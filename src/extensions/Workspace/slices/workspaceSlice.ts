@@ -9,11 +9,11 @@ import type { Role } from '../api';
 // active workspace, or null when no workspace is active / data not yet loaded.
 export const selectCurrentUserWorkspaceRole = createSelector(
   selectActiveWorkspace,
-  (workspace): Role | null => workspace?.callerRole ?? null,
+  (workspace): Role | null => workspace?.callerRole ?? null
 );
 
 // Convenience predicate — true only for GUEST-role callers.
 export const selectIsGuestInActiveWorkspace = createSelector(
   selectCurrentUserWorkspaceRole,
-  (role): boolean => role === 'GUEST',
+  (role): boolean => role === 'GUEST'
 );

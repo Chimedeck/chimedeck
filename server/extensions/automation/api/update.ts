@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { automationConfig } from '../config';
-import type { AutomationActionRow, AutomationRow, AutomationTriggerRow, AutomationType } from '../common/types';
+import type { AutomationType } from '../common/types';
 import { validateTrigger } from '../engine/triggers/validate';
 // Ensure trigger registry is populated.
 import '../engine/triggers/index';
@@ -16,8 +16,6 @@ const VALID_AUTOMATION_TYPES: AutomationType[] = [
   'SCHEDULED',
   'DUE_DATE',
 ];
-type BoardRow = { workspace_id: string };
-type MembershipRow = { role: string };
 
 interface UpdateAutomationBody {
   name?: unknown;
@@ -39,7 +37,7 @@ interface UpdateAutomationBody {
 export async function handleUpdateAutomation(
   req: Request,
   boardId: string,
-  automationId: string,
+  automationId: string
 ): Promise<Response> {
   if (!automationConfig.enabled) {
     return Response.json({ error: { name: 'feature-disabled' } }, { status: 404 });
@@ -47,26 +45,25 @@ export async function handleUpdateAutomation(
 
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
-  const currentUser = (req as AuthenticatedRequest).currentUser;
-  if (!currentUser) return Response.json({ error: { name: 'unauthorized' } }, { status: 401 });
+  const currentUser = (req as AuthenticatedRequest).currentUser!;
 
-  const board = (await db('boards').where({ id: boardId }).first()) as BoardRow | undefined;
+  const board = await db('boards').where({ id: boardId }).first();
   if (!board) {
     return Response.json({ error: { name: 'board-not-found' } }, { status: 404 });
   }
 
   // Only workspace members with at least MEMBER role can manage automations.
-  const membership = (await db('memberships')
+  const membership = await db('memberships')
     .where({ user_id: currentUser.id, workspace_id: board.workspace_id })
-    .first()) as MembershipRow | undefined;
+    .first();
   if (!membership || !['OWNER', 'ADMIN', 'MEMBER'].includes(membership.role)) {
     return Response.json({ error: { name: 'insufficient-role' } }, { status: 403 });
   }
 
   // Automations are private to their creator — only the creator can update.
-  const automation = (await db('automations')
+  const automation = await db('automations')
     .where({ id: automationId, board_id: boardId, created_by: currentUser.id })
-    .first()) as AutomationRow | undefined;
+    .first();
   if (!automation) {
     return Response.json({ error: { name: 'automation-not-found' } }, { status: 404 });
   }
@@ -75,14 +72,24 @@ export async function handleUpdateAutomation(
   try {
     body = (await req.json()) as UpdateAutomationBody;
   } catch {
-    return Response.json({ error: { name: 'bad-request', data: { message: 'Invalid JSON body' } } }, { status: 400 });
+    return Response.json(
+      { error: { name: 'bad-request', data: { message: 'Invalid JSON body' } } },
+      { status: 400 }
+    );
   }
 
-  if (body.automationType !== undefined && !VALID_AUTOMATION_TYPES.includes(body.automationType as AutomationType)) {
+  if (
+    body.automationType !== undefined &&
+    !VALID_AUTOMATION_TYPES.includes(body.automationType as AutomationType)
+  ) {
     return Response.json({ error: { name: 'automation-type-invalid' } }, { status: 422 });
   }
 
-  if (body.trigger !== undefined && body.trigger !== null && typeof body.trigger.triggerType !== 'string') {
+  if (
+    body.trigger !== undefined &&
+    body.trigger !== null &&
+    typeof body.trigger.triggerType !== 'string'
+  ) {
     return Response.json({ error: { name: 'trigger-type-unknown' } }, { status: 422 });
   }
 
@@ -92,13 +99,16 @@ export async function handleUpdateAutomation(
     if (!triggerValidation.valid) {
       return Response.json(
         { error: { name: triggerValidation.errorName, data: triggerValidation.errorData } },
-        { status: 422 },
+        { status: 422 }
       );
     }
   }
 
   if (body.actions !== undefined && !Array.isArray(body.actions)) {
-    return Response.json({ error: { name: 'bad-request', data: { message: 'actions must be an array' } } }, { status: 400 });
+    return Response.json(
+      { error: { name: 'bad-request', data: { message: 'actions must be an array' } } },
+      { status: 400 }
+    );
   }
 
   if (body.actions) {
@@ -111,7 +121,8 @@ export async function handleUpdateAutomation(
 
   await db.transaction(async (trx) => {
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    if (body.name !== undefined && typeof body.name === 'string') updates['name'] = body.name.trim();
+    if (body.name !== undefined && typeof body.name === 'string')
+      updates['name'] = body.name.trim();
     if (body.automationType !== undefined) updates['automation_type'] = body.automationType;
     if (body.isEnabled !== undefined) updates['is_enabled'] = body.isEnabled;
     if (body.icon !== undefined) updates['icon'] = body.icon || null;
@@ -149,11 +160,14 @@ export async function handleUpdateAutomation(
     }
   });
 
-  const [updated, trigger, actions] = (await Promise.all([
+  const [updated, trigger, actions] = await Promise.all([
     db('automations').where({ id: automationId }).first(),
     db('automation_triggers').where({ automation_id: automationId }).first(),
-    db('automation_actions').where({ automation_id: automationId }).orderBy('position', 'asc').select('*'),
-  ])) as [AutomationRow, AutomationTriggerRow | undefined, AutomationActionRow[]];
+    db('automation_actions')
+      .where({ automation_id: automationId })
+      .orderBy('position', 'asc')
+      .select('*'),
+  ]);
 
   return Response.json({ data: formatAutomation(updated, trigger ?? null, actions) });
 }

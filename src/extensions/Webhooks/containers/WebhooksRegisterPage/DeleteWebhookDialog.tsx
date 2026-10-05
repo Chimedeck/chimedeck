@@ -31,7 +31,9 @@ export default function DeleteWebhookDialog({ webhook, onClose, onDeleted }: Pro
       role="dialog"
       aria-modal="true"
       aria-labelledby="delete-webhook-title"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="relative w-full max-w-sm rounded-lg bg-bg-surface shadow-xl mx-4">
         {/* Header */}
@@ -40,7 +42,7 @@ export default function DeleteWebhookDialog({ webhook, onClose, onDeleted }: Pro
             {translations['DeleteWebhookDialog.title']}
           </h3>
           <IconButton
-            aria-label="Close dialog"
+            aria-label={translations['DeleteWebhookDialog.closeAria']}
             icon={<XMarkIcon className="h-4 w-4" />}
             variant="ghost"
             onClick={onClose}

@@ -26,19 +26,36 @@ export function AttachmentUrlModal({ onAdd, onClose }: Props): React.ReactElemen
     try {
       await onAdd(name.trim(), url.trim());
       onClose();
-    } catch (err: unknown) {
-      const e = err as { message?: string };
-      setError(e.message ?? translations['attachment.urlModal.error.failed']);
+    } catch (err: any) {
+      setError(err?.message ?? translations['attachment.urlModal.error.failed']);
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.4)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+      }}
+    >
       <form
-        onSubmit={(e) => { void handleSubmit(e); }}
-        style={{ background: '#fff', borderRadius: 8, padding: 24, minWidth: 320, display: 'flex', flexDirection: 'column', gap: 12 }}
+        onSubmit={handleSubmit}
+        style={{
+          background: '#fff',
+          borderRadius: 8,
+          padding: 24,
+          minWidth: 320,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+        }}
       >
         <h3 style={{ margin: 0, fontSize: 16 }}>{translations['attachment.urlModal.title']}</h3>
         <label style={{ fontSize: 13 }}>
@@ -46,8 +63,17 @@ export function AttachmentUrlModal({ onAdd, onClose }: Props): React.ReactElemen
           <input
             type="text"
             value={name}
-            onChange={(e) => { setName(e.target.value); }}
-            style={{ display: 'block', width: '100%', marginTop: 4, padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: 4 }}
+            onChange={(e) => {
+              setName(e.target.value);
+            }}
+            style={{
+              display: 'block',
+              width: '100%',
+              marginTop: 4,
+              padding: '6px 8px',
+              border: '1px solid #d1d5db',
+              borderRadius: 4,
+            }}
           />
         </label>
         <label style={{ fontSize: 13 }}>
@@ -55,14 +81,35 @@ export function AttachmentUrlModal({ onAdd, onClose }: Props): React.ReactElemen
           <input
             type="url"
             value={url}
-            onChange={(e) => { setUrl(e.target.value); }}
-            style={{ display: 'block', width: '100%', marginTop: 4, padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: 4 }}
+            onChange={(e) => {
+              setUrl(e.target.value);
+            }}
+            style={{
+              display: 'block',
+              width: '100%',
+              marginTop: 4,
+              padding: '6px 8px',
+              border: '1px solid #d1d5db',
+              borderRadius: 4,
+            }}
           />
         </label>
         {error && <span style={{ color: '#ef4444', fontSize: 13 }}>{error}</span>}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <Button variant="secondary" size="sm" type="button" onClick={onClose} disabled={submitting}>{translations['attachment.urlModal.cancel']}</Button>
-          <Button variant="primary" size="sm" type="submit" disabled={submitting}>{submitting ? translations['attachment.urlModal.submitting'] : translations['attachment.urlModal.submit']}</Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+          >
+            {translations['attachment.urlModal.cancel']}
+          </Button>
+          <Button variant="primary" size="sm" type="submit" disabled={submitting}>
+            {submitting
+              ? translations['attachment.urlModal.submitting']
+              : translations['attachment.urlModal.submit']}
+          </Button>
         </div>
       </form>
     </div>

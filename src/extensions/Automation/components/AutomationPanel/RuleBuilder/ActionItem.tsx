@@ -16,17 +16,26 @@ export interface ActionItemData {
   config: Record<string, unknown>;
 }
 
-type CustomFieldMap = Record<string, { name: string; field_type: string; options: Array<{ id: string; label: string }> }>;
+type CustomFieldMap = Record<
+  string,
+  { name: string; field_type: string; options: Array<{ id: string; label: string }> }
+>;
 
 const SIMPLE_FIELD_VALUE_READERS: Record<string, (item: ActionItemData) => string> = {
   TEXT: (item) => (typeof item.config.valueText === 'string' ? item.config.valueText : ''),
-  NUMBER: (item) => (typeof item.config.valueNumber === 'number' ? String(item.config.valueNumber) : ''),
-  DATE: (item) => (typeof item.config.valueDate === 'string' ? item.config.valueDate.slice(0, 10) : ''),
+  NUMBER: (item) =>
+    typeof item.config.valueNumber === 'number' ? String(item.config.valueNumber) : '',
+  DATE: (item) =>
+    typeof item.config.valueDate === 'string' ? item.config.valueDate.slice(0, 10) : '',
   CHECKBOX: (item) => (item.config.valueCheckbox === true ? 'Checked' : 'Unchecked'),
 };
 
-function getCustomFieldValueLabel(item: ActionItemData, field: CustomFieldMap[string] | undefined): string {
-  const fieldType = (typeof item.config.fieldType === 'string' ? item.config.fieldType : field?.field_type) ?? '';
+function getCustomFieldValueLabel(
+  item: ActionItemData,
+  field: CustomFieldMap[string] | undefined
+): string {
+  const fieldType =
+    (typeof item.config.fieldType === 'string' ? item.config.fieldType : field?.field_type) ?? '';
 
   const simpleReader = SIMPLE_FIELD_VALUE_READERS[fieldType];
   if (simpleReader) return simpleReader(item);
@@ -40,7 +49,10 @@ function getCustomFieldValueLabel(item: ActionItemData, field: CustomFieldMap[st
   return '';
 }
 
-function getCustomFieldSummary(item: ActionItemData, customFieldsById: CustomFieldMap): string | null {
+function getCustomFieldSummary(
+  item: ActionItemData,
+  customFieldsById: CustomFieldMap
+): string | null {
   if (item.actionType !== 'card.update_custom_field_value') return null;
 
   const fieldId = typeof item.config.fieldId === 'string' ? item.config.fieldId : '';
@@ -70,9 +82,13 @@ const ActionItem = ({ item, onDelete, workspaceBoards = [], customFieldsById = {
   const [targetBoardLists, setTargetBoardLists] = useState<Record<string, string>>({});
 
   // Fetch lists for the target board (cross-board actions like copy_to_board).
-  const targetBoardId = typeof item.config.targetBoardId === 'string' ? item.config.targetBoardId : null;
+  const targetBoardId =
+    typeof item.config.targetBoardId === 'string' ? item.config.targetBoardId : null;
   useEffect(() => {
-    if (!targetBoardId) { setTargetBoardLists({}); return; }
+    if (!targetBoardId) {
+      setTargetBoardLists({});
+      return;
+    }
     apiClient
       .get(`/boards/${targetBoardId}/lists`)
       .then((res: any) => {
@@ -102,9 +118,7 @@ const ActionItem = ({ item, onDelete, workspaceBoards = [], customFieldsById = {
       return targetBoardLists[value] ?? lists[value]?.title ?? value;
     }
     if (Array.isArray(value)) {
-      const names = (value as string[])
-        .map((id) => lists[id]?.title ?? id)
-        .filter(Boolean);
+      const names = (value as string[]).map((id) => lists[id]?.title ?? id).filter(Boolean);
       return names.length > 0 ? names.join(', ') : '';
     }
     if (typeof value === 'string') return value;
@@ -113,11 +127,13 @@ const ActionItem = ({ item, onDelete, workspaceBoards = [], customFieldsById = {
   };
 
   // Show the first config value as a summary hint (skip if empty).
-  const configSummary = getCustomFieldSummary(item, customFieldsById) ?? Object.entries(item.config)
-    .filter(([, v]) => v !== undefined && v !== null && v !== '')
-    .map(([k, v]) => resolveConfigValue(k, v))
-    .slice(0, 2)
-    .join(', ');
+  const configSummary =
+    getCustomFieldSummary(item, customFieldsById) ??
+    Object.entries(item.config)
+      .filter(([, v]) => v !== undefined && v !== null && v !== '')
+      .map(([k, v]) => resolveConfigValue(k, v))
+      .slice(0, 2)
+      .join(', ');
 
   return (
     <li
@@ -139,9 +155,7 @@ const ActionItem = ({ item, onDelete, workspaceBoards = [], customFieldsById = {
       {/* Label + summary */}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-subtle">{item.label}</p>
-        {configSummary && (
-          <p className="truncate text-xs text-muted">{configSummary}</p>
-        )}
+        {configSummary && <p className="truncate text-xs text-muted">{configSummary}</p>}
       </div>
 
       {/* Delete */}

@@ -4,14 +4,11 @@ import { healthCheckConfig } from './common/config/healthCheck';
 import { healthCheckRouter } from './api/index';
 
 const featureDisabled = () =>
-  Response.json(
-    { error: { name: 'not-found', data: { message: 'Not found' } } },
-    { status: 404 },
-  );
+  Response.json({ error: { name: 'not-found', data: { message: 'Not found' } } }, { status: 404 });
 
 export async function healthCheckExtensionRouter(
   req: Request,
-  pathname: string,
+  pathname: string
 ): Promise<Response | null> {
   // Short-circuit when the feature flag is off — expose no surface area.
   if (!healthCheckConfig.enabled) {

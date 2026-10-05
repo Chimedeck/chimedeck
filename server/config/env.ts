@@ -1,14 +1,8 @@
 // Single source of truth for all environment variable access.
-// Never use Bun.env or process.env directly outside this module.
-
-// JWT keys are stored as base64 in .env to avoid multiline quoting issues.
-// If the value looks like raw PEM already (starts with -----), use it as-is.
-function decodeKey(raw: string): string {
-  if (!raw) return '';
-  if (raw.startsWith('-----')) return raw;
-  // base64-encoded PEM
-  return Buffer.from(raw, 'base64').toString('utf-8');
-}
+// Never use Bun.env or process.env outside this module.
+import { decodeKey } from './decodeKey';
+// Re-export so test files can exercise the decoder without instantiating `env`.
+export { decodeKey };
 
 /**
  * Resolve the S3 / object-storage settings.
@@ -73,14 +67,14 @@ function resolveS3Env(): {
 
 export const env = {
   DATABASE_URL: Bun.env['DATABASE_URL'] ?? '',
-  JWT_PRIVATE_KEY: decodeKey(Bun.env['JWT_PRIVATE_KEY'] ?? ''),
-  JWT_PUBLIC_KEY: decodeKey(Bun.env['JWT_PUBLIC_KEY'] ?? ''),
+  JWT_PRIVATE_KEY: decodeKey(Bun.env['JWT_PRIVATE_KEY'] ?? '', 'JWT_PRIVATE_KEY'),
+  JWT_PUBLIC_KEY: decodeKey(Bun.env['JWT_PUBLIC_KEY'] ?? '', 'JWT_PUBLIC_KEY'),
 
-  // S3 / file storage
+  // S3 / file storage.
   //
   // FLAG_USE_LOCAL_STORAGE=true points S3 at the LocalStack service defined in
   // docker-compose.yml (port 4566) and fills in throwaway credentials, so local
-  // dev and e2e runs work without real AWS. Explicit S3_ENDPOINT / S3_AWS_* env
+  // dev and e2e runs work without real AWS. Explicit S3_ENDPOINT / S3_* env
   // values always win, so a self-hosted object store or real credentials can
   // still be supplied alongside the flag.
   ...resolveS3Env(),
@@ -115,6 +109,65 @@ export const env = {
   // Search feature gate — when false, GET /search returns 501
   SEARCH_ENABLED: Bun.env['SEARCH_ENABLED'] === 'true',
 
+  // Board chat embeddings — used by Sprint 166 write-path retry handling.
+  // OpenAI-compatible by default. Set CHAT_PROVIDER=ollama to route through
+  // https://ollama.com/v1 using the OLLAMA_* env vars (see getChatProviderConfig).
+  // CHAT_EMBEDDING_ENABLED is an independent kill-switch for the embedding path —
+  // set it to false when the provider (e.g. Ollama Cloud) does not expose an
+  // embedding model, or to disable semantic retrieval without disabling chat.
+  CHAT_EMBEDDING_ENABLED: Bun.env['CHAT_EMBEDDING_ENABLED'] !== 'false',
+  CHAT_EMBEDDING_API_URL: Bun.env['CHAT_EMBEDDING_API_URL'] ?? '',
+  CHAT_EMBEDDING_API_KEY: Bun.env['CHAT_EMBEDDING_API_KEY'] ?? '',
+  CHAT_EMBEDDING_MODEL: Bun.env['CHAT_EMBEDDING_MODEL'] ?? 'text-embedding-3-small',
+  CHAT_EMBEDDING_DIMENSIONS: parseInt(Bun.env['CHAT_EMBEDDING_DIMENSIONS'] ?? '1536', 10),
+  // Board chat assist provider — used by Sprint 167 assist endpoint.
+  // OpenAI-compatible by default. Set CHAT_PROVIDER=ollama to route through
+  // https://ollama.com/v1 using the OLLAMA_* env vars (see getChatProviderConfig).
+  CHAT_ASSIST_API_KEY: Bun.env['CHAT_ASSIST_API_KEY'] ?? '',
+  CHAT_ASSIST_BASE_URL: Bun.env['CHAT_ASSIST_BASE_URL'] ?? '',
+  CHAT_ASSIST_MODEL: Bun.env['CHAT_ASSIST_MODEL'] ?? '',
+  // Chat provider selector — when 'ollama' (default) the embedding + assist providers route through
+  // https://ollama.com/v1 using the OLLAMA_* env vars. When 'openai' the
+  // CHAT_EMBEDDING_* / CHAT_ASSIST_* vars are used as-is.
+  CHAT_PROVIDER:
+    (Bun.env['CHAT_PROVIDER'] ?? 'ollama').toLowerCase() === 'openai' ? 'openai' : 'ollama',
+  // Ollama (https://ollama.com/v1) — OpenAI-compatible hosted inference.
+  // Used for both embedding and assist when CHAT_PROVIDER=ollama (the default).
+  OLLAMA_API_KEY: Bun.env['OLLAMA_API_KEY'] ?? '',
+  OLLAMA_BASE_URL: Bun.env['OLLAMA_BASE_URL'] ?? 'https://ollama.com/v1',
+  OLLAMA_EMBEDDING_MODEL: Bun.env['OLLAMA_EMBEDDING_MODEL'] ?? '',
+  OLLAMA_EMBEDDING_DIMENSIONS: parseInt(Bun.env['OLLAMA_EMBEDDING_DIMENSIONS'] ?? '1024', 10),
+  OLLAMA_ASSIST_MODEL: Bun.env['OLLAMA_ASSIST_MODEL'] ?? 'deepseek-r1',
+
+  GITHUB_APP_ID: Bun.env['GITHUB_APP_ID'] ?? '',
+  GITHUB_APP_PRIVATE_KEY: decodeKey(
+    Bun.env['GITHUB_APP_PRIVATE_KEY'] ?? '',
+    'GITHUB_APP_PRIVATE_KEY'
+  ),
+  GITHUB_APP_BOT_ALIAS: Bun.env['GITHUB_APP_BOT_ALIAS'] ?? 'github-app[bot]',
+  GITHUB_APP_API_BASE_URL: Bun.env['GITHUB_APP_API_BASE_URL'] ?? 'https://api.github.com',
+  GITHUB_REPOSITORY_CACHE_DIR: Bun.env['GITHUB_REPOSITORY_CACHE_DIR'] ?? '',
+  GITHUB_REPOSITORY_CACHE_TTL_SECONDS: parseInt(
+    Bun.env['GITHUB_REPOSITORY_CACHE_TTL_SECONDS'] ?? '300',
+    10
+  ),
+  GITHUB_INSTALLATION_TOKEN_REFRESH_SKEW_SECONDS: parseInt(
+    Bun.env['GITHUB_INSTALLATION_TOKEN_REFRESH_SKEW_SECONDS'] ?? '60',
+    10
+  ),
+  // GitHub App webhook receiver — when true, POST /api/v1/github/webhook is mounted.
+  // Off by default in local dev so the server doesn't have to be reachable from the internet.
+  GITHUB_WEBHOOKS_ENABLED: Bun.env['GITHUB_WEBHOOKS_ENABLED'] === 'true',
+  // Fallback webhook signing secret used when a per-installation secret has not been
+  // registered (e.g. during the very first `installation.created` event, before our
+  // own handler has stored one). Generate with: openssl rand -hex 32
+  GITHUB_APP_WEBHOOK_SECRET: Bun.env['GITHUB_APP_WEBHOOK_SECRET'] ?? '',
+
+  // Multi-instance handling — when true, commit requests are validated against
+  // ALB sticky-session cookies (AWSALB/AWSELB) to ensure they land on the same
+  // instance that holds the locally-written proposal files.
+  MULTI_INSTANCE_HANDLING_ENABLED: Bun.env['MULTI_INSTANCE_HANDLING_ENABLED'] === 'true',
+
   // OpenTelemetry — when false, no SDK is initialised and spans are no-ops
   OTEL_ENABLED: Bun.env['OTEL_ENABLED'] === 'true',
   OTEL_EXPORTER_URL: Bun.env['OTEL_EXPORTER_URL'] ?? 'http://localhost:4318/v1/traces',
@@ -123,6 +176,15 @@ export const env = {
 
   // Rate-limiting — when false, all limits are bypassed
   RATE_LIMIT_ENABLED: Bun.env['RATE_LIMIT_ENABLED'] === 'true',
+
+  // Subscription gates — master kill switch and default tier fallback.
+  SUBSCRIPTIONS_ENABLED: Bun.env['SUBSCRIPTIONS_ENABLED'] === 'true',
+  SUBSCRIPTIONS_DEFAULT_UNLIMITED_TIER: Bun.env['SUBSCRIPTIONS_DEFAULT_UNLIMITED_TIER'] !== 'false',
+  STRIPE_SECRET_KEY: Bun.env['STRIPE_SECRET_KEY'] ?? '',
+  STRIPE_WEBHOOK_SECRET: Bun.env['STRIPE_WEBHOOK_SECRET'] ?? '',
+  STRIPE_PRICE_TIER_2: Bun.env['STRIPE_PRICE_TIER_2'] ?? '',
+  STRIPE_PRICE_TIER_3: Bun.env['STRIPE_PRICE_TIER_3'] ?? '',
+  STRIPE_PRICE_TIER_4: Bun.env['STRIPE_PRICE_TIER_4'] ?? '',
 
   // Email / SES
   SES_REGION: Bun.env['SES_REGION'] ?? 'us-east-1',
@@ -141,7 +203,10 @@ export const env = {
 
   // Access token TTL in seconds. Defaults to 24 hours (production-safe).
   // Override with ACCESS_TOKEN_TTL_SECONDS env var (e.g. set to 900 for tighter session windows).
-  ACCESS_TOKEN_TTL_SECONDS: parseInt(Bun.env['ACCESS_TOKEN_TTL_SECONDS'] ?? String(24 * 60 * 60), 10),
+  ACCESS_TOKEN_TTL_SECONDS: parseInt(
+    Bun.env['ACCESS_TOKEN_TTL_SECONDS'] ?? String(24 * 60 * 60),
+    10
+  ),
 
   // Refresh token TTL in days. Defaults to 30 days (1 month).
   // Override with REFRESH_TOKEN_TTL_DAYS env var for custom persistence windows.
@@ -158,6 +223,10 @@ export const env = {
   // When true, registration and email-change are restricted to ALLOWED_EMAIL_DOMAINS.
   // Set to "false" to disable the restriction entirely.
   EMAIL_DOMAIN_RESTRICTION_ENABLED: Bun.env['EMAIL_DOMAIN_RESTRICTION_ENABLED'] !== 'false',
+  // When true, signup is open to all email domains (public registration).
+  // Overrides EMAIL_DOMAIN_RESTRICTION_ENABLED and ALLOWED_EMAIL_DOMAINS.
+  // Defaults to false — only ALLOWED_EMAIL_DOMAINS may register.
+  EMAIL_DOMAIN_PUBLIC_ENABLED: Bun.env['EMAIL_DOMAIN_PUBLIC_ENABLED'] === 'true',
 
   // Webhooks — AES-256-GCM key used to encrypt signing secrets at rest.
   // Generate with: openssl rand -hex 32
@@ -190,7 +259,10 @@ export const env = {
   /** HTTP probe timeout in milliseconds. Default: 10 000 ms. */
   HEALTH_CHECK_TIMEOUT_MS: parseInt(Bun.env['HEALTH_CHECK_TIMEOUT_MS'] ?? '10000', 10),
   /** Response time threshold (ms) above which a 2xx response is classified amber. Default: 1 000 ms. */
-  HEALTH_CHECK_AMBER_THRESHOLD_MS: parseInt(Bun.env['HEALTH_CHECK_AMBER_THRESHOLD_MS'] ?? '1000', 10),
+  HEALTH_CHECK_AMBER_THRESHOLD_MS: parseInt(
+    Bun.env['HEALTH_CHECK_AMBER_THRESHOLD_MS'] ?? '1000',
+    10
+  ),
 
   // Design System dev page — enabled by default in development, disabled in production.
   // Set DESIGN_SYSTEM_ENABLED=true to force-enable in production (not recommended).
@@ -211,5 +283,4 @@ export const env = {
 
   // Webhooks feature flag — disabled by default in local dev, enabled in staging/prod.
   // Set WEBHOOKS_ENABLED=true to activate all /api/v1/webhooks routes.
-  WEBHOOKS_ENABLED: Bun.env['WEBHOOKS_ENABLED'] === 'true',
 } as const;

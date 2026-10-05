@@ -17,25 +17,27 @@ export type TrelloAuthUser = {
 };
 
 export async function listActionReactionRows(commentId: string): Promise<ReactionRow[]> {
-  return await db('comment_reactions')
+  return (await db('comment_reactions')
     .where({ comment_id: commentId })
-    .orderBy('created_at', 'asc') as ReactionRow[];
+    .orderBy('created_at', 'asc')) as ReactionRow[];
 }
 
 export async function listActionReactions(commentId: string) {
   const rows = await listActionReactionRows(commentId);
-  return rows.map((row) => serializeReaction({
-    id: row.id ?? null,
-    idMember: row.user_id,
-    idModel: commentId,
-    emoji: row.emoji,
-  }));
+  return rows.map((row) =>
+    serializeReaction({
+      id: row.id ?? null,
+      idMember: row.user_id,
+      idModel: commentId,
+      emoji: row.emoji,
+    })
+  );
 }
 
 export async function getActionReaction(commentId: string, reactionIdentifier: string) {
-  const byId = await db('comment_reactions')
+  const byId = (await db('comment_reactions')
     .where({ id: reactionIdentifier, comment_id: commentId })
-    .first() as ReactionRow | undefined;
+    .first()) as ReactionRow | undefined;
   if (byId) {
     return serializeReaction({
       id: byId.id ?? null,
@@ -45,9 +47,9 @@ export async function getActionReaction(commentId: string, reactionIdentifier: s
     });
   }
 
-  const byEmoji = await db('comment_reactions')
+  const byEmoji = (await db('comment_reactions')
     .where({ comment_id: commentId, emoji: reactionIdentifier })
-    .first() as ReactionRow | undefined;
+    .first()) as ReactionRow | undefined;
   if (!byEmoji) return null;
 
   return serializeReaction({
@@ -63,9 +65,9 @@ export async function createOrGetActionReaction(args: {
   emoji: string;
   user: TrelloAuthUser;
 }) {
-  const existing = await db('comment_reactions')
+  const existing = (await db('comment_reactions')
     .where({ comment_id: args.commentId, user_id: args.user.id, emoji: args.emoji })
-    .first() as ReactionRow | undefined;
+    .first()) as ReactionRow | undefined;
 
   if (!existing) {
     await db('comment_reactions').insert({
@@ -77,9 +79,9 @@ export async function createOrGetActionReaction(args: {
     });
   }
 
-  const created = await db('comment_reactions')
+  const created = (await db('comment_reactions')
     .where({ comment_id: args.commentId, user_id: args.user.id, emoji: args.emoji })
-    .first() as ReactionRow | undefined;
+    .first()) as ReactionRow | undefined;
 
   return serializeReaction({
     id: created?.id ?? null,
@@ -95,9 +97,9 @@ export async function deleteActionReaction(args: {
   callerId: string;
   boardAdmin: boolean;
 }): Promise<{ allowed: boolean }> {
-  const byId = await db('comment_reactions')
+  const byId = (await db('comment_reactions')
     .where({ id: args.reactionIdentifier, comment_id: args.commentId })
-    .first() as ReactionRow | undefined;
+    .first()) as ReactionRow | undefined;
 
   if (byId) {
     if (byId.user_id !== args.callerId && !args.boardAdmin) {

@@ -34,6 +34,7 @@ import ApiKeyRevealModal from '../../modals/ApiKeyRevealModal';
 import { updatePlugin } from '../../api';
 import type { Plugin, UpdatePluginBody, RegisterPluginBody } from '../../api';
 import translations from '../../translations/en.json';
+import { PuzzlePieceIcon } from '@heroicons/react/24/solid';
 
 const PluginRegistryPage = () => {
   const dispatch = useAppDispatch();
@@ -79,9 +80,9 @@ const PluginRegistryPage = () => {
       const params: Parameters<typeof fetchPluginsThunk>[0] = { status: statusFilter };
       if (searchQuery) params.q = searchQuery;
       if (selectedCategory) params.category = selectedCategory;
-      void dispatch(fetchPluginsThunk(params));
+      dispatch(fetchPluginsThunk(params));
     }
-  }, [isAdmin, dispatch]);
+  }, [isAdmin, dispatch]); // eslint-disable-line react-hooks/exhaustive-deps — fetch once on mount
 
   // Re-fetch when filters change
   const dispatchFetch = useCallback(
@@ -97,7 +98,7 @@ const PluginRegistryPage = () => {
       const params: Parameters<typeof fetchPluginsThunk>[0] = { status: s ?? statusFilter };
       if (q) params.q = q;
       if (category) params.category = category;
-      void dispatch(fetchPluginsThunk(params));
+      dispatch(fetchPluginsThunk(params));
     },
     [dispatch, statusFilter]
   );
@@ -117,7 +118,7 @@ const PluginRegistryPage = () => {
     const params: Parameters<typeof fetchPluginsThunk>[0] = { status: s };
     if (searchQuery) params.q = searchQuery;
     if (selectedCategory) params.category = selectedCategory;
-    void dispatch(fetchPluginsThunk(params));
+    dispatch(fetchPluginsThunk(params));
   };
 
   const handleRegisterSubmit = async (body: RegisterPluginBody) => {
@@ -147,7 +148,7 @@ const PluginRegistryPage = () => {
       const params: Parameters<typeof fetchPluginsThunk>[0] = { status: statusFilter };
       if (searchQuery) params.q = searchQuery;
       if (selectedCategory) params.category = selectedCategory;
-      void dispatch(fetchPluginsThunk(params));
+      dispatch(fetchPluginsThunk(params));
     }
     setRevealApiKey(null);
   };
@@ -168,7 +169,7 @@ const PluginRegistryPage = () => {
       const params: Parameters<typeof fetchPluginsThunk>[0] = { status: statusFilter };
       if (searchQuery) params.q = searchQuery;
       if (selectedCategory) params.category = selectedCategory;
-      void dispatch(fetchPluginsThunk(params));
+      dispatch(fetchPluginsThunk(params));
     }
     setReactivatingId(null);
   };
@@ -195,12 +196,8 @@ const PluginRegistryPage = () => {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-base">
-            {translations['plugins.registry.title']}
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            {translations['plugins.registry.subtitle']}
-          </p>
+          <h1 className="text-2xl font-bold text-base">{translations['plugins.registry.title']}</h1>
+          <p className="mt-1 text-sm text-muted">{translations['plugins.registry.subtitle']}</p>
         </div>
         {/* "+ Register Plugin" button — wired in a future iteration */}
         <button
@@ -247,9 +244,7 @@ const PluginRegistryPage = () => {
       {/* Empty state */}
       {status === 'idle' && plugins.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-muted text-sm">
-            {translations['plugins.registry.empty']}
-          </p>
+          <p className="text-muted text-sm">{translations['plugins.registry.empty']}</p>
         </div>
       )}
 
@@ -260,8 +255,8 @@ const PluginRegistryPage = () => {
           deactivatingId={deactivatingId}
           reactivatingId={reactivatingId}
           onEdit={setEditingPlugin}
-          onDeactivate={(id) => void handleDeactivate(id)}
-          onReactivate={(id) => void handleReactivate(id)}
+          onDeactivate={handleDeactivate}
+          onReactivate={handleReactivate}
         />
       )}
 
@@ -275,7 +270,7 @@ const PluginRegistryPage = () => {
           setEditingPlugin(null);
           setEditServerError(null);
         }}
-        onSubmit={(pluginId, body) => void handleEditSubmit(pluginId, body)}
+        onSubmit={handleEditSubmit}
       />
 
       {/* Register plugin modal — step 1: fill in the form */}
@@ -283,8 +278,10 @@ const PluginRegistryPage = () => {
         open={registerOpen}
         isSubmitting={isSubmittingRegister}
         serverError={registerServerError}
-        onClose={() => { setRegisterOpen(false); }}
-        onSubmit={(body) => void handleRegisterSubmit(body)}
+        onClose={() => {
+          setRegisterOpen(false);
+        }}
+        onSubmit={handleRegisterSubmit}
       />
 
       {/* API key reveal modal — step 2: shown once after successful registration */}

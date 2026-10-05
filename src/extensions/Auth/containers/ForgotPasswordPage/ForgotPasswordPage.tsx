@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
 import Button from '~/common/components/Button';
-import { Squares2X2Icon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -39,7 +38,11 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md bg-bg-surface border border-border rounded-2xl shadow-2xl p-8">
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8">
-          <Squares2X2Icon className="h-7 w-7 text-indigo-400" aria-hidden="true" />
+          <img
+            src="/apple-touch-icon.png"
+            alt={translations.appName}
+            className="h-7 w-7 rounded-sm object-contain"
+          />
           <span className="text-xl font-bold text-base">{translations.appName}</span>
         </div>
 
@@ -51,10 +54,7 @@ export default function ForgotPasswordPage() {
             <p className="text-success mb-6">
               {translations.forgotPassword.sent.replace('{email}', email)}
             </p>
-            <Link
-              to="/login"
-              className="text-indigo-400 hover:text-indigo-300 text-sm font-medium"
-            >
+            <Link to="/login" className="text-indigo-400 hover:text-indigo-300 text-sm font-medium">
               {translations.forgotPassword.backToLogin}
             </Link>
           </div>
@@ -74,7 +74,7 @@ export default function ForgotPasswordPage() {
                     setEmail(e.target.value);
                   }}
                   className="bg-bg-overlay border border-border rounded-lg px-3 py-2 text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                  placeholder="you@example.com"
+                  placeholder={translations['forgotPassword.emailPlaceholder']}
                   aria-describedby={emailError ? 'forgot-email-error' : undefined}
                   aria-invalid={!!emailError}
                 />

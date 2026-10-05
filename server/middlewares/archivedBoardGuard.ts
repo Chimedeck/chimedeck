@@ -2,39 +2,15 @@
 // Use this helper inside any mutation handler that resolves a board.
 import { db } from '../common/db';
 
-// db/migrations/0004_board.ts
-interface BoardStateRow {
-  id: string;
-  state: 'ACTIVE' | 'ARCHIVED';
-}
-
-// db/migrations/0006_card.ts
-interface CardListRow {
-  id: string;
-  list_id: string;
-}
-
-// db/migrations/0005_list.ts
-interface ListBoardRow {
-  id: string;
-  board_id: string;
-}
-
-// db/migrations/0010_comments_activity.ts
-interface CommentCardRow {
-  id: string;
-  card_id: string;
-}
-
 // Returns a 403 Response if the board (by id) is archived, null otherwise.
 // Also returns 404 if the board is not found.
 export async function requireBoardNotArchived(boardId: string): Promise<Response | null> {
-  const board = await db<BoardStateRow>('boards').where({ id: boardId }).first();
+  const board = await db('boards').where({ id: boardId }).first();
 
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -46,7 +22,7 @@ export async function requireBoardNotArchived(boardId: string): Promise<Response
           message: 'This board is archived and cannot be modified.',
         },
       },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -56,34 +32,34 @@ export async function requireBoardNotArchived(boardId: string): Promise<Response
 // Convenience: resolve board from a cardId and return 403 if archived.
 // Returns { error: Response } on failure or { board } on success.
 export async function resolveBoardFromCard(
-  cardId: string,
-): Promise<{ error: Response } | { board: BoardStateRow }> {
-  const card = await db<CardListRow>('cards').where({ id: cardId }).first();
+  cardId: string
+): Promise<{ error: Response } | { board: Record<string, unknown> }> {
+  const card = await db('cards').where({ id: cardId }).first();
   if (!card) {
     return {
       error: Response.json(
         { error: { code: 'card-not-found', message: 'Card not found' } },
-        { status: 404 },
+        { status: 404 }
       ),
     };
   }
 
-  const list = await db<ListBoardRow>('lists').where({ id: card.list_id }).first();
+  const list = await db('lists').where({ id: card.list_id }).first();
   if (!list) {
     return {
       error: Response.json(
         { error: { code: 'card-not-found', message: 'Card parent list not found' } },
-        { status: 404 },
+        { status: 404 }
       ),
     };
   }
 
-  const board = await db<BoardStateRow>('boards').where({ id: list.board_id }).first();
+  const board = await db('boards').where({ id: list.board_id }).first();
   if (!board) {
     return {
       error: Response.json(
         { error: { code: 'board-not-found', message: 'Board not found' } },
-        { status: 404 },
+        { status: 404 }
       ),
     };
   }
@@ -97,7 +73,7 @@ export async function resolveBoardFromCard(
             message: 'This board is archived and cannot be modified.',
           },
         },
-        { status: 403 },
+        { status: 403 }
       ),
     };
   }
@@ -107,17 +83,17 @@ export async function resolveBoardFromCard(
 
 // Convenience: resolve board from a commentId and return 403 if archived.
 export async function resolveBoardFromComment(
-  commentId: string,
-): Promise<{ error: Response } | { board: BoardStateRow }> {
-  const comment = await db<CommentCardRow>('comments').where({ id: commentId }).first();
+  commentId: string
+): Promise<{ error: Response } | { board: Record<string, unknown> }> {
+  const comment = await db('comments').where({ id: commentId }).first();
   if (!comment) {
     return {
       error: Response.json(
         { error: { code: 'comment-not-found', message: 'Comment not found' } },
-        { status: 404 },
+        { status: 404 }
       ),
     };
   }
 
-  return resolveBoardFromCard(comment.card_id);
+  return resolveBoardFromCard(comment.card_id as string);
 }

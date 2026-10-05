@@ -45,7 +45,9 @@ export function useHealthCheckAutoRefresh({ onRefresh, enabled = true }: Options
       isVisibleRef.current = !document.hidden;
     }
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => { document.removeEventListener('visibilitychange', handleVisibilityChange); };
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   // Ref-based countdown so we can reset from triggerRefresh without
@@ -72,7 +74,9 @@ export function useHealthCheckAutoRefresh({ onRefresh, enabled = true }: Options
       }
     }, TICK_MS);
 
-    return () => { clearInterval(id); };
+    return () => {
+      clearInterval(id);
+    };
   }, [enabled, doRefresh]);
 
   const triggerRefresh = useCallback(() => {

@@ -66,7 +66,10 @@ function toBoolean(value: unknown): boolean {
   return !!value;
 }
 
-function toOptions(value: CustomFieldRow['options'], idCustomField: string): TrelloCustomFieldOption[] {
+function toOptions(
+  value: CustomFieldRow['options'],
+  idCustomField: string
+): TrelloCustomFieldOption[] {
   let options: CustomFieldOptionRow[] = [];
   if (Array.isArray(value)) {
     options = value;
@@ -90,25 +93,37 @@ function toOptions(value: CustomFieldRow['options'], idCustomField: string): Tre
 
 function toValueForFieldType(
   row: CardCustomFieldValueRow,
-  fieldType?: string,
+  fieldType?: string
 ): TrelloCustomFieldItem['value'] {
   const normalizedType = fieldType?.trim().toUpperCase();
   if (normalizedType === 'TEXT') return { text: row.value_text ?? null };
   if (normalizedType === 'NUMBER') {
-    return { number: row.value_number === null || row.value_number === undefined ? null : String(row.value_number) };
+    return {
+      number:
+        row.value_number === null || row.value_number === undefined
+          ? null
+          : String(row.value_number),
+    };
   }
   if (normalizedType === 'DATE') {
     return { date: toIsoOrNull(row.value_date) };
   }
   if (normalizedType === 'CHECKBOX') {
-    return { checked: row.value_checkbox === null || row.value_checkbox === undefined ? null : String(row.value_checkbox) };
+    return {
+      checked:
+        row.value_checkbox === null || row.value_checkbox === undefined
+          ? null
+          : String(row.value_checkbox),
+    };
   }
   if (normalizedType === 'DROPDOWN') return { optionId: row.value_option_id ?? null };
 
   if (row.value_option_id) return { optionId: row.value_option_id };
   if (row.value_date) return { date: toIsoOrNull(row.value_date) };
-  if (row.value_number !== null && row.value_number !== undefined) return { number: String(row.value_number) };
-  if (row.value_checkbox !== null && row.value_checkbox !== undefined) return { checked: String(row.value_checkbox) };
+  if (row.value_number !== null && row.value_number !== undefined)
+    return { number: String(row.value_number) };
+  if (row.value_checkbox !== null && row.value_checkbox !== undefined)
+    return { checked: String(row.value_checkbox) };
   return { text: row.value_text ?? null };
 }
 
@@ -133,7 +148,7 @@ export function serializeCustomField(customField: CustomFieldRow): TrelloCustomF
 
 export function serializeCustomFieldItem(
   row: CardCustomFieldValueRow,
-  fieldType?: string,
+  fieldType?: string
 ): TrelloCustomFieldItem {
   const value = toValueForFieldType(row, fieldType);
   const result: TrelloCustomFieldItem = {

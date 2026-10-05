@@ -30,7 +30,9 @@ const adminInviteSlice = createSlice({
     },
     setInviteCredentials(
       state,
-      action: PayloadAction<Pick<AdminCreateUserResponse, 'credentials' | 'emailSent' | 'emailVerifiedAt'>>,
+      action: PayloadAction<
+        Pick<AdminCreateUserResponse, 'credentials' | 'emailSent' | 'emailVerifiedAt'>
+      >
     ) {
       state.credentials = action.payload.credentials;
       state.emailSent = action.payload.emailSent;
@@ -39,8 +41,7 @@ const adminInviteSlice = createSlice({
   },
 });
 
-export const { openInviteModal, closeInviteModal, setInviteCredentials } =
-  adminInviteSlice.actions;
+export const { openInviteModal, closeInviteModal, setInviteCredentials } = adminInviteSlice.actions;
 
 export const adminInviteReducer = adminInviteSlice.reducer;
 

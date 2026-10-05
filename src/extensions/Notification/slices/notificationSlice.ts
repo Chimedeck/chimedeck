@@ -4,12 +4,21 @@ import type { RootState } from '~/store';
 import { createAppAsyncThunk } from '~/utils/redux';
 import { notificationApi, type Notification, type NotificationCommentReaction } from '../api';
 
+function shouldIncludeNotification(notification: Notification): boolean {
+  // [why] "card_updated" entries should stay in board/card activities but
+  // should not appear in the notification list UI.
+  return notification.type !== 'card_updated';
+}
+
 // ---------- State ----------
 
 export interface NotificationState {
   notifications: Notification[];
   unreadCount: number;
   status: 'idle' | 'loading' | 'error';
+  // [why] Separate status for load-more so the initial fetch error doesn't
+  // block the "Load more" button, and load-more errors can be surfaced independently.
+  loadMoreStatus: 'idle' | 'loading' | 'error';
   hasMore: boolean;
   cursor: string | null;
 }
@@ -18,6 +27,7 @@ const initialState: NotificationState = {
   notifications: [],
   unreadCount: 0,
   status: 'idle',
+  loadMoreStatus: 'idle',
   hasMore: false,
   cursor: null,
 };
@@ -32,7 +42,7 @@ export const fetchNotificationsThunk = createAppAsyncThunk(
     } catch {
       return rejectWithValue('fetch-failed');
     }
-  },
+  }
 );
 
 export const fetchMoreNotificationsThunk = createAppAsyncThunk(
@@ -44,7 +54,7 @@ export const fetchMoreNotificationsThunk = createAppAsyncThunk(
     } catch {
       return rejectWithValue('fetch-more-failed');
     }
-  },
+  }
 );
 
 export const markReadThunk = createAppAsyncThunk(
@@ -56,7 +66,7 @@ export const markReadThunk = createAppAsyncThunk(
     } catch {
       return rejectWithValue('mark-read-failed');
     }
-  },
+  }
 );
 
 export const markAllReadThunk = createAppAsyncThunk(
@@ -67,7 +77,7 @@ export const markAllReadThunk = createAppAsyncThunk(
     } catch {
       return rejectWithValue('mark-all-read-failed');
     }
-  },
+  }
 );
 
 export const deleteNotificationThunk = createAppAsyncThunk(
@@ -79,7 +89,7 @@ export const deleteNotificationThunk = createAppAsyncThunk(
     } catch {
       return rejectWithValue('delete-failed');
     }
-  },
+  }
 );
 
 export const clearAllNotificationsThunk = createAppAsyncThunk(
@@ -90,7 +100,19 @@ export const clearAllNotificationsThunk = createAppAsyncThunk(
     } catch {
       return rejectWithValue('clear-all-failed');
     }
-  },
+  }
+);
+
+export const markUnreadThunk = createAppAsyncThunk(
+  'notifications/markUnread',
+  async ({ id }: { id: string }, { rejectWithValue }) => {
+    try {
+      await notificationApi.markUnread({ id });
+      return id;
+    } catch {
+      return rejectWithValue('mark-unread-failed');
+    }
+  }
 );
 
 // ---------- Slice ----------
@@ -101,6 +123,10 @@ const notificationSlice = createSlice({
   reducers: {
     // Called by useNotificationSync when a WS notification_created event arrives
     addNotification(state, action: PayloadAction<Notification>) {
+      if (!shouldIncludeNotification(action.payload)) {
+        return;
+      }
+
       const existingIndex = state.notifications.findIndex((n) => n.id === action.payload.id);
       if (existingIndex === -1) {
         state.notifications.unshift(action.payload);
@@ -134,17 +160,14 @@ const notificationSlice = createSlice({
     // Keeps comment reactions in Redux so close/reopen preserves optimistic updates.
     setNotificationCommentReactions(
       state,
-      action: PayloadAction<{ id: string; reactions: NotificationCommentReaction[] }>,
+      action: PayloadAction<{ id: string; reactions: NotificationCommentReaction[] }>
     ) {
       const notification = state.notifications.find((item) => item.id === action.payload.id);
       if (!notification) return;
       notification.comment_reactions = action.payload.reactions;
     },
 
-    setNotificationReadState(
-      state,
-      action: PayloadAction<{ id: string; read: boolean }>,
-    ) {
+    setNotificationReadState(state, action: PayloadAction<{ id: string; read: boolean }>) {
       const notification = state.notifications.find((item) => item.id === action.payload.id);
       if (!notification || notification.read === action.payload.read) return;
 
@@ -163,27 +186,54 @@ const notificationSlice = createSlice({
       })
       .addCase(fetchNotificationsThunk.fulfilled, (state, action) => {
         state.status = 'idle';
-        state.notifications = action.payload.data;
-        state.unreadCount = action.payload.data.filter((n) => !n.read).length;
-        state.hasMore = action.payload.metadata.hasMore;
-        state.cursor = action.payload.metadata.cursor;
+        const filteredNotifications = action.payload.data.filter(shouldIncludeNotification);
+        const existingIds = new Set(state.notifications.map((n) => n.id));
+        const newOnes = filteredNotifications.filter((n) => !existingIds.has(n.id));
+        // [why] Merge instead of replace — polling refreshes must not wipe
+        // pages accumulated via "Load more". Prepend new items, keep existing.
+        state.notifications = [...newOnes, ...state.notifications];
+        state.unreadCount = state.notifications.filter((n) => !n.read).length;
+        // [why] Only seed cursor/hasMore on initial load. Overwriting them
+        // after load-more resets pagination state and causes the next
+        // "Load more" to re-fetch already-loaded pages (silent no-op).
+        const isInitialLoad = state.cursor === null;
+        if (isInitialLoad) {
+          state.hasMore = action.payload.metadata.hasMore;
+          state.cursor = action.payload.metadata.cursor;
+        }
       })
       .addCase(fetchNotificationsThunk.rejected, (state) => {
         state.status = 'error';
       })
+      .addCase(fetchMoreNotificationsThunk.pending, (state) => {
+        state.loadMoreStatus = 'loading';
+      })
       .addCase(fetchMoreNotificationsThunk.fulfilled, (state, action) => {
+        state.loadMoreStatus = 'idle';
         const existingIds = new Set(state.notifications.map((n) => n.id));
-        const newOnes = action.payload.data.filter((n) => !existingIds.has(n.id));
+        const newOnes = action.payload.data
+          .filter(shouldIncludeNotification)
+          .filter((n) => !existingIds.has(n.id));
         state.notifications.push(...newOnes);
         state.unreadCount = state.notifications.filter((n) => !n.read).length;
         state.hasMore = action.payload.metadata.hasMore;
         state.cursor = action.payload.metadata.cursor;
+      })
+      .addCase(fetchMoreNotificationsThunk.rejected, (state) => {
+        state.loadMoreStatus = 'error';
       })
       .addCase(markReadThunk.fulfilled, (state, action) => {
         const n = state.notifications.find((n) => n.id === action.payload);
         if (n && !n.read) {
           n.read = true;
           state.unreadCount = Math.max(0, state.unreadCount - 1);
+        }
+      })
+      .addCase(markUnreadThunk.fulfilled, (state, action) => {
+        const n = state.notifications.find((n) => n.id === action.payload);
+        if (n && n.read) {
+          n.read = false;
+          state.unreadCount += 1;
         }
       })
       .addCase(markAllReadThunk.fulfilled, (state) => {
@@ -220,5 +270,7 @@ export const selectNotifications = (state: RootState) => state.notifications.not
 export const selectUnreadCount = (state: RootState) => state.notifications.unreadCount;
 export const selectNotificationStatus = (state: RootState) => state.notifications.status;
 export const selectNotificationHasMore = (state: RootState) => state.notifications.hasMore;
+export const selectNotificationLoadMoreStatus = (state: RootState) =>
+  state.notifications.loadMoreStatus;
 
 export default notificationSlice.reducer;

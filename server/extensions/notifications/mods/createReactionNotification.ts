@@ -24,10 +24,10 @@ export async function createReactionNotification({
 }): Promise<void> {
   try {
     // Load comment author — we notify them about the reaction
-    const comment = await db('comments')
+    const comment = (await db('comments')
       .where({ id: commentId })
       .select('user_id', 'content')
-      .first() as { user_id: string; content: string | null } | undefined;
+      .first()) as { user_id: string; content: string | null } | undefined;
     if (!comment) return;
 
     const recipientId: string = comment.user_id;
@@ -40,22 +40,28 @@ export async function createReactionNotification({
     if (!globalEnabled) return;
 
     // Board-level opt-out guard
-    const boardEnabled = await boardPreferenceGuard({ userId: recipientId, boardId }).catch(() => true);
+    const boardEnabled = await boardPreferenceGuard({ userId: recipientId, boardId }).catch(
+      () => true
+    );
     if (!boardEnabled) return;
 
     // Per-type preference (opt-out model)
     let inAppEnabled = true;
     if (env.NOTIFICATION_PREFERENCES_ENABLED) {
-      const pref = await preferenceGuard({ userId: recipientId, type: 'comment_reaction' }).catch(() => null);
+      const pref = await preferenceGuard({ userId: recipientId, type: 'comment_reaction' }).catch(
+        () => null
+      );
       if (pref) inAppEnabled = pref.in_app_enabled;
     }
     if (!inAppEnabled) return;
 
     // Fetch actor details for the notification payload
-    const actor = await db('users')
+    const actor = (await db('users')
       .where({ id: actorId })
-      .select('id', 'nickname', db.raw("COALESCE(name, email) as name"), 'avatar_url')
-      .first() as { id: string; nickname: string | null; name: string | null; avatar_url: string | null } | undefined;
+      .select('id', 'nickname', db.raw('COALESCE(name, email) as name'), 'avatar_url')
+      .first()) as
+      | { id: string; nickname: string | null; name: string | null; avatar_url: string | null }
+      | undefined;
     const actorAvatarUrl = actor?.avatar_url
       ? buildAvatarProxyUrl({ userId: actorId, avatarUrl: actor.avatar_url })
       : null;
@@ -67,14 +73,12 @@ export async function createReactionNotification({
     };
 
     // Fetch card title and board title for display
-    const card = await db('cards')
-      .where({ id: cardId })
-      .select('title')
-      .first() as { title: string } | undefined;
-    const board = await db('boards')
-      .where({ id: boardId })
-      .select('title')
-      .first() as { title: string } | undefined;
+    const card = (await db('cards').where({ id: cardId }).select('title').first()) as
+      | { title: string }
+      | undefined;
+    const board = (await db('boards').where({ id: boardId }).select('title').first()) as
+      | { title: string }
+      | undefined;
     const now = new Date().toISOString();
 
     const nextNotificationRow = {
@@ -92,7 +96,9 @@ export async function createReactionNotification({
 
     let inserted: Record<string, unknown> | undefined;
     try {
-      [inserted] = await db('notifications').insert(nextNotificationRow, ['*']) as [Record<string, unknown>];
+      [inserted] = (await db('notifications').insert(nextNotificationRow, ['*'])) as [
+        Record<string, unknown>,
+      ];
     } catch (error) {
       const dbError = error as { code?: string };
       if (dbError.code !== '23505') {
@@ -101,7 +107,7 @@ export async function createReactionNotification({
 
       // [why] Some environments dedupe by (user_id, source_type, source_id, type).
       // Refresh the existing row so the notification surfaces again as unread.
-      [inserted] = await db('notifications')
+      [inserted] = (await db('notifications')
         .where({
           user_id: recipientId,
           source_type: 'comment',
@@ -117,8 +123,8 @@ export async function createReactionNotification({
             read: false,
             created_at: now,
           },
-          ['*'],
-        ) as [Record<string, unknown>];
+          ['*']
+        )) as [Record<string, unknown>];
     }
 
     if (!inserted) return;

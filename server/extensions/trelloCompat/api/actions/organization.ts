@@ -20,16 +20,21 @@ type MembershipRow = {
 };
 
 export async function getActionOrganizationResponse(board: BoardRef): Promise<Response> {
-  const workspace = await db('workspaces').where({ id: board.workspace_id }).first() as WorkspaceRow | undefined;
+  const workspace = (await db('workspaces').where({ id: board.workspace_id }).first()) as
+    | WorkspaceRow
+    | undefined;
   if (!workspace) return TRELLO_ORGANIZATION_NOT_FOUND();
 
-  const memberships = (await db('memberships')
-    .where({ workspace_id: workspace.id })
-    .orderBy('user_id', 'asc') as MembershipRow[])
-    .filter((membership) => membership.role !== 'GUEST');
+  const memberships = (
+    (await db('memberships')
+      .where({ workspace_id: workspace.id })
+      .orderBy('user_id', 'asc')) as MembershipRow[]
+  ).filter((membership) => membership.role !== 'GUEST');
 
-  return Response.json(serializeOrganization({
-    ...workspace,
-    memberships,
-  }));
+  return Response.json(
+    serializeOrganization({
+      ...workspace,
+      memberships,
+    })
+  );
 }

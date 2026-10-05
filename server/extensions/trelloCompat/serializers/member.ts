@@ -11,9 +11,7 @@ function toInitials(name: string): string {
 }
 
 export function usernameFromEmail(email: string): string {
-  return (email.split('@')[0] ?? email)
-    .toLowerCase()
-    .replace(/[^a-z0-9_]/g, '');
+  return (email.split('@')[0] ?? email).toLowerCase().replace(/[^a-z0-9_]/g, '');
 }
 
 export function boardRoleToMemberType(role: unknown): Exclude<TrelloMemberType, 'ghost'> {

@@ -111,5 +111,3 @@ export async function getBoardRuns({
 }): Promise<PaginatedRunLogs> {
   return apiClient.get(`/boards/${boardId}/automation-runs`, { params });
 }
-
-

@@ -13,9 +13,7 @@ export default function Section({ id, title, description, children }: SectionPro
   return (
     <section id={id} className="py-10 border-b border-border-subtle last:border-b-0 scroll-mt-20">
       <h2 className="text-xl font-semibold text-text-primary mb-1">{title}</h2>
-      {description && (
-        <p className="text-sm text-text-secondary mb-6">{description}</p>
-      )}
+      {description && <p className="text-sm text-text-secondary mb-6">{description}</p>}
       <div className="mt-4">{children}</div>
     </section>
   );

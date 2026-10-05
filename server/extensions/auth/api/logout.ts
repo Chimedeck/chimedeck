@@ -5,7 +5,7 @@ import { pubsub } from '../../../mods/pubsub/index';
 function parseCookie(header: string | null, name: string): string | null {
   if (!header) return null;
   const match = new RegExp(String.raw`(?:^|;\s*)${name}=([^;]+)`).exec(header);
-  return match ? decodeURIComponent(match[1] ?? '') : null;
+  return match ? decodeURIComponent(match[1]!) : null;
 }
 
 export async function handleLogout(req: Request): Promise<Response> {
@@ -28,8 +28,8 @@ export async function handleLogout(req: Request): Promise<Response> {
     // Notify any open WebSocket connections for this user to close (code 4001).
     if (tokenRow?.user_id) {
       await pubsub.publish(
-        `session:${String(tokenRow.user_id)}`,
-        JSON.stringify({ type: 'session_revoked' }),
+        `session:${tokenRow.user_id}`,
+        JSON.stringify({ type: 'session_revoked' })
       );
     }
   }
@@ -38,11 +38,11 @@ export async function handleLogout(req: Request): Promise<Response> {
   // Clear both auth cookies.
   responseHeaders.append(
     'Set-Cookie',
-    'refresh_token=; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=0',
+    'refresh_token=; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=0'
   );
   responseHeaders.append(
     'Set-Cookie',
-    'access_token=; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=0',
+    'access_token=; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=0'
   );
 
   return new Response(JSON.stringify({ data: {} }), { status: 200, headers: responseHeaders });

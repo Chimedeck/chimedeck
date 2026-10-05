@@ -6,7 +6,10 @@ import {
   requireWorkspaceMembership,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
+import {
+  requireBoardWritable,
+  type BoardScopedRequest,
+} from '../../board/middlewares/requireBoardWritable';
 import { featureFlags } from '../../../config/featureFlags';
 import {
   createDefaultGraphFromLists,
@@ -41,8 +44,10 @@ type PutBody = {
 export async function handlePutStateTransitions(req: Request, boardId: string): Promise<Response> {
   if (!featureFlags.STATE_TRANSITIONS_ENABLED) {
     return Response.json(
-      stateTransitionError('not-implemented', { message: 'State transitions feature is not enabled' }),
-      { status: 501 },
+      stateTransitionError('not-implemented', {
+        message: 'State transitions feature is not enabled',
+      }),
+      { status: 501 }
     );
   }
 
@@ -55,7 +60,7 @@ export async function handlePutStateTransitions(req: Request, boardId: string): 
     if (writableError.status === 404) {
       return Response.json(
         stateTransitionError('board-not-found', { message: 'Board not found' }),
-        { status: 404 },
+        { status: 404 }
       );
     }
     return writableError;
@@ -63,10 +68,9 @@ export async function handlePutStateTransitions(req: Request, boardId: string): 
 
   const board = boardReq.board;
   if (!board) {
-    return Response.json(
-      stateTransitionError('board-not-found', { message: 'Board not found' }),
-      { status: 404 },
-    );
+    return Response.json(stateTransitionError('board-not-found', { message: 'Board not found' }), {
+      status: 404,
+    });
   }
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -76,9 +80,9 @@ export async function handlePutStateTransitions(req: Request, boardId: string): 
   if (workspaceRoleError) {
     const currentUserId = (req as AuthenticatedRequest).currentUser?.id;
     const actingBoardMember = currentUserId
-      ? await db('board_members')
-        .where({ board_id: board.id, user_id: currentUserId })
-        .first() as { role?: string } | undefined
+      ? ((await db('board_members')
+          .where({ board_id: board.id, user_id: currentUserId })
+          .first()) as { role?: string } | undefined)
       : undefined;
 
     const actingBoardRole = actingBoardMember?.role;
@@ -91,16 +95,15 @@ export async function handlePutStateTransitions(req: Request, boardId: string): 
     const raw = await req.text();
     body = raw ? (JSON.parse(raw) as PutBody) : {};
   } catch {
-    return Response.json(
-      stateTransitionError('bad-request', { message: 'Invalid JSON body' }),
-      { status: 400 },
-    );
+    return Response.json(stateTransitionError('bad-request', { message: 'Invalid JSON body' }), {
+      status: 400,
+    });
   }
 
   if (body.enabled !== undefined && typeof body.enabled !== 'boolean') {
     return Response.json(
       stateTransitionError('bad-request', { message: 'enabled must be a boolean when provided' }),
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -109,17 +112,19 @@ export async function handlePutStateTransitions(req: Request, boardId: string): 
     const graphValidation = validateGraphShape(body.graph);
     if (!graphValidation.ok) {
       return Response.json(
-        stateTransitionError('state-transition-graph-invalid', { message: graphValidation.message }),
-        { status: 422 },
+        stateTransitionError('state-transition-graph-invalid', {
+          message: graphValidation.message,
+        }),
+        { status: 422 }
       );
     }
     validatedGraph = graphValidation.graph;
   }
 
-  const activeLists = await db('lists')
+  const activeLists = (await db('lists')
     .where({ board_id: board.id, archived: false })
     .orderBy('position', 'asc')
-    .select('id', 'title') as Array<{ id: string; title: string }>;
+    .select('id', 'title')) as Array<{ id: string; title: string }>;
 
   if (validatedGraph) {
     const listIds = new Set(activeLists.map((list) => list.id));
@@ -127,7 +132,7 @@ export async function handlePutStateTransitions(req: Request, boardId: string): 
     if (unknownNodeId) {
       return Response.json(
         stateTransitionError('state-transition-node-unknown-list', { nodeId: unknownNodeId }),
-        { status: 422 },
+        { status: 422 }
       );
     }
 
@@ -138,13 +143,13 @@ export async function handlePutStateTransitions(req: Request, boardId: string): 
           listId: missingListId,
           message: `graph is missing node for list ${missingListId}`,
         }),
-        { status: 422 },
+        { status: 422 }
       );
     }
 
     const outOfSyncNodeLabel = findOutOfSyncNodeLabel(
       validatedGraph,
-      new Map(activeLists.map((list) => [list.id, list])),
+      new Map(activeLists.map((list) => [list.id, list]))
     );
     if (outOfSyncNodeLabel) {
       return Response.json(
@@ -155,25 +160,25 @@ export async function handlePutStateTransitions(req: Request, boardId: string): 
           receivedLabel: outOfSyncNodeLabel.receivedLabel,
           message: 'graph node labels must match current board list titles',
         }),
-        { status: 422 },
+        { status: 422 }
       );
     }
   }
 
-  let row = await db('board_state_transitions')
-    .where({ board_id: board.id })
-    .first() as TransitionRow | undefined;
+  let row = (await db('board_state_transitions').where({ board_id: board.id }).first()) as
+    | TransitionRow
+    | undefined;
 
   if (!row) {
     const defaultGraph = createDefaultGraphFromLists(activeLists);
-    const insertedRows = await db('board_state_transitions')
+    const insertedRows = (await db('board_state_transitions')
       .insert({
         id: generateId(),
         board_id: board.id,
         enabled: false,
         graph_data: defaultGraph,
       })
-      .returning('*') as TransitionRow[];
+      .returning('*')) as TransitionRow[];
     row = insertedRows[0];
   }
 
@@ -181,22 +186,20 @@ export async function handlePutStateTransitions(req: Request, boardId: string): 
     enabled: false,
     graph_data: createEmptyGraph(),
   };
-  const persistedGraph = deserializeGraphData(persistedRow.graph_data)
-    ?? createDefaultGraphFromLists(activeLists);
+  const persistedGraph =
+    deserializeGraphData(persistedRow.graph_data) ?? createDefaultGraphFromLists(activeLists);
   const syncedPersistedGraph = syncGraphWithLists(persistedGraph, activeLists).graph;
   const nextGraph = validatedGraph ?? syncedPersistedGraph;
   const nextEnabled = typeof body.enabled === 'boolean' ? body.enabled : persistedRow.enabled;
 
-  const updatedRows = await db('board_state_transitions')
-    .where({ board_id: board.id })
-    .update(
-      {
-        enabled: nextEnabled,
-        graph_data: nextGraph,
-        updated_at: new Date().toISOString(),
-      },
-      ['*'],
-    ) as TransitionRow[];
+  const updatedRows = (await db('board_state_transitions').where({ board_id: board.id }).update(
+    {
+      enabled: nextEnabled,
+      graph_data: nextGraph,
+      updated_at: new Date().toISOString(),
+    },
+    ['*']
+  )) as TransitionRow[];
 
   const saved = updatedRows[0];
   if (!saved) {
@@ -204,7 +207,7 @@ export async function handlePutStateTransitions(req: Request, boardId: string): 
       stateTransitionError('state-transition-update-failed', {
         message: 'State transitions could not be updated',
       }),
-      { status: 500 },
+      { status: 500 }
     );
   }
 
@@ -222,6 +225,6 @@ export async function handlePutStateTransitions(req: Request, boardId: string): 
       enabled: saved.enabled,
       graph: saved.graph_data,
       updatedAt: saved.updated_at,
-    }),
+    })
   );
 }

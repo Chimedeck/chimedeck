@@ -7,7 +7,6 @@ import TimelineBar, { ROW_SLOT_HEIGHT } from './TimelineBar';
 import Button from '../../common/components/Button';
 import { useTimelineDrag } from './useTimelineDrag';
 import translations from './translations/en.json';
-import { parseLocalDate } from '../../common/utils/dates';
 import type { TimelineRowProps } from './types';
 import type { Card } from '../Card/api';
 
@@ -17,6 +16,12 @@ const BAR_TOP = 8;
 const BAR_BOTTOM_PAD = 6;
 
 // ── Row-packing helpers ────────────────────────────────────────────────────
+
+function parseLocalDate(s: string): Date {
+  const datePart = s.slice(0, 10);
+  const [y, m, d] = datePart.split('-');
+  return new Date(Number(y), Number(m) - 1, Number(d));
+}
 
 function daysBetween(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
@@ -29,12 +34,9 @@ function daysBetween(a: Date, b: Date): number {
  */
 function assignRows(cards: Card[], originDate: Date): Map<string, number> {
   const intervals = cards.map((card) => {
-    // [why] assignRows is only called with scheduledCards, which always have a
-    // due_date; the guard is a type-system safety net matching the previous `!`.
-    if (!card.due_date) throw new Error('scheduled card missing due_date');
-    const startStr = card.start_date ?? card.due_date;
+    const startStr = card.start_date ?? card.due_date!;
     const startDay = daysBetween(originDate, parseLocalDate(startStr));
-    const dueDay   = daysBetween(originDate, parseLocalDate(card.due_date));
+    const dueDay = daysBetween(originDate, parseLocalDate(card.due_date!));
     return { id: card.id, startDay, dueDay };
   });
 
@@ -83,7 +85,7 @@ const TimelineRow = ({
   // layout stays stable during a drag.
   const rowAssignments = useMemo(
     () => assignRows(swimlane.scheduledCards, originDate),
-    [swimlane.scheduledCards, originDate],
+    [swimlane.scheduledCards, originDate]
   );
 
   const rowCount = Math.max(1, ...Array.from(rowAssignments.values()).map((r) => r + 1));
@@ -104,9 +106,7 @@ const TimelineRow = ({
           style={{ width: labelWidth, minHeight: barAreaHeight }}
           data-testid={`timeline-lane-label-${swimlane.listId}`}
         >
-          <span className="truncate text-sm font-medium text-subtle">
-            {swimlane.listTitle}
-          </span>
+          <span className="truncate text-sm font-medium text-subtle">{swimlane.listTitle}</span>
           {swimlane.scheduledCards.length > 0 && (
             <span className="text-xs text-muted">
               {swimlane.scheduledCards.length} {translations['TimelineView.scheduledCount']}
@@ -127,7 +127,9 @@ const TimelineRow = ({
               originDate={originDate}
               dayWidth={dayWidth}
               rowIndex={rowAssignments.get(card.id) ?? 0}
-              {...(dragOverrides[card.id] !== undefined ? { dragOverride: dragOverrides[card.id] } : {})}
+              {...(dragOverrides[card.id] !== undefined
+                ? { dragOverride: dragOverrides[card.id] }
+                : {})}
               onCardClick={onCardClick}
               onMoveStart={handleMoveStart}
               onResizeLeftStart={handleResizeLeftStart}
@@ -149,7 +151,9 @@ const TimelineRow = ({
             className="sticky left-0 z-10 shrink-0 border-r border-border bg-bg-surface px-3 py-1"
             style={{ width: labelWidth }}
           >
-            <span className="text-xs italic text-muted">{translations['TimelineView.unscheduledLabel']}</span>
+            <span className="text-xs italic text-muted">
+              {translations['TimelineView.unscheduledLabel']}
+            </span>
           </div>
 
           {/* Chips */}
@@ -159,7 +163,9 @@ const TimelineRow = ({
                 key={card.id}
                 variant="ghost"
                 className="rounded bg-bg-overlay px-2 py-0.5 text-xs text-subtle hover:bg-bg-sunken"
-                onClick={() => { onCardClick(card.id); }}
+                onClick={() => {
+                  onCardClick(card.id);
+                }}
                 data-testid={`timeline-unscheduled-chip-${card.id}`}
               >
                 {card.title}

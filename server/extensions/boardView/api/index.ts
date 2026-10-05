@@ -13,7 +13,7 @@ export async function boardViewRouter(req: Request, pathname: string): Promise<R
   if (!boardId) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

@@ -5,15 +5,12 @@
   "plugins.dashboard.loading": "Loading plugins…",
   "plugins.dashboard.noMatch": "No plugins match your search.",
   "plugins.dashboard.clearSearch": "Clear search",
-
   "plugins.searchBar.placeholder": "Search plugins…",
   "plugins.searchBar.allCategories": "All categories",
-
   "plugins.list.activeHeading": "Active on this board",
   "plugins.list.activeEmpty": "No plugins enabled on this board yet.",
   "plugins.list.availableHeading": "Available plugins",
   "plugins.list.availableEmpty": "No additional plugins available.",
-
   "plugins.card.by": "by",
   "plugins.card.editAriaLabel": "Edit plugin",
   "plugins.card.editTitle": "Edit plugin",
@@ -23,7 +20,6 @@
   "plugins.card.enable": "Enable",
   "plugins.card.disabling": "Disabling…",
   "plugins.card.disable": "Disable",
-
   "plugins.capabilities.cardBadges": "Card Badges",
   "plugins.capabilities.cardButtons": "Card Buttons",
   "plugins.capabilities.cardDetailBadges": "Card Detail Badges",
@@ -31,14 +27,12 @@
   "plugins.capabilities.showSettings": "Settings",
   "plugins.capabilities.authorizationStatus": "Auth Status",
   "plugins.capabilities.showAuthorization": "Authorization",
-
   "plugins.allowedDomains.heading": "Allowed Domains",
   "plugins.allowedDomains.description": "Restrict which external domains this plugin may open on this board. Unchecked domains will be blocked.",
   "plugins.allowedDomains.saveError": "Failed to save domain settings.",
   "plugins.allowedDomains.saveSuccess": "Domain settings saved.",
   "plugins.allowedDomains.saving": "Saving…",
   "plugins.allowedDomains.save": "Save domain settings",
-
   "plugins.registerModal.ariaLabel": "Register Plugin",
   "plugins.registerModal.title": "Register a Plugin",
   "plugins.registerModal.closeAriaLabel": "Close",
@@ -76,7 +70,6 @@
   "plugins.registerModal.cancel": "Cancel",
   "plugins.registerModal.registering": "Registering…",
   "plugins.registerModal.submit": "Register Plugin",
-
   "plugins.editModal.ariaLabel": "Edit Plugin",
   "plugins.editModal.title": "Edit Plugin",
   "plugins.editModal.closeAriaLabel": "Close",
@@ -115,7 +108,6 @@
   "plugins.editModal.cancel": "Cancel",
   "plugins.editModal.saving": "Saving…",
   "plugins.editModal.submit": "Save Changes",
-
   "plugins.apiKeyModal.ariaLabel": "API Key",
   "plugins.apiKeyModal.title": "Plugin API Key",
   "plugins.apiKeyModal.warningPrefix": "⚠️",
@@ -124,24 +116,19 @@
   "plugins.apiKeyModal.copied": "✓ Copied",
   "plugins.apiKeyModal.copy": "Copy",
   "plugins.apiKeyModal.done": "I've saved the key — Done",
-
   "plugins.dashboard.toast.noPermissionEnable": "You do not have permission to enable plugins on this board.",
   "plugins.dashboard.toast.failedEnable": "Failed to enable plugin. Please try again.",
   "plugins.dashboard.toast.pluginUpdated": "Plugin updated.",
-
   "plugins.dashboard.enabled.heading": "Enabled on this board",
   "plugins.dashboard.enabled.empty": "No plugins enabled on this board yet.",
   "plugins.dashboard.discover.heading": "Discover Plugins",
   "plugins.dashboard.discover.empty": "No plugins available. Ask your platform administrator to register plugins.",
   "plugins.dashboard.discover.noMatch": "No plugins match your search.",
   "plugins.dashboard.discover.clearSearch": "Clear search",
-
   "plugins.modal.defaultTitle": "Plugin",
   "plugins.modal.closeAriaLabel": "Close modal",
-
   "plugins.popup.defaultTitle": "Plugin",
   "plugins.popup.closeAriaLabel": "Close popup",
-
   "plugins.registry.title": "Plugin Registry",
   "plugins.registry.subtitle": "Manage the plugins available across all boards.",
   "plugins.registry.registerPlugin": "+ Register Plugin",
@@ -149,13 +136,11 @@
   "plugins.registry.error": "Failed to load plugins. Please try again.",
   "plugins.registry.empty": "No plugins registered yet. Click \"+ Register Plugin\" to add the first one.",
   "plugins.registry.noPermission": "You don't have permission to manage plugins.",
-
   "plugins.registry.table.colIcon": "Icon",
   "plugins.registry.table.colName": "Name / Author",
   "plugins.registry.table.colDescription": "Description",
   "plugins.registry.table.colCategories": "Categories",
   "plugins.registry.table.colActions": "Actions",
-
   "plugins.registry.row.edit": "Edit",
   "plugins.registry.row.deactivate": "Deactivate",
   "plugins.registry.row.deactivating": "Deactivating…",
@@ -165,9 +150,11 @@
   "plugins.registry.row.reactivate": "Reactivate",
   "plugins.registry.row.reactivating": "Reactivating…",
   "plugins.registry.row.inactiveBadge": "Inactive",
-
   "plugins.searchBar.statusLabel": "Status",
   "plugins.searchBar.statusAll": "All",
   "plugins.searchBar.statusActive": "Active",
-  "plugins.searchBar.statusInactive": "Inactive"
+  "plugins.searchBar.statusInactive": "Inactive",
+  "plugins.editModal.placeholder.connectorUrl": "https://my-plugin.example.com/connector",
+  "plugins.registry.confirmDeactivateAria": "Confirm deactivate",
+  "plugins.registry.cancelDeactivateAria": "Cancel deactivate"
 }

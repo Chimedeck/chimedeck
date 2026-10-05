@@ -25,19 +25,31 @@ interface Props {
 function relativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return `${String(seconds)}s ago`;
+  if (seconds < 60) return `${seconds}s ago`;
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${String(minutes)}m ago`;
+  if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${String(hours)}h ago`;
+  if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
-  return `${String(days)}d ago`;
+  return `${days}d ago`;
 }
 
 const STATUS_ICON: Record<string, { icon: typeof CheckCircleIcon; cls: string; label: string }> = {
-  SUCCESS: { icon: CheckCircleIcon, cls: 'text-emerald-400', label: translations['automation.runLogRow.status.success'] },
-  PARTIAL: { icon: ExclamationCircleIcon, cls: 'text-amber-400', label: translations['automation.runLogRow.status.partial'] },
-  FAILED: { icon: XCircleIcon, cls: 'text-danger', label: translations['automation.runLogRow.status.failed'] },
+  SUCCESS: {
+    icon: CheckCircleIcon,
+    cls: 'text-emerald-400',
+    label: translations['automation.runLogRow.status.success'],
+  },
+  PARTIAL: {
+    icon: ExclamationCircleIcon,
+    cls: 'text-amber-400',
+    label: translations['automation.runLogRow.status.partial'],
+  },
+  FAILED: {
+    icon: XCircleIcon,
+    cls: 'text-danger',
+    label: translations['automation.runLogRow.status.failed'],
+  },
 };
 
 const TYPE_ICON: Record<string, { icon: typeof BoltIcon; label: string }> = {
@@ -51,17 +63,10 @@ const TYPE_ICON: Record<string, { icon: typeof BoltIcon; label: string }> = {
 const RunLogRow: FC<Props> = ({ run, onOpenCard }) => {
   const [expanded, setExpanded] = useState(false);
 
-  const statusMeta = STATUS_ICON[run.status] ?? {
-    icon: XCircleIcon,
-    cls: 'text-danger',
-    label: translations['automation.runLogRow.status.failed'],
-  };
+  const statusMeta = STATUS_ICON[run.status] ?? STATUS_ICON['FAILED']!;
   const StatusIcon = statusMeta.icon;
 
-  const typeMeta = TYPE_ICON[run.automationType ?? ''] ?? {
-    icon: BoltIcon,
-    label: translations['automation.runLogRow.type.rule'],
-  };
+  const typeMeta = TYPE_ICON[run.automationType ?? ''] ?? TYPE_ICON['RULE']!;
   const TypeIcon = typeMeta.icon;
 
   return (
@@ -72,10 +77,7 @@ const RunLogRow: FC<Props> = ({ run, onOpenCard }) => {
       >
         {/* Status */}
         <td className="py-2 pl-4 pr-2 w-8">
-          <StatusIcon
-            className={`h-4 w-4 ${statusMeta.cls}`}
-            aria-label={statusMeta.label}
-          />
+          <StatusIcon className={`h-4 w-4 ${statusMeta.cls}`} aria-label={statusMeta.label} />
         </td>
 
         {/* Automation name + type chip */}
@@ -94,20 +96,24 @@ const RunLogRow: FC<Props> = ({ run, onOpenCard }) => {
           {run.cardId && run.cardName ? (
             <button
               className="truncate text-xs text-blue-400 hover:underline text-left max-w-[120px]"
-              onClick={() => onOpenCard?.(run.cardId ?? '')}
+              onClick={() => onOpenCard?.(run.cardId!)}
               title={run.cardName}
             >
               {run.cardName}
             </button>
           ) : (
-            <span className="text-xs text-muted">{translations['automation.runLogRow.boardWide']}</span>
+            <span className="text-xs text-muted">
+              {translations['automation.runLogRow.boardWide']}
+            </span>
           )}
         </td>
 
         {/* Triggered by */}
         <td className="py-2 px-2">
           <span className="text-xs text-muted">
-            {run.triggeredByUser ? run.triggeredByUser.name : translations['automation.runLogRow.scheduledTrigger']}
+            {run.triggeredByUser
+              ? run.triggeredByUser.name
+              : translations['automation.runLogRow.scheduledTrigger']}
           </span>
         </td>
 
@@ -126,7 +132,11 @@ const RunLogRow: FC<Props> = ({ run, onOpenCard }) => {
             onClick={() => {
               setExpanded((v) => !v);
             }}
-            aria-label={expanded ? translations['automation.runLogRow.collapseAriaLabel'] : translations['automation.runLogRow.expandAriaLabel']}
+            aria-label={
+              expanded
+                ? translations['automation.runLogRow.collapseAriaLabel']
+                : translations['automation.runLogRow.expandAriaLabel']
+            }
           >
             {expanded ? (
               <ChevronUpIcon className="h-4 w-4" />

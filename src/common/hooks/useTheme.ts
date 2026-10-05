@@ -1,9 +1,61 @@
 import { useState, useEffect } from 'react';
 
-export type Theme = 'light' | 'dark' | 'elegant' | 'elegant-dark' | 'paper' | 'nordic' | 'archive' | 'macintosh' | 'obsidian' | 'next' | 'bauhaus' | 'moss' | 'vapor' | 'cyberpunk' | 'the-seven' | 'hc-light' | 'hc-dark';
+export type Theme =
+  | 'light'
+  | 'dark'
+  | 'elegant'
+  | 'elegant-dark'
+  | 'paper'
+  | 'nordic'
+  | 'archive'
+  | 'macintosh'
+  | 'obsidian'
+  | 'next'
+  | 'bauhaus'
+  | 'moss'
+  | 'vapor'
+  | 'cyberpunk'
+  | 'the-seven'
+  | 'hc-light'
+  | 'hc-dark';
 
-const THEME_CYCLE: Theme[] = ['light', 'dark', 'elegant', 'elegant-dark', 'paper', 'nordic', 'archive', 'macintosh', 'obsidian', 'next', 'bauhaus', 'moss', 'vapor', 'cyberpunk', 'the-seven', 'hc-light', 'hc-dark'];
-const ALL_THEME_CLASSES = ['dark', 'elegant', 'elegant-dark', 'theme-paper', 'theme-nordic', 'theme-archive', 'theme-macintosh', 'theme-obsidian', 'theme-next', 'theme-bauhaus', 'theme-moss', 'theme-vapor', 'theme-cyberpunk', 'theme-the-seven', 'theme-hc-light', 'theme-hc-dark'];
+const THEME_CYCLE: Theme[] = [
+  'light',
+  'dark',
+  'elegant',
+  'elegant-dark',
+  'paper',
+  'nordic',
+  'archive',
+  'macintosh',
+  'obsidian',
+  'next',
+  'bauhaus',
+  'moss',
+  'vapor',
+  'cyberpunk',
+  'the-seven',
+  'hc-light',
+  'hc-dark',
+];
+const ALL_THEME_CLASSES = [
+  'dark',
+  'elegant',
+  'elegant-dark',
+  'theme-paper',
+  'theme-nordic',
+  'theme-archive',
+  'theme-macintosh',
+  'theme-obsidian',
+  'theme-next',
+  'theme-bauhaus',
+  'theme-moss',
+  'theme-vapor',
+  'theme-cyberpunk',
+  'theme-the-seven',
+  'theme-hc-light',
+  'theme-hc-dark',
+];
 
 function applyTheme(theme: Theme) {
   const html = document.documentElement;

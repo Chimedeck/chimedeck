@@ -48,14 +48,18 @@ export default function StickyNav({ items }: StickyNavProps) {
           pick();
         },
         // Trigger when the top portion of the section enters the viewport
-        { rootMargin: '-10% 0px -80% 0px', threshold: 0 },
+        { rootMargin: '-10% 0px -80% 0px', threshold: 0 }
       );
 
       obs.observe(el);
       observers.push(obs);
     });
 
-    return () => { observers.forEach((obs) => { obs.disconnect(); }); };
+    return () => {
+      observers.forEach((obs) => {
+        obs.disconnect();
+      });
+    };
   }, [items]);
 
   return (

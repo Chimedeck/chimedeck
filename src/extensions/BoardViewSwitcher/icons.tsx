@@ -34,9 +34,33 @@ export const CalendarIcon = ({ className }: IconProps) => (
 
 export const TimelineIcon = ({ className }: IconProps) => (
   <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-    <line x1="2" y1="6" x2="10" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    <line x1="6" y1="10" x2="16" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    <line x1="4" y1="14" x2="14" y2="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <line
+      x1="2"
+      y1="6"
+      x2="10"
+      y2="6"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <line
+      x1="6"
+      y1="10"
+      x2="16"
+      y2="10"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <line
+      x1="4"
+      y1="14"
+      x2="14"
+      y2="14"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
   </svg>
 );
 

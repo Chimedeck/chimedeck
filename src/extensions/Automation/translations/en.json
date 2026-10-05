@@ -8,11 +8,9 @@
   "automation.panel.loading": "Loading…",
   "automation.panel.error.loadFailed": "Failed to load automations.",
   "automation.panel.retry": "Retry",
-
   "automation.emptyState.title": "No automation rules yet",
   "automation.emptyState.description": "Create a rule to automatically act on cards when something happens on this board.",
   "automation.emptyState.createRule": "Create rule",
-
   "automation.list.sectionLabel": "Rules",
   "automation.list.createRule": "+ Create rule",
   "automation.list.noTrigger": "No trigger",
@@ -28,7 +26,6 @@
   "automation.list.row.deleteTitle": "Delete",
   "automation.list.row.confirmDeleteAriaLabel": "Confirm delete",
   "automation.list.row.confirmDeleteTitle": "Click again to confirm",
-
   "automation.buttonsTab.cardButtons.heading": "Card Buttons",
   "automation.buttonsTab.cardButtons.addAriaLabel": "Create card button",
   "automation.buttonsTab.cardButtons.empty": "No card buttons yet. Add one to appear on every card's back panel.",
@@ -47,12 +44,11 @@
   "automation.buttonsTab.row.cancel": "Cancel",
   "automation.buttonsTab.row.action": "action",
   "automation.buttonsTab.row.actions": "actions",
-
+  "automation.configField.removeItemTitle": "Remove item",
   "automation.ruleBuilder.backAriaLabel": "Back to rules list",
   "automation.ruleBuilder.editTitle": "Edit rule",
   "automation.ruleBuilder.newTitle": "New rule",
   "automation.ruleBuilder.error.saveFailed": "Failed to save rule. Please try again.",
-
   "automation.triggerPicker.label": "When…",
   "automation.triggerPicker.placeholder": "Select a trigger…",
   "automation.triggerPicker.searchPlaceholder": "Search triggers…",
@@ -68,7 +64,6 @@
   "automation.triggerConfig.customField.checkboxTrue": "Checked",
   "automation.triggerConfig.customField.checkboxFalse": "Unchecked",
   "automation.triggerConfig.customField.selectOptionPlaceholder": "Select an option…",
-
   "automation.actionPicker.searchPlaceholder": "Search actions…",
   "automation.actionPicker.loading": "Loading…",
   "automation.actionPicker.noResults": "No results",
@@ -83,20 +78,16 @@
   "automation.actionConfig.customField.checkboxTrue": "Checked",
   "automation.actionConfig.customField.checkboxFalse": "Unchecked",
   "automation.actionConfig.customField.selectOptionPlaceholder": "Select an option…",
-
   "automation.actionList.label": "Then do…",
   "automation.actionList.hideConfig": "Hide config",
   "automation.actionList.configure": "Configure…",
   "automation.actionList.addAction": "Add action",
-
   "automation.actionItem.dragAriaLabel": "Drag to reorder",
-
   "automation.ruleBuilderFooter.ruleNameLabel": "Rule name",
   "automation.ruleBuilderFooter.ruleNamePlaceholder": "My automation rule",
   "automation.ruleBuilderFooter.cancel": "Cancel",
   "automation.ruleBuilderFooter.saving": "Saving…",
   "automation.ruleBuilderFooter.save": "Save rule",
-
   "automation.cardButtonBuilder.ariaCreate": "Create card button",
   "automation.cardButtonBuilder.ariaEdit": "Edit card button",
   "automation.cardButtonBuilder.titleCreate": "New Card Button",
@@ -110,7 +101,6 @@
   "automation.cardButtonBuilder.saveChanges": "Save changes",
   "automation.cardButtonBuilder.create": "Create button",
   "automation.cardButtonBuilder.error.saveFailed": "Failed to save card button. Please try again.",
-
   "automation.boardButtonBuilder.ariaCreate": "Create board button",
   "automation.boardButtonBuilder.ariaEdit": "Edit board button",
   "automation.boardButtonBuilder.titleCreate": "New Board Button",
@@ -129,20 +119,14 @@
   "automation.boardButtonBuilder.saveChanges": "Save changes",
   "automation.boardButtonBuilder.create": "Create button",
   "automation.boardButtonBuilder.error.saveFailed": "Failed to save board button. Please try again.",
-
   "automation.cardButtonItem.running": "Running…",
-
   "automation.addCardButton.ariaLabel": "Add automation button",
   "automation.addCardButton.label": "Add button",
-
   "automation.boardButtonItem.running": "Running…",
-
   "automation.boardButtonsBar.ariaLabel": "Board automation buttons",
-
   "automation.runsPanel.backAriaLabel": "Back",
   "automation.runsPanel.runHistory": "Run history",
   "automation.runsPanel.error.loadFailed": "Failed to load run history.",
-
   "automation.runLogTable.col.automation": "Automation",
   "automation.runLogTable.col.card": "Card",
   "automation.runLogTable.col.triggeredBy": "Triggered by",
@@ -153,7 +137,6 @@
   "automation.runLogTable.nextAriaLabel": "Next page",
   "automation.runLogTable.prev": "← Prev",
   "automation.runLogTable.next": "Next →",
-
   "automation.runLogRow.status.success": "Success",
   "automation.runLogRow.status.partial": "Partial",
   "automation.runLogRow.status.failed": "Failed",
@@ -166,17 +149,13 @@
   "automation.runLogRow.scheduledTrigger": "Scheduled",
   "automation.runLogRow.expandAriaLabel": "Expand details",
   "automation.runLogRow.collapseAriaLabel": "Collapse details",
-
   "automation.runLogDetail.error": "Error",
   "automation.runLogDetail.context": "Context",
-
   "automation.quotaBar.warningAriaLabel": "Quota warning",
-
   "automation.scheduleEmptyState.title": "No scheduled commands yet",
   "automation.scheduleEmptyState.description": "Run actions on a calendar schedule or when cards approach their due date.",
   "automation.scheduleEmptyState.createScheduled": "Create a scheduled command",
   "automation.scheduleEmptyState.createDueDate": "Create a due date command",
-
   "automation.scheduleList.scheduledHeading": "Scheduled Commands",
   "automation.scheduleList.scheduledAddAriaLabel": "Create scheduled command",
   "automation.scheduleList.dueDateHeading": "Due Date Commands",
@@ -184,7 +163,6 @@
   "automation.scheduleList.add": "Add",
   "automation.scheduleList.scheduledEmpty": "No scheduled commands yet.",
   "automation.scheduleList.dueDateEmpty": "No due date commands yet.",
-
   "automation.scheduleItem.enableAriaLabel": "Enable",
   "automation.scheduleItem.disableAriaLabel": "Disable",
   "automation.scheduleItem.editAriaLabel": "Edit",
@@ -194,9 +172,7 @@
   "automation.scheduleItem.confirmDeleteTitle": "Click again to confirm",
   "automation.scheduleItem.action": "action",
   "automation.scheduleItem.actions": "actions",
-
   "automation.quickStartTemplates.heading": "Quick-start templates",
-
   "automation.scheduledBuilder.ariaCreate": "New scheduled command",
   "automation.scheduledBuilder.ariaEdit": "Edit scheduled command",
   "automation.scheduledBuilder.titleCreate": "New Scheduled Command",
@@ -225,7 +201,6 @@
   "automation.scheduledBuilder.saving": "Saving…",
   "automation.scheduledBuilder.saveChanges": "Save changes",
   "automation.scheduledBuilder.create": "Create command",
-
   "automation.dueDateBuilder.ariaCreate": "New due date command",
   "automation.dueDateBuilder.ariaEdit": "Edit due date command",
   "automation.dueDateBuilder.titleCreate": "New Due Date Command",
@@ -252,7 +227,6 @@
   "automation.dueDateBuilder.saving": "Saving…",
   "automation.dueDateBuilder.saveChanges": "Save changes",
   "automation.dueDateBuilder.create": "Create command",
-
   "automation.dueDateBuilder.ariaLabelNew": "New due-date command",
   "automation.dueDateBuilder.ariaLabelEdit": "Edit due-date command",
   "automation.dueDateBuilder.titleNew": "New Due Date Command",
@@ -266,12 +240,10 @@
   "automation.dueDateBuilder.commandNamePlaceholder": "Auto-generated name",
   "automation.dueDateBuilder.commandNameHint": "You can customise the name or keep the auto-generated summary.",
   "automation.dueDateBuilder.next": "Next →",
-
   "automation.scheduledBuilder.previewLabel": "Preview",
   "automation.scheduledBuilder.commandNameLabel": "Command name",
   "automation.scheduledBuilder.commandNamePlaceholder": "Auto-generated name",
   "automation.scheduledBuilder.commandNameHint": "You can customise the name or leave it as the auto-generated summary.",
-
   "automation.headerButton.ariaLabel": "Open automation panel",
   "automation.cardButtonsSection.ariaLabel": "Automation buttons"
 }

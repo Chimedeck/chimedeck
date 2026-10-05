@@ -4,7 +4,10 @@
 // The 'source' field indicates which level provided the value.
 import { db } from '../../../../common/db';
 import { type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { applyBoardVisibility, type BoardVisibilityScopedRequest } from '../../../../middlewares/boardVisibility';
+import {
+  applyBoardVisibility,
+  type BoardVisibilityScopedRequest,
+} from '../../../../middlewares/boardVisibility';
 import { NOTIFICATION_TYPES } from '../../mods/preferenceGuard';
 
 type ResolvedBoardPreferenceRequest = BoardVisibilityScopedRequest & {
@@ -14,7 +17,7 @@ type ResolvedBoardPreferenceRequest = BoardVisibilityScopedRequest & {
 
 export async function handleGetBoardTypePreferences(
   req: Request,
-  boardId: string,
+  boardId: string
 ): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
   if (visibilityError) return visibilityError;
@@ -32,8 +35,18 @@ export async function handleGetBoardTypePreferences(
       .select('type', 'in_app_enabled', 'email_enabled'),
   ]);
 
-  const boardByType = new Map(boardRows.map((r: { type: string; in_app_enabled: boolean; email_enabled: boolean }) => [r.type, r]));
-  const userByType = new Map(userRows.map((r: { type: string; in_app_enabled: boolean; email_enabled: boolean }) => [r.type, r]));
+  const boardByType = new Map(
+    boardRows.map((r: { type: string; in_app_enabled: boolean; email_enabled: boolean }) => [
+      r.type,
+      r,
+    ])
+  );
+  const userByType = new Map(
+    userRows.map((r: { type: string; in_app_enabled: boolean; email_enabled: boolean }) => [
+      r.type,
+      r,
+    ])
+  );
 
   const data = NOTIFICATION_TYPES.map((type) => {
     const boardRow = boardByType.get(type);

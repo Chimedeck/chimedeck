@@ -3,21 +3,28 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { apiCall } from '../apiClient';
 
 export function registerMoveCard(server: McpServer, token: string): void {
-  server.registerTool(
+  server.tool(
     'move_card',
+    'Move a card to a different list, optionally after a specific card.',
     {
-      description: 'Move a card to a different list, optionally after a specific card.',
-      inputSchema: {
-        cardId: z.string().describe('ID of the card to move'),
-        targetListId: z.string().describe('ID of the destination list'),
-        afterCardId: z.string().nullable().optional().describe('Insert after this card ID (null places at top)'),
-        position: z.number().optional().describe('Deprecated alias. Only 0 is supported and maps to top'),
-      },
+      cardId: z.string().describe('ID of the card to move'),
+      targetListId: z.string().describe('ID of the destination list'),
+      afterCardId: z
+        .string()
+        .nullable()
+        .optional()
+        .describe('Insert after this card ID (null places at top)'),
+      position: z
+        .number()
+        .optional()
+        .describe('Deprecated alias. Only 0 is supported and maps to top'),
     },
     async ({ cardId, targetListId, afterCardId, position }) => {
       if (afterCardId === undefined && position !== undefined && position !== 0) {
         return {
-          content: [{ type: 'text', text: 'Error: bad-request (position is deprecated; use afterCardId)' }],
+          content: [
+            { type: 'text', text: 'Error: bad-request (position is deprecated; use afterCardId)' },
+          ],
           isError: true,
         };
       }
@@ -45,6 +52,6 @@ export function registerMoveCard(server: McpServer, token: string): void {
       return {
         content: [{ type: 'text', text: JSON.stringify(result.data) }],
       };
-    },
+    }
   );
 }

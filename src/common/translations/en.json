@@ -12,6 +12,7 @@
   "Common.ariaOpenMenu": "Open menu",
   "Common.ariaCloseMenu": "Close menu",
   "Common.dismissNotification": "Dismiss notification",
+  "Common.toastOpenAction": "Open",
   "Common.toastRegionAriaLabel": "Notifications",
   "Common.avatarAlt": "Avatar",
   "Common.switchToLightMode": "Switch to light mode",

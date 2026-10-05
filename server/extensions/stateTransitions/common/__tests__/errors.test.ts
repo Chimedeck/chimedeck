@@ -8,7 +8,9 @@ import {
 
 describe('stateTransitions errors', () => {
   it('creates generic state transition errors with name and data', () => {
-    expect(stateTransitionError('state-transition-graph-invalid', { message: 'invalid graph' })).toEqual({
+    expect(
+      stateTransitionError('state-transition-graph-invalid', { message: 'invalid graph' })
+    ).toEqual({
       name: 'state-transition-graph-invalid',
       data: { message: 'invalid graph' },
     });

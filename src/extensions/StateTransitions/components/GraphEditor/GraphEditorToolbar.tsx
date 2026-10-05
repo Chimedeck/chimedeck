@@ -1,4 +1,8 @@
-import { ArrowLongRightIcon, ChatBubbleBottomCenterTextIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowLongRightIcon,
+  ChatBubbleBottomCenterTextIcon,
+  PlusCircleIcon,
+} from '@heroicons/react/24/outline';
 import type { ActionTypeConfig } from '../../config/actionTypes';
 import type { StateTransitionAction } from '../../api';
 import translations from '../../translations/en.json';

@@ -15,61 +15,34 @@ import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
 import { writeActivity } from '../../activity/mods/write';
 import { publishCardActivityEvent } from '../../activity/events/publishCardActivityEvent';
 
-interface CardContext { boardId: string; workspaceId: string; }
-
-interface CardRow extends Record<string, unknown> {
-  id: string;
-  list_id: string;
-  title: string;
-}
-
-interface ListRow {
-  id: string;
-  board_id: string;
-}
-
-interface BoardRow {
-  id: string;
-  workspace_id: string;
-}
-
-interface ChecklistRow extends Record<string, unknown> {
-  id: string;
-  card_id: string;
-  title: string;
-  position: string;
-}
-
-interface ChecklistItemRow extends Record<string, unknown> {
-  id: string;
-  checklist_id: string | null;
-  card_id: string;
-  position: string;
+interface CardContext {
+  boardId: string;
+  workspaceId: string;
 }
 
 async function resolveContextFromCard(cardId: string): Promise<CardContext | null> {
-  const card = await db<CardRow>('cards').where({ id: cardId }).first();
+  const card = await db('cards').where({ id: cardId }).first();
   if (!card) return null;
-  const list = await db<ListRow>('lists').where({ id: card.list_id }).first();
+  const list = await db('lists').where({ id: card.list_id }).first();
   if (!list) return null;
-  const board = await db<BoardRow>('boards').where({ id: list.board_id }).first();
+  const board = await db('boards').where({ id: list.board_id }).first();
   if (!board) return null;
   return { boardId: board.id, workspaceId: board.workspace_id };
 }
 
 async function resolveContextFromChecklist(
-  checklistId: string,
+  checklistId: string
 ): Promise<{ context: CardContext | null; cardId: string | null }> {
-  const checklist = await db<ChecklistRow>('checklists').where({ id: checklistId }).first();
+  const checklist = await db('checklists').where({ id: checklistId }).first();
   if (!checklist) return { context: null, cardId: null };
   const context = await resolveContextFromCard(checklist.card_id);
   return { context, cardId: checklist.card_id };
 }
 
 async function checklistWithItems(checklistId: string) {
-  const checklist = await db<ChecklistRow>('checklists').where({ id: checklistId }).first();
+  const checklist = await db('checklists').where({ id: checklistId }).first();
   if (!checklist) return null;
-  const items = await db<ChecklistItemRow>('checklist_items')
+  const items = await db('checklist_items')
     .where({ checklist_id: checklistId })
     .orderBy('position', 'asc');
   return { ...checklist, items };
@@ -80,11 +53,11 @@ export async function handleCreateChecklist(req: Request, cardId: string): Promi
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const card = await db<CardRow>('cards').where({ id: cardId }).first();
+  const card = await db('cards').where({ id: cardId }).first();
   if (!card) {
     return Response.json(
       { error: { name: 'card-not-found', data: { message: 'Card not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -92,7 +65,7 @@ export async function handleCreateChecklist(req: Request, cardId: string): Promi
   if (!context) {
     return Response.json(
       { error: { name: 'card-not-found', data: { message: 'Card context not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -112,14 +85,14 @@ export async function handleCreateChecklist(req: Request, cardId: string): Promi
 
   const title = body.title?.trim() || 'Checklist';
 
-  const lastChecklist = await db<ChecklistRow>('checklists')
+  const lastChecklist = await db('checklists')
     .where({ card_id: cardId })
     .orderBy('position', 'desc')
     .first();
   const position = between(lastChecklist ? lastChecklist.position : '', HIGH_SENTINEL);
 
   const id = randomUUID();
-  await db<ChecklistRow>('checklists').insert({
+  await db('checklists').insert({
     id,
     card_id: cardId,
     title,
@@ -130,17 +103,19 @@ export async function handleCreateChecklist(req: Request, cardId: string): Promi
 
   const result = await checklistWithItems(id);
 
-  const actorId = (req as AuthenticatedRequest & { currentUser: { id: string } }).currentUser.id;
+  const actorId = (req as AuthenticatedRequest).currentUser!.id;
   writeActivity({
     entityType: 'card',
     entityId: cardId,
     boardId: context.boardId,
     action: 'checklist_created',
     actorId,
-    payload: { checklistTitle: title, cardTitle: card.title },
-  }).then((activity) => {
-    publishCardActivityEvent({ activity, boardId: context.boardId }).catch(() => {});
-  }).catch(() => {});
+    payload: { checklistTitle: title, cardTitle: card?.title ?? '' },
+  })
+    .then((activity) => {
+      publishCardActivityEvent({ activity, boardId: context.boardId }).catch(() => {});
+    })
+    .catch(() => {});
 
   return Response.json({ data: result }, { status: 201 });
 }
@@ -150,11 +125,11 @@ export async function handleUpdateChecklist(req: Request, checklistId: string): 
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const checklist = await db<ChecklistRow>('checklists').where({ id: checklistId }).first();
+  const checklist = await db('checklists').where({ id: checklistId }).first();
   if (!checklist) {
     return Response.json(
       { error: { name: 'checklist-not-found', data: { message: 'Checklist not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -162,7 +137,7 @@ export async function handleUpdateChecklist(req: Request, checklistId: string): 
   if (!context) {
     return Response.json(
       { error: { name: 'checklist-not-found', data: { message: 'Checklist context not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -179,17 +154,19 @@ export async function handleUpdateChecklist(req: Request, checklistId: string): 
   } catch {
     return Response.json(
       { error: { name: 'bad-request', data: { message: 'Invalid JSON body' } } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
-  const updates: { title?: string; position?: string; updated_at: Date } = { updated_at: new Date() };
+  const updates: { title?: string; position?: string; updated_at: Date } = {
+    updated_at: new Date(),
+  };
 
   if (body.title !== undefined) {
     if (typeof body.title !== 'string' || body.title.trim() === '') {
       return Response.json(
         { error: { name: 'bad-request', data: { message: 'title must be a non-empty string' } } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.title = body.title.trim();
@@ -198,8 +175,10 @@ export async function handleUpdateChecklist(req: Request, checklistId: string): 
   if (body.position !== undefined) {
     if (typeof body.position !== 'string' || body.position.trim() === '') {
       return Response.json(
-        { error: { name: 'bad-request', data: { message: 'position must be a non-empty string' } } },
-        { status: 400 },
+        {
+          error: { name: 'bad-request', data: { message: 'position must be a non-empty string' } },
+        },
+        { status: 400 }
       );
     }
     updates.position = body.position;
@@ -207,12 +186,17 @@ export async function handleUpdateChecklist(req: Request, checklistId: string): 
 
   if (!updates.title && !updates.position) {
     return Response.json(
-      { error: { name: 'bad-request', data: { message: 'at least one of title or position is required' } } },
-      { status: 400 },
+      {
+        error: {
+          name: 'bad-request',
+          data: { message: 'at least one of title or position is required' },
+        },
+      },
+      { status: 400 }
     );
   }
 
-  await db<ChecklistRow>('checklists').where({ id: checklistId }).update(updates);
+  await db('checklists').where({ id: checklistId }).update(updates);
 
   const result = await checklistWithItems(checklistId);
   return Response.json({ data: result });
@@ -223,11 +207,11 @@ export async function handleDeleteChecklist(req: Request, checklistId: string): 
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const checklist = await db<ChecklistRow>('checklists').where({ id: checklistId }).first();
+  const checklist = await db('checklists').where({ id: checklistId }).first();
   if (!checklist) {
     return Response.json(
       { error: { name: 'checklist-not-found', data: { message: 'Checklist not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -235,7 +219,7 @@ export async function handleDeleteChecklist(req: Request, checklistId: string): 
   if (!context) {
     return Response.json(
       { error: { name: 'checklist-not-found', data: { message: 'Checklist context not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -247,10 +231,10 @@ export async function handleDeleteChecklist(req: Request, checklistId: string): 
   if (roleError) return roleError;
 
   // ON DELETE CASCADE removes checklist_items rows automatically
-  await db<ChecklistRow>('checklists').where({ id: checklistId }).delete();
+  await db('checklists').where({ id: checklistId }).delete();
 
-  const actorId = (req as AuthenticatedRequest & { currentUser: { id: string } }).currentUser.id;
-  const card = await db<CardRow>('cards').where({ id: checklist.card_id }).select('title').first();
+  const actorId = (req as AuthenticatedRequest).currentUser!.id;
+  const card = await db('cards').where({ id: checklist.card_id }).select('title').first();
   writeActivity({
     entityType: 'card',
     entityId: checklist.card_id,
@@ -258,9 +242,11 @@ export async function handleDeleteChecklist(req: Request, checklistId: string): 
     action: 'checklist_deleted',
     actorId,
     payload: { checklistTitle: checklist.title, cardTitle: card?.title ?? '' },
-  }).then((activity) => {
-    publishCardActivityEvent({ activity, boardId: context.boardId }).catch(() => {});
-  }).catch(() => {});
+  })
+    .then((activity) => {
+      publishCardActivityEvent({ activity, boardId: context.boardId }).catch(() => {});
+    })
+    .catch(() => {});
 
   return new Response(null, { status: 204 });
 }
@@ -268,16 +254,16 @@ export async function handleDeleteChecklist(req: Request, checklistId: string): 
 // POST /api/v1/checklists/:checklistId/items
 export async function handleCreateChecklistItemInGroup(
   req: Request,
-  checklistId: string,
+  checklistId: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const checklist = await db<ChecklistRow>('checklists').where({ id: checklistId }).first();
+  const checklist = await db('checklists').where({ id: checklistId }).first();
   if (!checklist) {
     return Response.json(
       { error: { name: 'checklist-not-found', data: { message: 'Checklist not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -285,7 +271,7 @@ export async function handleCreateChecklistItemInGroup(
   if (!context) {
     return Response.json(
       { error: { name: 'checklist-not-found', data: { message: 'Checklist context not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -302,25 +288,25 @@ export async function handleCreateChecklistItemInGroup(
   } catch {
     return Response.json(
       { error: { name: 'bad-request', data: { message: 'Invalid JSON body' } } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
     return Response.json(
       { error: { name: 'bad-request', data: { message: 'title is required' } } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
-  const lastItem = await db<ChecklistItemRow>('checklist_items')
+  const lastItem = await db('checklist_items')
     .where({ checklist_id: checklistId })
     .orderBy('position', 'desc')
     .first();
   const position = between(lastItem ? lastItem.position : '', HIGH_SENTINEL);
 
   const id = randomUUID();
-  await db<ChecklistItemRow>('checklist_items').insert({
+  await db('checklist_items').insert({
     id,
     card_id: checklist.card_id,
     checklist_id: checklistId,
@@ -329,6 +315,6 @@ export async function handleCreateChecklistItemInGroup(
     position,
   });
 
-  const item = await db<ChecklistItemRow>('checklist_items').where({ id }).first();
+  const item = await db('checklist_items').where({ id }).first();
   return Response.json({ data: item }, { status: 201 });
 }

@@ -33,39 +33,18 @@ interface CardCustomFieldValueRow {
   value_option_id: string | null;
 }
 
-interface CardRow {
-  id: string;
-  list_id: string;
-  title: string | null;
-}
-
-interface ListRow {
-  board_id: string;
-}
-
-interface BoardRow {
-  id: string;
-  workspace_id: string;
-  state: string | null;
-}
-
-interface CustomFieldRow {
-  board_id: string;
-  field_type: FieldType;
-  name: string | null;
-  options: unknown;
-}
-
 interface DropdownOption {
   id: string;
   label: string;
-  color: string | undefined;
+  color?: string;
 }
 
 function parseDropdownOptions(options: unknown): DropdownOption[] {
   if (!Array.isArray(options)) return [];
   return options
-    .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+    .filter(
+      (entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null
+    )
     .map((entry) => ({
       id: typeof entry.id === 'string' ? entry.id : '',
       label: typeof entry.label === 'string' ? entry.label : '',
@@ -93,7 +72,11 @@ function formatCustomFieldValueForActivity({
     case 'DATE': {
       const parsed = new Date(String(value));
       if (Number.isNaN(parsed.getTime())) return String(value);
-      const datePart = parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const datePart = parsed.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
       const timePart = parsed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
       return `${datePart} ${timePart}`;
     }
@@ -102,7 +85,7 @@ function formatCustomFieldValueForActivity({
     case 'DROPDOWN': {
       const optionId = String(value);
       const option = parseDropdownOptions(options).find((entry) => entry.id === optionId);
-      return option?.label.trim() || optionId;
+      return option?.label?.trim() || optionId;
     }
     default:
       return String(value);
@@ -111,7 +94,7 @@ function formatCustomFieldValueForActivity({
 
 function toComparableFieldValue(
   fieldType: FieldType,
-  row: CardCustomFieldValueRow | null | undefined,
+  row: CardCustomFieldValueRow | null | undefined
 ): string | number | boolean | null {
   if (!row) return null;
 
@@ -119,7 +102,7 @@ function toComparableFieldValue(
     case 'TEXT':
       return row.value_text ?? null;
     case 'NUMBER': {
-      if (row.value_number === null) return null;
+      if (row.value_number === null || row.value_number === undefined) return null;
       const num = Number(row.value_number);
       return Number.isNaN(num) ? null : num;
     }
@@ -138,13 +121,13 @@ function toComparableFieldValue(
 }
 
 async function resolveCardContext(
-  cardId: string,
-): Promise<{ card: CardRow; board: BoardRow } | null> {
-  const card = (await db('cards').where({ id: cardId }).first()) as CardRow | undefined;
+  cardId: string
+): Promise<{ card: Record<string, unknown>; board: Record<string, unknown> } | null> {
+  const card = await db('cards').where({ id: cardId }).first();
   if (!card) return null;
-  const list = (await db('lists').where({ id: card.list_id }).first()) as ListRow | undefined;
+  const list = await db('lists').where({ id: card.list_id }).first();
   if (!list) return null;
-  const board = (await db('boards').where({ id: list.board_id }).first()) as BoardRow | undefined;
+  const board = await db('boards').where({ id: list.board_id }).first();
   if (!board) return null;
   return { card, board };
 }
@@ -158,18 +141,18 @@ export async function handleListCardFieldValues(req: Request, cardId: string): P
   if (!ctx) {
     return Response.json(
       { error: { name: 'card-not-found', data: { message: 'Card not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(
     scopedReq,
-    ctx.board.workspace_id,
+    ctx.board.workspace_id as string
   );
   if (membershipError) return membershipError;
 
-  const values = (await db('card_custom_field_values').where({ card_id: cardId })) as CardCustomFieldValueRow[];
+  const values = await db('card_custom_field_values').where({ card_id: cardId });
   return Response.json({ data: values });
 }
 
@@ -177,7 +160,7 @@ export async function handleListCardFieldValues(req: Request, cardId: string): P
 export async function handleGetCardFieldValue(
   req: Request,
   cardId: string,
-  fieldId: string,
+  fieldId: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -186,33 +169,38 @@ export async function handleGetCardFieldValue(
   if (!ctx) {
     return Response.json(
       { error: { name: 'card-not-found', data: { message: 'Card not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(
     scopedReq,
-    ctx.board.workspace_id,
+    ctx.board.workspace_id as string
   );
   if (membershipError) return membershipError;
 
-  const field = (await db('custom_fields').where({ id: fieldId }).first()) as CustomFieldRow | undefined;
+  const field = await db('custom_fields').where({ id: fieldId }).first();
   if (!field) {
     return Response.json(
       { error: { name: 'custom-field-not-found', data: { message: 'Custom field not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
-  const value = (await db('card_custom_field_values')
+  const value = await db('card_custom_field_values')
     .where({ card_id: cardId, custom_field_id: fieldId })
-    .first()) as CardCustomFieldValueRow | undefined;
+    .first();
 
   if (!value) {
     return Response.json(
-      { error: { name: 'custom-field-value-not-found', data: { message: 'No value set for this field on this card' } } },
-      { status: 404 },
+      {
+        error: {
+          name: 'custom-field-value-not-found',
+          data: { message: 'No value set for this field on this card' },
+        },
+      },
+      { status: 404 }
     );
   }
 
@@ -223,7 +211,7 @@ export async function handleGetCardFieldValue(
 export async function handleUpsertCardFieldValue(
   req: Request,
   cardId: string,
-  fieldId: string,
+  fieldId: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -232,29 +220,34 @@ export async function handleUpsertCardFieldValue(
   if (!ctx) {
     return Response.json(
       { error: { name: 'card-not-found', data: { message: 'Card not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(
     scopedReq,
-    ctx.board.workspace_id,
+    ctx.board.workspace_id as string
   );
   if (membershipError) return membershipError;
 
   if (ctx.board.state === 'ARCHIVED') {
     return Response.json(
-      { error: { code: 'board-is-archived', message: 'This board is archived and cannot be modified.' } },
-      { status: 403 },
+      {
+        error: {
+          code: 'board-is-archived',
+          message: 'This board is archived and cannot be modified.',
+        },
+      },
+      { status: 403 }
     );
   }
 
-  const field = (await db('custom_fields').where({ id: fieldId }).first()) as CustomFieldRow | undefined;
+  const field = await db('custom_fields').where({ id: fieldId }).first();
   if (!field) {
     return Response.json(
       { error: { name: 'custom-field-not-found', data: { message: 'Custom field not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -267,7 +260,7 @@ export async function handleUpsertCardFieldValue(
           data: { message: 'Custom field does not belong to the board of this card' },
         },
       },
-      { status: 422 },
+      { status: 422 }
     );
   }
 
@@ -277,19 +270,19 @@ export async function handleUpsertCardFieldValue(
   } catch {
     return Response.json(
       { error: { name: 'bad-request', data: { message: 'Invalid JSON body' } } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
-  const fieldType = field.field_type;
+  const fieldType = field.field_type as FieldType;
   const valuePayload = buildValuePayload(fieldType, body);
   if ('error' in valuePayload) {
     return Response.json({ error: valuePayload.error }, { status: 400 });
   }
 
-  const existing = (await db('card_custom_field_values')
+  const existing = await db('card_custom_field_values')
     .where({ card_id: cardId, custom_field_id: fieldId })
-    .first()) as CardCustomFieldValueRow | undefined;
+    .first();
 
   if (existing) {
     await db('card_custom_field_values')
@@ -304,21 +297,21 @@ export async function handleUpsertCardFieldValue(
     });
   }
 
-  const saved = (await db('card_custom_field_values')
+  const saved = await db('card_custom_field_values')
     .where({ card_id: cardId, custom_field_id: fieldId })
-    .first()) as CardCustomFieldValueRow | undefined;
+    .first<CardCustomFieldValueRow>();
 
   const previousValue = toComparableFieldValue(fieldType, existing);
   const newValue = toComparableFieldValue(fieldType, saved);
-  const cardTitle = ctx.card.title ?? '';
-  const fieldName = field.name ?? '';
+  const cardTitle = typeof ctx.card.title === 'string' ? ctx.card.title : '';
+  const fieldName = typeof field.name === 'string' ? field.name : '';
 
   // [why] This trigger should only fire for actual value transitions, not no-op saves.
   if (previousValue !== newValue && saved) {
     const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
     await dispatchEvent({
       type: 'card.custom_field_value_updated',
-      boardId: ctx.board.id,
+      boardId: ctx.board.id as string,
       entityId: cardId,
       actorId,
       payload: {
@@ -332,7 +325,7 @@ export async function handleUpsertCardFieldValue(
     const activity = await writeActivity({
       entityType: 'card',
       entityId: cardId,
-      boardId: ctx.board.id,
+      boardId: ctx.board.id as string,
       action: 'card.custom_field.updated',
       actorId,
       payload: {
@@ -350,7 +343,7 @@ export async function handleUpsertCardFieldValue(
     });
     publishCardActivityEvent({
       activity,
-      boardId: ctx.board.id,
+      boardId: ctx.board.id as string,
     }).catch(() => {});
   }
 
@@ -361,7 +354,7 @@ export async function handleUpsertCardFieldValue(
 export async function handleDeleteCardFieldValue(
   req: Request,
   cardId: string,
-  fieldId: string,
+  fieldId: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -370,42 +363,48 @@ export async function handleDeleteCardFieldValue(
   if (!ctx) {
     return Response.json(
       { error: { name: 'card-not-found', data: { message: 'Card not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(
     scopedReq,
-    ctx.board.workspace_id,
+    ctx.board.workspace_id as string
   );
   if (membershipError) return membershipError;
 
   if (ctx.board.state === 'ARCHIVED') {
     return Response.json(
-      { error: { code: 'board-is-archived', message: 'This board is archived and cannot be modified.' } },
-      { status: 403 },
+      {
+        error: {
+          code: 'board-is-archived',
+          message: 'This board is archived and cannot be modified.',
+        },
+      },
+      { status: 403 }
     );
   }
 
-  const existing = (await db('card_custom_field_values')
+  const existing = await db('card_custom_field_values')
     .where({ card_id: cardId, custom_field_id: fieldId })
-    .first()) as CardCustomFieldValueRow | undefined;
+    .first<CardCustomFieldValueRow>();
 
   if (!existing) {
     return Response.json(
       { error: { name: 'custom-field-value-not-found', data: { message: 'No value to delete' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
-  const field = (await db('custom_fields').where({ id: fieldId }).first()) as CustomFieldRow | undefined;
-  const fieldType = field?.field_type ?? null;
-  const cardTitle = ctx.card.title ?? '';
-  const fieldName = field?.name ?? '';
-  const previousValue = fieldType
-    ? toComparableFieldValue(fieldType, existing)
-    : null;
+  const field = await db('custom_fields').where({ id: fieldId }).first();
+  const fieldType = (field?.field_type as FieldType | undefined) ?? null;
+  const cardTitle = typeof ctx.card.title === 'string' ? ctx.card.title : '';
+  const fieldName =
+    field && typeof (field as Record<string, unknown>).name === 'string'
+      ? ((field as Record<string, unknown>).name as string)
+      : '';
+  const previousValue = fieldType ? toComparableFieldValue(fieldType, existing) : null;
 
   await db('card_custom_field_values')
     .where({ card_id: cardId, custom_field_id: fieldId })
@@ -416,7 +415,7 @@ export async function handleDeleteCardFieldValue(
     const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
     await dispatchEvent({
       type: 'card.custom_field_value_updated',
-      boardId: ctx.board.id,
+      boardId: ctx.board.id as string,
       entityId: cardId,
       actorId,
       payload: {
@@ -431,7 +430,7 @@ export async function handleDeleteCardFieldValue(
       const activity = await writeActivity({
         entityType: 'card',
         entityId: cardId,
-        boardId: ctx.board.id,
+        boardId: ctx.board.id as string,
         action: 'card.custom_field.updated',
         actorId,
         payload: {
@@ -443,13 +442,13 @@ export async function handleDeleteCardFieldValue(
           newValueDisplay: formatCustomFieldValueForActivity({
             fieldType,
             value: null,
-            options: field.options,
+            options: (field as Record<string, unknown>).options,
           }),
         },
       });
       publishCardActivityEvent({
         activity,
-        boardId: ctx.board.id,
+        boardId: ctx.board.id as string,
       }).catch(() => {});
     }
   }
@@ -462,7 +461,7 @@ export async function handleDeleteCardFieldValue(
 //       column, nulling out all others to prevent stale data from previous type upserts.
 function buildValuePayload(
   fieldType: FieldType,
-  body: Record<string, unknown>,
+  body: Record<string, unknown>
 ): { data: Record<string, unknown> } | { error: { name: string; data: { message: string } } } {
   // All columns start null — clears any previous value of a different type.
   const base: Record<string, unknown> = {
@@ -493,7 +492,9 @@ function buildValuePayload(
       }
       const num = Number(raw);
       if (isNaN(num)) {
-        return { error: { name: 'bad-request', data: { message: 'value_number must be a number' } } };
+        return {
+          error: { name: 'bad-request', data: { message: 'value_number must be a number' } },
+        };
       }
       return { data: { ...base, value_number: num } };
     }
@@ -505,7 +506,12 @@ function buildValuePayload(
       }
       const d = new Date(raw as string);
       if (isNaN(d.getTime())) {
-        return { error: { name: 'bad-request', data: { message: 'value_date must be a valid ISO date string' } } };
+        return {
+          error: {
+            name: 'bad-request',
+            data: { message: 'value_date must be a valid ISO date string' },
+          },
+        };
       }
       return { data: { ...base, value_date: d.toISOString() } };
     }
@@ -516,7 +522,9 @@ function buildValuePayload(
         return { data: base }; // explicit clear
       }
       if (typeof raw !== 'boolean') {
-        return { error: { name: 'bad-request', data: { message: 'value_checkbox must be a boolean' } } };
+        return {
+          error: { name: 'bad-request', data: { message: 'value_checkbox must be a boolean' } },
+        };
       }
       return { data: { ...base, value_checkbox: raw } };
     }
@@ -527,7 +535,9 @@ function buildValuePayload(
         return { data: base }; // explicit clear
       }
       if (typeof raw !== 'string') {
-        return { error: { name: 'bad-request', data: { message: 'value_option_id must be a string' } } };
+        return {
+          error: { name: 'bad-request', data: { message: 'value_option_id must be a string' } },
+        };
       }
       return { data: { ...base, value_option_id: raw } };
     }
@@ -554,29 +564,30 @@ async function parseBatchCardIds(req: Request): Promise<string[] | Response> {
     } catch {
       return Response.json(
         { error: { name: 'bad-request', data: { message: 'Invalid JSON body' } } },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     if (!Array.isArray(body.cardIds)) {
       return Response.json(
-        { error: { name: 'bad-request', data: { message: 'cardIds must be an array of strings' } } },
-        { status: 400 },
+        {
+          error: { name: 'bad-request', data: { message: 'cardIds must be an array of strings' } },
+        },
+        { status: 400 }
       );
     }
 
     const invalid = body.cardIds.some((id) => typeof id !== 'string');
     if (invalid) {
       return Response.json(
-        { error: { name: 'bad-request', data: { message: 'cardIds must be an array of strings' } } },
-        { status: 400 },
+        {
+          error: { name: 'bad-request', data: { message: 'cardIds must be an array of strings' } },
+        },
+        { status: 400 }
       );
     }
 
-    return (body.cardIds as unknown[])
-      .filter((id): id is string => typeof id === 'string')
-      .map((id) => id.trim())
-      .filter(Boolean);
+    return body.cardIds.map((id) => id.trim()).filter(Boolean);
   }
 
   return [];
@@ -590,16 +601,16 @@ export async function handleBatchCardFieldValues(req: Request, boardId: string):
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const board = (await db('boards').where({ id: boardId }).first()) as BoardRow | undefined;
+  const board = await db('boards').where({ id: boardId }).first();
   if (!board) {
     return Response.json(
       { error: { name: 'board-not-found', data: { message: 'Board not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
+  const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id as string);
   if (membershipError) return membershipError;
 
   const parsedIds = await parseBatchCardIds(req);
@@ -612,17 +623,16 @@ export async function handleBatchCardFieldValues(req: Request, boardId: string):
 
   // [security] Only return values for cards that actually belong to this board,
   // preventing an authenticated member from probing cards from other boards.
-  const boardCardIds = (await db('cards')
+  const boardCardIds: string[] = await db('cards')
     .join('lists', 'cards.list_id', 'lists.id')
     .where('lists.board_id', boardId)
     .whereIn('cards.id', requestedIds)
-    .pluck('cards.id'))
-    .filter((id): id is string => typeof id === 'string');
+    .pluck('cards.id');
 
   if (boardCardIds.length === 0) {
     return Response.json({ data: [] });
   }
 
-  const values = (await db('card_custom_field_values').whereIn('card_id', boardCardIds)) as CardCustomFieldValueRow[];
+  const values = await db('card_custom_field_values').whereIn('card_id', boardCardIds);
   return Response.json({ data: values });
 }

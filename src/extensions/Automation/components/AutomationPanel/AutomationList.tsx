@@ -95,7 +95,10 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-subtle">{automation.name}</p>
         <p className="mt-0.5 truncate text-xs text-muted">
-          {triggerLabel} · {automation.actions.length} {automation.actions.length !== 1 ? translations['automation.list.actions'] : translations['automation.list.action']}
+          {triggerLabel} · {automation.actions.length}{' '}
+          {automation.actions.length !== 1
+            ? translations['automation.list.actions']
+            : translations['automation.list.action']}
         </p>
       </div>
 
@@ -109,10 +112,18 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
           className={`rounded p-1 transition-colors ${
             toggling ? 'opacity-50 cursor-not-allowed' : 'hover:bg-bg-overlay'
           } ${automation.isEnabled ? 'text-emerald-400' : 'text-muted'}`}
-          onClick={() => void handleToggle()}
+          onClick={handleToggle}
           disabled={toggling}
-          aria-label={automation.isEnabled ? translations['automation.list.row.disableAriaLabel'] : translations['automation.list.row.enableAriaLabel']}
-          title={automation.isEnabled ? translations['automation.list.row.disableTitle'] : translations['automation.list.row.enableTitle']}
+          aria-label={
+            automation.isEnabled
+              ? translations['automation.list.row.disableAriaLabel']
+              : translations['automation.list.row.enableAriaLabel']
+          }
+          title={
+            automation.isEnabled
+              ? translations['automation.list.row.disableTitle']
+              : translations['automation.list.row.enableTitle']
+          }
         >
           {automation.isEnabled ? (
             <CheckCircleIcon className="h-4 w-4" aria-hidden="true" />
@@ -138,11 +149,21 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
               ? 'bg-danger text-white hover:opacity-90' // [theme-exception] text-white on danger active state
               : 'text-muted hover:bg-bg-overlay hover:text-danger'
           } ${deleting ? 'opacity-50 cursor-not-allowed' : ''}`}
-          onClick={() => void handleDelete()}
+          onClick={handleDelete}
           disabled={deleting}
-          aria-label={confirmDelete ? translations['automation.list.row.confirmDeleteAriaLabel'] : translations['automation.list.row.deleteAriaLabel']}
-          title={confirmDelete ? translations['automation.list.row.confirmDeleteTitle'] : translations['automation.list.row.deleteTitle']}
-          onBlur={() => { setConfirmDelete(false); }}
+          aria-label={
+            confirmDelete
+              ? translations['automation.list.row.confirmDeleteAriaLabel']
+              : translations['automation.list.row.deleteAriaLabel']
+          }
+          title={
+            confirmDelete
+              ? translations['automation.list.row.confirmDeleteTitle']
+              : translations['automation.list.row.deleteTitle']
+          }
+          onBlur={() => {
+            setConfirmDelete(false);
+          }}
         >
           <TrashIcon className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -160,11 +181,7 @@ const AutomationList = ({ boardId, automations, onCreateRule, onEditRule, onChan
         <p className="text-xs font-medium uppercase tracking-wide text-muted">
           {translations['automation.list.sectionLabel']} ({rules.length})
         </p>
-        <Button
-          variant="primary"
-          onClick={onCreateRule}
-          className="flex items-center gap-1"
-        >
+        <Button variant="primary" onClick={onCreateRule} className="flex items-center gap-1">
           {translations['automation.list.createRule']}
         </Button>
       </div>
@@ -175,7 +192,9 @@ const AutomationList = ({ boardId, automations, onCreateRule, onEditRule, onChan
             key={automation.id}
             boardId={boardId}
             automation={automation}
-            onEdit={() => { onEditRule(automation); }}
+            onEdit={() => {
+              onEditRule(automation);
+            }}
             onDeleted={onChanged}
             onToggled={onChanged}
           />

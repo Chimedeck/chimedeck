@@ -2,36 +2,19 @@
 // Called after virus scan marks an attachment as READY.
 // Stores the thumbnail at thumbnails/<card_id>/<attachment_id>.webp in S3
 // and updates thumbnail_key, width, height columns in the DB.
-// Direct server-side operations — uses the internal endpoint client.
 import sharp from 'sharp';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { s3ServerClient, s3Config } from '../common/config/s3';
+import { s3Client, s3Config } from '../common/config/s3';
 import { db } from '../../../common/db';
 
 const THUMBNAIL_MAX_WIDTH = 400;
 const THUMBNAIL_MAX_HEIGHT = 300;
 
 // SVG excluded — sharp requires explicit rasterization density per file.
-const THUMBNAIL_SUPPORTED_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-]);
-
-// Attachment columns consumed here, from 0011_attachments.ts and
-// 0033_attachments_enhanced.ts / 0108_attachment_dimensions.ts (width/height).
-interface AttachmentRow {
-  id: string;
-  card_id: string;
-  mime_type: string | null;
-  s3_key: string | null;
-  width: number | null;
-  height: number | null;
-}
+const THUMBNAIL_SUPPORTED_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 
 export async function generateThumbnail({ attachmentId }: { attachmentId: string }): Promise<void> {
-  const attachment = await db<AttachmentRow>('attachments').where({ id: attachmentId }).first();
+  const attachment = await db('attachments').where({ id: attachmentId }).first();
   if (!attachment) return;
 
   // Use mime_type (client-provided on upload) to gate image-only processing
@@ -41,8 +24,8 @@ export async function generateThumbnail({ attachmentId }: { attachmentId: string
   if (!attachment.s3_key) return;
 
   // Download original file from S3
-  const getResult = await s3ServerClient.send(
-    new GetObjectCommand({ Bucket: s3Config.bucket, Key: attachment.s3_key }),
+  const getResult = await s3Client.send(
+    new GetObjectCommand({ Bucket: s3Config.bucket, Key: attachment.s3_key })
   );
 
   const chunks: Uint8Array[] = [];
@@ -58,10 +41,12 @@ export async function generateThumbnail({ attachmentId }: { attachmentId: string
   // GIFs must not be converted to WebP — animation would be lost.
   // Persist dimensions and return without generating a thumbnail_key.
   if (mimeType === 'image/gif') {
-    await db('attachments').where({ id: attachmentId }).update({
-      width: metadata.width,
-      height: metadata.height,
-    });
+    await db('attachments')
+      .where({ id: attachmentId })
+      .update({
+        width: metadata.width ?? null,
+        height: metadata.height ?? null,
+      });
     return;
   }
 
@@ -75,18 +60,20 @@ export async function generateThumbnail({ attachmentId }: { attachmentId: string
 
   const thumbnailKey = `thumbnails/${attachment.card_id}/${attachmentId}.webp`;
 
-  await s3ServerClient.send(
+  await s3Client.send(
     new PutObjectCommand({
       Bucket: s3Config.bucket,
       Key: thumbnailKey,
       Body: resized,
       ContentType: 'image/webp',
-    }),
+    })
   );
 
-  await db('attachments').where({ id: attachmentId }).update({
-    thumbnail_key: thumbnailKey,
-    width: metadata.width,
-    height: metadata.height,
-  });
+  await db('attachments')
+    .where({ id: attachmentId })
+    .update({
+      thumbnail_key: thumbnailKey,
+      width: metadata.width ?? null,
+      height: metadata.height ?? null,
+    });
 }

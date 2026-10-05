@@ -16,8 +16,6 @@ export const cardRemoveMemberAction: ActionHandler = {
     if (!cardId) throw new Error('card-id-missing');
 
     // Idempotent: no-op if not assigned
-    await trx('card_members')
-      .where({ card_id: cardId, user_id: config.memberId })
-      .delete();
+    await trx('card_members').where({ card_id: cardId, user_id: config.memberId }).delete();
   },
 };

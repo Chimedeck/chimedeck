@@ -9,44 +9,29 @@ import {
 } from '../../../middlewares/permissionManager';
 import { proxyS3Object } from '../common/proxyS3Object';
 
-interface ThumbnailAttachmentRow {
-  id: string;
-  card_id: string;
-  thumbnail_key: string | null;
-  status: 'PENDING' | 'REJECTED' | 'READY';
-  alias: string | null;
-  name: string | null;
-}
-
-interface CardRow {
-  id: string;
-  list_id: string;
-}
-
-interface ListRow {
-  id: string;
-  board_id: string;
-}
-
-interface BoardRow {
-  id: string;
-  workspace_id: string;
-}
-
-export async function handleThumbnailAttachment(req: Request, attachmentId: string): Promise<Response> {
+export async function handleThumbnailAttachment(
+  req: Request,
+  attachmentId: string
+): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const attachment = await db<ThumbnailAttachmentRow>('attachments').where({ id: attachmentId }).first();
+  const attachment = await db('attachments').where({ id: attachmentId }).first();
   if (!attachment) {
-    return Response.json({ name: 'attachment-not-found', data: { message: 'Attachment not found' } }, { status: 404 });
+    return Response.json(
+      { name: 'attachment-not-found', data: { message: 'Attachment not found' } },
+      { status: 404 }
+    );
   }
 
-  const card = await db<CardRow>('cards').where({ id: attachment.card_id }).first();
-  const list = card ? await db<ListRow>('lists').where({ id: card.list_id }).first() : null;
-  const board = list ? await db<BoardRow>('boards').where({ id: list.board_id }).first() : null;
+  const card = await db('cards').where({ id: attachment.card_id }).first();
+  const list = card ? await db('lists').where({ id: card.list_id }).first() : null;
+  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
-    return Response.json({ name: 'board-not-found', data: { message: 'Board not found' } }, { status: 404 });
+    return Response.json(
+      { name: 'board-not-found', data: { message: 'Board not found' } },
+      { status: 404 }
+    );
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
@@ -54,15 +39,24 @@ export async function handleThumbnailAttachment(req: Request, attachmentId: stri
   if (membershipError) return membershipError;
 
   if (!attachment.thumbnail_key) {
-    return Response.json({ name: 'thumbnail-not-found', data: { message: 'No thumbnail for this attachment' } }, { status: 404 });
+    return Response.json(
+      { name: 'thumbnail-not-found', data: { message: 'No thumbnail for this attachment' } },
+      { status: 404 }
+    );
   }
 
   if (attachment.status === 'PENDING') {
-    return Response.json({ name: 'attachment-pending', data: { message: 'Attachment is still being processed' } }, { status: 202 });
+    return Response.json(
+      { name: 'attachment-pending', data: { message: 'Attachment is still being processed' } },
+      { status: 202 }
+    );
   }
 
   if (attachment.status === 'REJECTED') {
-    return Response.json({ name: 'attachment-rejected', data: { message: 'Attachment was rejected by virus scan' } }, { status: 422 });
+    return Response.json(
+      { name: 'attachment-rejected', data: { message: 'Attachment was rejected by virus scan' } },
+      { status: 422 }
+    );
   }
 
   return proxyS3Object({

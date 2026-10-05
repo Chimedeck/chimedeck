@@ -24,6 +24,7 @@ import { useHealthCheckProbe } from '../../hooks/useHealthCheckProbe';
 import { HEALTH_CHECK_POLL_INTERVAL_MS } from '../../config/healthCheckConfig';
 import Button from '../../../../common/components/Button';
 import Spinner from '../../../../common/components/Spinner';
+import translations from '../../translations/en.json';
 
 const TOTAL_COUNTDOWN_SECONDS = Math.round(HEALTH_CHECK_POLL_INTERVAL_MS / 1000);
 
@@ -37,11 +38,11 @@ function formatLastChecked(isoString: string | null): string {
   const diffMs = Date.now() - new Date(isoString).getTime();
   const diffSec = Math.floor(diffMs / 1000);
   if (diffSec < 10) return 'just now';
-  if (diffSec < 60) return `${String(diffSec)}s ago`;
+  if (diffSec < 60) return `${diffSec}s ago`;
   const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${String(diffMin)} min ago`;
+  if (diffMin < 60) return `${diffMin} min ago`;
   const diffHr = Math.floor(diffMin / 60);
-  return `${String(diffHr)}h ago`;
+  return `${diffHr}h ago`;
 }
 
 /** Full Health Check tab panel: loads entries, renders rows, empty state, and countdown. */
@@ -55,11 +56,11 @@ export function HealthCheckTab({ boardId }: Props) {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Per-row probe state (on-demand single probe).
-  const { isProbing } = useHealthCheckProbe({ boardId });
+  const { isProbing, probe } = useHealthCheckProbe({ boardId });
 
   // Fetch the list on mount (and when boardId changes).
   useEffect(() => {
-    void dispatch(fetchHealthChecksThunk({ boardId }));
+    dispatch(fetchHealthChecksThunk({ boardId }));
   }, [dispatch, boardId]);
 
   // Probe-all on refresh (manual or auto).
@@ -74,7 +75,7 @@ export function HealthCheckTab({ boardId }: Props) {
   }, [dispatch, boardId]);
 
   const { secondsUntilRefresh, triggerRefresh } = useHealthCheckAutoRefresh({
-    onRefresh: () => { void handleRefresh(); },
+    onRefresh: handleRefresh,
   });
 
   const handleManualRefresh = useCallback(() => {
@@ -83,9 +84,9 @@ export function HealthCheckTab({ boardId }: Props) {
 
   const handleRemove = useCallback(
     (healthCheckId: string) => {
-      void dispatch(removeHealthCheckThunk({ boardId, healthCheckId }));
+      dispatch(removeHealthCheckThunk({ boardId, healthCheckId }));
     },
-    [dispatch, boardId],
+    [dispatch, boardId]
   );
 
   const isEmpty = entries.length === 0;
@@ -98,8 +99,7 @@ export function HealthCheckTab({ boardId }: Props) {
         <div>
           <h2 className="text-base font-semibold text-base">Health Check</h2>
           <p className="text-xs text-muted mt-0.5">
-            Last checked:{' '}
-            <span className="text-subtle">{formatLastChecked(lastCheckedAt)}</span>
+            Last checked: <span className="text-subtle">{formatLastChecked(lastCheckedAt)}</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -117,8 +117,8 @@ export function HealthCheckTab({ boardId }: Props) {
             onClick={handleManualRefresh}
             disabled={isRefreshing || isLoading}
             className="flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="Refresh health checks"
-            title="Refresh all services now"
+            aria-label={translations['HealthCheckTab.refreshAria']}
+            title={translations['HealthCheckTab.refreshTitle']}
           >
             <ArrowPathIcon
               className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`}
@@ -132,9 +132,11 @@ export function HealthCheckTab({ boardId }: Props) {
             type="button"
             variant="primary"
             size="sm"
-            onClick={() => { setAddModalOpen(true); }}
+            onClick={() => {
+              setAddModalOpen(true);
+            }}
             className="flex items-center gap-1.5"
-            aria-label="Add service to monitor"
+            aria-label={translations['HealthCheckTab.addServiceAria']}
           >
             <PlusIcon className="h-4 w-4" aria-hidden="true" />
             Add
@@ -149,9 +151,7 @@ export function HealthCheckTab({ boardId }: Props) {
           <span className="flex-shrink-0 w-40 text-xs font-medium text-muted uppercase tracking-wide">
             Name
           </span>
-          <span className="flex-1 text-xs font-medium text-muted uppercase tracking-wide">
-            URL
-          </span>
+          <span className="flex-1 text-xs font-medium text-muted uppercase tracking-wide">URL</span>
           <span className="flex-shrink-0 w-24 text-right text-xs font-medium text-muted uppercase tracking-wide">
             Response
           </span>
@@ -164,13 +164,21 @@ export function HealthCheckTab({ boardId }: Props) {
       )}
 
       {/* Content area */}
-      <div className="flex-1 overflow-y-auto" role="table" aria-label="Health check services">
+      <div
+        className="flex-1 overflow-y-auto"
+        role="table"
+        aria-label={translations['HealthCheckTab.servicesTableAria']}
+      >
         {isLoading && entries.length === 0 ? (
           <div className="flex items-center justify-center py-16">
             <Spinner className="h-6 w-6" />
           </div>
         ) : isEmpty ? (
-          <HealthCheckEmptyState onAddService={() => { setAddModalOpen(true); }} />
+          <HealthCheckEmptyState
+            onAddService={() => {
+              setAddModalOpen(true);
+            }}
+          />
         ) : (
           <div role="rowgroup">
             {entries.map((entry) => (
@@ -189,7 +197,9 @@ export function HealthCheckTab({ boardId }: Props) {
       <AddServiceModal
         boardId={boardId}
         isOpen={addModalOpen}
-        onClose={() => { setAddModalOpen(false); }}
+        onClose={() => {
+          setAddModalOpen(false);
+        }}
       />
     </div>
   );

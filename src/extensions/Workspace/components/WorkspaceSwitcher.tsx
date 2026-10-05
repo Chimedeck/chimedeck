@@ -7,6 +7,7 @@ import {
   currentWorkspaceSelector,
   fetchWorkspace,
 } from '../containers/WorkspacePage/WorkspacePage.duck';
+import translations from '../translations/en.json';
 
 interface WorkspaceSwitcherProps {
   onSwitch?: (workspaceId: string) => void;
@@ -35,9 +36,7 @@ const WorkspaceSwitcher = ({ onSwitch }: WorkspaceSwitcherProps) => {
   }
 
   if (workspaces.length === 0) {
-    return (
-      <span className="text-sm text-muted">No workspaces</span>
-    );
+    return <span className="text-sm text-muted">No workspaces</span>;
   }
 
   return (
@@ -45,7 +44,7 @@ const WorkspaceSwitcher = ({ onSwitch }: WorkspaceSwitcherProps) => {
       className="rounded border border-border bg-bg-overlay px-2 py-1 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
       value={current?.id ?? ''}
       onChange={handleChange}
-      aria-label="Switch workspace"
+      aria-label={translations['WorkspaceSwitcher.label']}
     >
       {!current && (
         <option value="" disabled>

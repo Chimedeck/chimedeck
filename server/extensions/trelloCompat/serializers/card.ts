@@ -26,17 +26,20 @@ function normalizeCustomFieldItem(item: TrelloCustomFieldItem): TrelloCustomFiel
   }
   if (Object.hasOwn(value, 'date')) return { ...item, value: { date: value.date ?? null } };
   if (Object.hasOwn(value, 'number')) return { ...item, value: { number: value.number ?? null } };
-  if (Object.hasOwn(value, 'checked')) return { ...item, value: { checked: value.checked ?? null } };
+  if (Object.hasOwn(value, 'checked'))
+    return { ...item, value: { checked: value.checked ?? null } };
   return { ...item, value: { text: value.text ?? null } };
 }
 
-type CardLabelInput = TrelloLabel | {
-  id: string;
-  board_id?: string | null;
-  idBoard?: string | null;
-  name?: string | null;
-  color?: string | null;
-};
+type CardLabelInput =
+  | TrelloLabel
+  | {
+      id: string;
+      board_id?: string | null;
+      idBoard?: string | null;
+      name?: string | null;
+      color?: string | null;
+    };
 
 export function serializeCard(card: {
   id: string;
@@ -67,13 +70,17 @@ export function serializeCard(card: {
   const due = toIso(card.due_date);
   const start = toIso(card.start_date);
   const pos = typeof card._rank === 'number' ? rankToPos(card._rank) : 65535;
-  const shortLink = typeof card.short_id === 'number'
-    ? card.short_id.toString()
-    : card.short_id ?? card.id.slice(0, 8);
-  const idShort = typeof card.short_id === 'number'
-    ? card.short_id
-    : Number.parseInt(card.short_id ?? '', 10) || 0;
-  const labels = (card.labels ?? []).map((label) => serializeEmbeddedLabel(label, card.board_id ?? ''));
+  const shortLink =
+    typeof card.short_id === 'number'
+      ? card.short_id.toString()
+      : (card.short_id ?? card.id.slice(0, 8));
+  const idShort =
+    typeof card.short_id === 'number'
+      ? card.short_id
+      : Number.parseInt(card.short_id ?? '', 10) || 0;
+  const labels = (card.labels ?? []).map((label) =>
+    serializeEmbeddedLabel(label, card.board_id ?? '')
+  );
   const idChecklists = toCardChecklistIds(card.checklists ?? []);
   const idLabels = toCardLabelIds(labels);
   const idMembers = toCardMemberIds(card.members ?? []);
@@ -111,9 +118,7 @@ export function serializeCard(card: {
       isTemplate: false,
     },
     creationMethod: null,
-    dateLastActivity: toIso(card.updated_at)
-      ?? toIso(card.created_at)
-      ?? new Date().toISOString(),
+    dateLastActivity: toIso(card.updated_at) ?? toIso(card.created_at) ?? new Date().toISOString(),
     desc: card.description ?? '',
     descData: null,
     due,

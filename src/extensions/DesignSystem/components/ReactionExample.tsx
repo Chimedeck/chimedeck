@@ -39,7 +39,9 @@ export default function ReactionExample() {
             type="button"
             aria-label={`${r.label}: ${String(r.count)} reaction${r.count !== 1 ? 's' : ''}${r.active ? ', reacted' : ''}`}
             aria-pressed={r.active}
-            onClick={() => { toggle(r.emoji); }}
+            onClick={() => {
+              toggle(r.emoji);
+            }}
             className={[
               'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm border transition-colors',
               r.active

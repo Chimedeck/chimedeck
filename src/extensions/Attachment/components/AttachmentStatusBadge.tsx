@@ -9,9 +9,27 @@ interface Props {
 }
 
 const BADGE_STYLES: Record<AttachmentStatus, React.CSSProperties> = {
-  PENDING: { background: '#fbbf24', color: '#1f2937', padding: '2px 8px', borderRadius: 4, fontSize: 12 },
-  READY: { background: '#34d399', color: '#1f2937', padding: '2px 8px', borderRadius: 4, fontSize: 12 },
-  REJECTED: { background: '#f87171', color: '#fff', padding: '2px 8px', borderRadius: 4, fontSize: 12 },
+  PENDING: {
+    background: '#fbbf24',
+    color: '#1f2937',
+    padding: '2px 8px',
+    borderRadius: 4,
+    fontSize: 12,
+  },
+  READY: {
+    background: '#34d399',
+    color: '#1f2937',
+    padding: '2px 8px',
+    borderRadius: 4,
+    fontSize: 12,
+  },
+  REJECTED: {
+    background: '#f87171',
+    color: '#fff',
+    padding: '2px 8px',
+    borderRadius: 4,
+    fontSize: 12,
+  },
 };
 
 const BADGE_LABELS: Record<AttachmentStatus, string> = {

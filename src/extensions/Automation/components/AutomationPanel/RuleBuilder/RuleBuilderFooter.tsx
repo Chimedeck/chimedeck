@@ -22,10 +22,7 @@ const RuleBuilderFooter = ({
   <div className="shrink-0 border-t border-border bg-bg-base px-4 py-3 flex flex-col gap-3">
     {/* Rule name input */}
     <div>
-      <label
-        htmlFor="rule-name"
-        className="mb-1 block text-xs font-medium text-muted"
-      >
+      <label htmlFor="rule-name" className="mb-1 block text-xs font-medium text-muted">
         {translations['automation.ruleBuilderFooter.ruleNameLabel']}
       </label>
       <input
@@ -58,7 +55,9 @@ const RuleBuilderFooter = ({
         onClick={onSave}
         aria-busy={saving}
       >
-        {saving ? translations['automation.ruleBuilderFooter.saving'] : translations['automation.ruleBuilderFooter.save']}
+        {saving
+          ? translations['automation.ruleBuilderFooter.saving']
+          : translations['automation.ruleBuilderFooter.save']}
       </Button>
     </div>
   </div>

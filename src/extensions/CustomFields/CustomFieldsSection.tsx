@@ -4,7 +4,11 @@
 //       the section manages its own field + value state via hooks.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import translations from './translations/en.json';
-import { useCustomFields, useCardCustomFieldValues, invalidateBoardCardFieldValuesCache } from './api';
+import {
+  useCustomFields,
+  useCardCustomFieldValues,
+  invalidateBoardCardFieldValuesCache,
+} from './api';
 import CustomFieldValueEditor from './CustomFieldValueEditor';
 import type { CustomFieldValue } from './types';
 
@@ -37,7 +41,9 @@ const CustomFieldsSection = ({ boardId, cardId, disabled = false }: Props) => {
     });
 
     observer.observe(gridRef.current);
-    return () => { observer.disconnect(); };
+    return () => {
+      observer.disconnect();
+    };
   }, [fieldsLoading, valuesLoading, fields.length]);
 
   const handleValueChange = useCallback(
@@ -56,7 +62,7 @@ const CustomFieldsSection = ({ boardId, cardId, disabled = false }: Props) => {
       setValues(nextValues);
       invalidateBoardCardFieldValuesCache(boardId);
     },
-    [boardId, values, setValues],
+    [boardId, values, setValues]
   );
 
   if (fieldsLoading || valuesLoading) {
@@ -89,7 +95,9 @@ const CustomFieldsSection = ({ boardId, cardId, disabled = false }: Props) => {
                 field={field}
                 value={value}
                 disabled={disabled}
-                onValueChange={(updated) => { handleValueChange(field.id, updated); }}
+                onValueChange={(updated) => {
+                  handleValueChange(field.id, updated);
+                }}
               />
             </div>
           );
@@ -100,6 +108,11 @@ const CustomFieldsSection = ({ boardId, cardId, disabled = false }: Props) => {
 };
 
 // Re-export so consumers can also access badge values for tile rendering.
-export { useCustomFields, useCardCustomFieldValues, upsertCardFieldValue, deleteCardFieldValue } from './api';
+export {
+  useCustomFields,
+  useCardCustomFieldValues,
+  upsertCardFieldValue,
+  deleteCardFieldValue,
+} from './api';
 export { apiClient } from '~/common/api/client';
 export default CustomFieldsSection;

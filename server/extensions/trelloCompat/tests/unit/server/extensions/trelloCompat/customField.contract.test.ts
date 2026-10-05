@@ -2,7 +2,10 @@ import { describe, expect, it } from 'bun:test';
 import { trelloError } from '../../../../../common/errors';
 import { toTrelloErrorResponse } from '../../../../../middlewares/errorHandler';
 import { serializeCard } from '../../../../../serializers/card';
-import { serializeCustomField, serializeCustomFieldItem } from '../../../../../serializers/customField';
+import {
+  serializeCustomField,
+  serializeCustomFieldItem,
+} from '../../../../../serializers/customField';
 import { createCardFixture } from '../../../../../helpers/fixtures';
 
 describe('trelloCompat custom fields adapter contract', () => {
@@ -44,36 +47,51 @@ describe('trelloCompat custom fields adapter contract', () => {
   });
 
   it('serializes card custom field item values by field type in Trello-compatible shape', () => {
-    const textItem = serializeCustomFieldItem({
-      id: 'item-text-1',
-      card_id: 'card-1',
-      custom_field_id: 'cf-text-1',
-      value_text: 'hello',
-    }, 'TEXT');
-    const numberItem = serializeCustomFieldItem({
-      id: 'item-number-1',
-      card_id: 'card-1',
-      custom_field_id: 'cf-number-1',
-      value_number: 12.5,
-    }, 'NUMBER');
-    const dateItem = serializeCustomFieldItem({
-      id: 'item-date-1',
-      card_id: 'card-1',
-      custom_field_id: 'cf-date-1',
-      value_date: 'not-a-date',
-    }, 'DATE');
-    const checkboxItem = serializeCustomFieldItem({
-      id: 'item-checkbox-1',
-      card_id: 'card-1',
-      custom_field_id: 'cf-checkbox-1',
-      value_checkbox: false,
-    }, 'CHECKBOX');
-    const listItem = serializeCustomFieldItem({
-      id: 'item-list-1',
-      card_id: 'card-1',
-      custom_field_id: 'cf-list-1',
-      value_option_id: 'opt-1',
-    }, 'DROPDOWN');
+    const textItem = serializeCustomFieldItem(
+      {
+        id: 'item-text-1',
+        card_id: 'card-1',
+        custom_field_id: 'cf-text-1',
+        value_text: 'hello',
+      },
+      'TEXT'
+    );
+    const numberItem = serializeCustomFieldItem(
+      {
+        id: 'item-number-1',
+        card_id: 'card-1',
+        custom_field_id: 'cf-number-1',
+        value_number: 12.5,
+      },
+      'NUMBER'
+    );
+    const dateItem = serializeCustomFieldItem(
+      {
+        id: 'item-date-1',
+        card_id: 'card-1',
+        custom_field_id: 'cf-date-1',
+        value_date: 'not-a-date',
+      },
+      'DATE'
+    );
+    const checkboxItem = serializeCustomFieldItem(
+      {
+        id: 'item-checkbox-1',
+        card_id: 'card-1',
+        custom_field_id: 'cf-checkbox-1',
+        value_checkbox: false,
+      },
+      'CHECKBOX'
+    );
+    const listItem = serializeCustomFieldItem(
+      {
+        id: 'item-list-1',
+        card_id: 'card-1',
+        custom_field_id: 'cf-list-1',
+        value_option_id: 'opt-1',
+      },
+      'DROPDOWN'
+    );
 
     expect(textItem.value).toEqual({ text: 'hello' });
     expect(numberItem.value).toEqual({ number: '12.5' });

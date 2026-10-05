@@ -31,7 +31,7 @@ export default function NicknameField({ value, onChange, error }: NicknameFieldP
           type="text"
           value={value}
           onChange={handleChange}
-          placeholder="your_nickname"
+          placeholder={translations['ProfilePage.nicknamePlaceholder']}
           maxLength={50}
           className="flex-1 bg-transparent text-sm text-base outline-none placeholder:text-muted"
           aria-label={translations['ProfilePage.nickname']}

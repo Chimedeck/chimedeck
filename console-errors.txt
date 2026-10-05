@@ -1,0 +1,13 @@
+Total messages: 12 (Errors: 6, Warnings: 3)
+Returning 10 messages for level "error"
+
+[ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:3000/:0
+[ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:3000/favicon.ico:0
+[ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:3000/api/v1/auth/login:0
+[ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:3000/api/v1/boards:0
+[ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5180/api/v1/boards:0
+[ERROR] WebSocket connection to 'ws://localhost:3000/api/v1/ws?token=eyJhbGciOiJSUzI1NiJ9.eyJlbWFpbCI6ImJvYXJkLWNoYXQtZGVuaWVkLTE3ODA0ODExMTgxMzJAZXhhbXBsZS5jb20iLCJzdWIiOiIwMTllOGNmMS1kMmE3LTc3OWEtYWQwMS1lMDJlNzYxNDJkNDUiLCJpYXQiOjE3ODA0ODI1NTYsImV4cCI6MTc4MDU2ODk1Nn0.EGm-WppFxiEfiQ2KdKvwET-qTD-PYNl_tunI-pEvo_7d3spXC3GKQ-qNSEFf_R70EIIa_Tq3y3fOOMvAzolWEKA1LXpeHLngj3KD-G75Jt_fXjGyx33jzc3jIs0jy6KMjAXjkQOhKm5S4uGZtZBV2pk4GKh2jfRbd1365euCuplYcRHq10EDoNWoMjn7AIXH5ZT1p9v9iY93eCWh-W4fU0h9oUKTfNAciJDCBpFInkYn5uRKg6PBMbVXOt3V1ycE4ui1axGuTjDU_b9gZHuF2K1zWe6BVKkYUpSNQQgoY2FSQiNQQ-9jhYYsBH2agbT_TlfoJhV2bbzN56ifXFIYRQ' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/src/extensions/Realtime/client/socket.ts:95
+[ERROR] WebSocket connection to 'ws://localhost:3000/api/v1/ws?token=eyJhbGciOiJSUzI1NiJ9.eyJlbWFpbCI6ImJvYXJkLWNoYXQtZGVuaWVkLTE3ODA0ODExMTgxMzJAZXhhbXBsZS5jb20iLCJzdWIiOiIwMTllOGNmMS1kMmE3LTc3OWEtYWQwMS1lMDJlNzYxNDJkNDUiLCJpYXQiOjE3ODA0ODI1NTYsImV4cCI6MTc4MDU2ODk1Nn0.EGm-WppFxiEfiQ2KdKvwET-qTD-PYNl_tunI-pEvo_7d3spXC3GKQ-qNSEFf_R70EIIa_Tq3y3fOOMvAzolWEKA1LXpeHLngj3KD-G75Jt_fXjGyx33jzc3jIs0jy6KMjAXjkQOhKm5S4uGZtZBV2pk4GKh2jfRbd1365euCuplYcRHq10EDoNWoMjn7AIXH5ZT1p9v9iY93eCWh-W4fU0h9oUKTfNAciJDCBpFInkYn5uRKg6PBMbVXOt3V1ycE4ui1axGuTjDU_b9gZHuF2K1zWe6BVKkYUpSNQQgoY2FSQiNQQ-9jhYYsBH2agbT_TlfoJhV2bbzN56ifXFIYRQ' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/src/extensions/Realtime/client/socket.ts:95
+[ERROR] Access to fetch at 'http://localhost:3000/api/v1/auth/login' from origin 'http://localhost:5180' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:5180/workspaces:0
+[ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:3000/api/v1/auth/login:0
+[ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5180/api/v1/auth/login:0

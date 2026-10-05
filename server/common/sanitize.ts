@@ -29,11 +29,28 @@ export function sanitizeText(input: string): string {
 export function sanitizeRichText(input: string): string {
   return sanitizeHtml(input, {
     allowedTags: [
-      'b', 'i', 'em', 'strong', 'u', 's', 'del',
-      'p', 'br', 'hr',
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'ul', 'ol', 'li',
-      'blockquote', 'pre', 'code',
+      'b',
+      'i',
+      'em',
+      'strong',
+      'u',
+      's',
+      'del',
+      'p',
+      'br',
+      'hr',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'ul',
+      'ol',
+      'li',
+      'blockquote',
+      'pre',
+      'code',
       'a',
     ],
     allowedAttributes: {
@@ -42,6 +59,8 @@ export function sanitizeRichText(input: string): string {
       pre: ['class'],
     },
     allowedSchemes: ['http', 'https', 'mailto'],
-    disallowedTagsMode: 'discard',
+    // [why] Preserve disallowed tags (e.g. <script>) as visible escaped text
+    // instead of silently dropping them, while still preventing execution.
+    disallowedTagsMode: 'escape',
   });
 }

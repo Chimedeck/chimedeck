@@ -18,49 +18,9 @@ import { publishCardActivityEvent } from '../../activity/events/publishCardActiv
 import { mapActivityToNotification } from '../../activity/mods/mapActivityToNotification';
 import { resolveCoverImageUrl } from '../../../common/cards/cover';
 
-interface CardContext { boardId: string; workspaceId: string; }
-
-interface CardRow extends Record<string, unknown> {
-  id: string;
-  list_id: string;
-  title: string;
-  position: string;
-  archived: boolean;
-  cover_attachment_id: string | null;
-}
-
-interface ListRow {
-  id: string;
-  board_id: string;
-}
-
-interface BoardRow {
-  id: string;
-  workspace_id: string;
-}
-
-interface ChecklistRow extends Record<string, unknown> {
-  id: string;
-  card_id: string;
-  title: string;
-}
-
-interface ChecklistItemRow extends Record<string, unknown> {
-  id: string;
-  card_id: string;
-  title: string;
-  position: string;
-  checked: boolean;
-  checklist_id: string | null;
-  assigned_member_id: string | null;
-  due_date: string | null;
-  linked_card_id: string | null;
-}
-
-interface UserRow {
-  id: string;
-  name: string | null;
-  email: string | null;
+interface CardContext {
+  boardId: string;
+  workspaceId: string;
 }
 
 interface ChecklistItemPatchBody {
@@ -73,17 +33,19 @@ interface ChecklistItemPatchBody {
 }
 
 async function resolveContextFromCard(cardId: string): Promise<CardContext | null> {
-  const card = await db<CardRow>('cards').where({ id: cardId }).first();
+  const card = await db('cards').where({ id: cardId }).first();
   if (!card) return null;
-  const list = await db<ListRow>('lists').where({ id: card.list_id }).first();
+  const list = await db('lists').where({ id: card.list_id }).first();
   if (!list) return null;
-  const board = await db<BoardRow>('boards').where({ id: list.board_id }).first();
+  const board = await db('boards').where({ id: list.board_id }).first();
   if (!board) return null;
   return { boardId: board.id, workspaceId: board.workspace_id };
 }
 
-async function resolveContextFromItem(itemId: string): Promise<{ context: CardContext | null; cardId: string | null }> {
-  const item = await db<ChecklistItemRow>('checklist_items').where({ id: itemId }).first();
+async function resolveContextFromItem(
+  itemId: string
+): Promise<{ context: CardContext | null; cardId: string | null }> {
+  const item = await db('checklist_items').where({ id: itemId }).first();
   if (!item) return { context: null, cardId: null };
   const context = await resolveContextFromCard(item.card_id);
   return { context, cardId: item.card_id };
@@ -93,11 +55,11 @@ export async function handleCreateChecklistItem(req: Request, cardId: string): P
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const card = await db<CardRow>('cards').where({ id: cardId }).first();
+  const card = await db('cards').where({ id: cardId }).first();
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -105,7 +67,7 @@ export async function handleCreateChecklistItem(req: Request, cardId: string): P
   if (!context) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card context not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -122,19 +84,19 @@ export async function handleCreateChecklistItem(req: Request, cardId: string): P
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
     return Response.json(
       { error: { code: 'bad-request', message: 'title is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   // Append to end of checklist
-  const lastItem = await db<ChecklistItemRow>('checklist_items')
+  const lastItem = await db('checklist_items')
     .where({ card_id: cardId })
     .orderBy('position', 'desc')
     .first();
@@ -142,14 +104,14 @@ export async function handleCreateChecklistItem(req: Request, cardId: string): P
   const position = between(lastItem ? lastItem.position : '', HIGH_SENTINEL);
 
   const id = randomUUID();
-  await db<ChecklistItemRow>('checklist_items').insert({
+  await db('checklist_items').insert({
     id,
     card_id: cardId,
     title: body.title.trim(),
     position,
   });
 
-  const item = await db<ChecklistItemRow>('checklist_items').where({ id }).first();
+  const item = await db('checklist_items').where({ id }).first();
   return Response.json({ data: item }, { status: 201 });
 }
 
@@ -157,11 +119,11 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const item = await db<ChecklistItemRow>('checklist_items').where({ id: itemId }).first();
+  const item = await db('checklist_items').where({ id: itemId }).first();
   if (!item) {
     return Response.json(
       { error: { code: 'checklist-item-not-found', message: 'Checklist item not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -169,7 +131,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
   if (!updateContext) {
     return Response.json(
       { error: { code: 'checklist-item-not-found', message: 'Checklist item context not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -186,7 +148,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -203,7 +165,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     if (typeof body.title !== 'string' || body.title.trim() === '') {
       return Response.json(
         { error: { code: 'bad-request', message: 'title must be a non-empty string' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.title = body.title.trim();
@@ -213,7 +175,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     if (typeof body.checked !== 'boolean') {
       return Response.json(
         { error: { code: 'bad-request', message: 'checked must be a boolean' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.checked = body.checked;
@@ -223,7 +185,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     if (typeof body.position !== 'string' || body.position.trim() === '') {
       return Response.json(
         { error: { code: 'bad-request', message: 'position must be a non-empty string' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.position = body.position;
@@ -233,26 +195,29 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     if (body.checklist_id !== null && typeof body.checklist_id !== 'string') {
       return Response.json(
         { error: { code: 'bad-request', message: 'checklist_id must be a string or null' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     if (typeof body.checklist_id === 'string') {
-      const targetChecklist = await db<ChecklistRow>('checklists')
-        .where({ id: body.checklist_id })
-        .first();
+      const targetChecklist = await db('checklists').where({ id: body.checklist_id }).first();
 
       if (!targetChecklist) {
         return Response.json(
-          { error: { code: 'bad-request', message: 'checklist_id must reference an existing checklist' } },
-          { status: 400 },
+          {
+            error: {
+              code: 'bad-request',
+              message: 'checklist_id must reference an existing checklist',
+            },
+          },
+          { status: 400 }
         );
       }
 
       if (targetChecklist.card_id !== item.card_id) {
         return Response.json(
           { error: { code: 'bad-request', message: 'checklist_id must belong to the same card' } },
-          { status: 400 },
+          { status: 400 }
         );
       }
     }
@@ -264,22 +229,27 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     if (body.assigned_member_id !== null && typeof body.assigned_member_id !== 'string') {
       return Response.json(
         { error: { code: 'bad-request', message: 'assigned_member_id must be a string or null' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     if (typeof body.assigned_member_id === 'string') {
-      const boardMember = await db<Record<string, unknown>>('board_members')
+      const boardMember = await db('board_members')
         .where({ board_id: updateContext.boardId, user_id: body.assigned_member_id })
         .first();
-      const boardGuest = await db<Record<string, unknown>>('board_guest_access')
+      const boardGuest = await db('board_guest_access')
         .where({ board_id: updateContext.boardId, user_id: body.assigned_member_id })
         .first();
 
       if (!boardMember && !boardGuest) {
         return Response.json(
-          { error: { code: 'bad-request', message: 'assigned_member_id must be a member or guest of this board' } },
-          { status: 400 },
+          {
+            error: {
+              code: 'bad-request',
+              message: 'assigned_member_id must be a member or guest of this board',
+            },
+          },
+          { status: 400 }
         );
       }
     }
@@ -291,15 +261,20 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     if (body.due_date !== null && typeof body.due_date !== 'string') {
       return Response.json(
         { error: { code: 'bad-request', message: 'due_date must be an ISO date string or null' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     if (typeof body.due_date === 'string') {
       const parsed = new Date(body.due_date);
       if (Number.isNaN(parsed.getTime())) {
         return Response.json(
-          { error: { code: 'bad-request', message: 'due_date must be a valid ISO date string or null' } },
-          { status: 400 },
+          {
+            error: {
+              code: 'bad-request',
+              message: 'due_date must be a valid ISO date string or null',
+            },
+          },
+          { status: 400 }
         );
       }
       updates.due_date = parsed.toISOString();
@@ -309,25 +284,24 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
   }
 
   if (Object.keys(updates).length > 0) {
-    await db<ChecklistItemRow>('checklist_items').where({ id: itemId }).update(updates);
+    await db('checklist_items').where({ id: itemId }).update(updates);
   }
 
-  const updated = await db<ChecklistItemRow>('checklist_items').where({ id: itemId }).first();
+  const updated = await db('checklist_items').where({ id: itemId }).first();
 
   const checkedChanged = updates.checked !== undefined && item.checked !== updated?.checked;
   const assigneeChanged =
-    updates.assigned_member_id !== undefined
-    && (item.assigned_member_id ?? null) !== (updated?.assigned_member_id ?? null);
+    updates.assigned_member_id !== undefined &&
+    (item.assigned_member_id ?? null) !== (updated?.assigned_member_id ?? null);
   const dueDateChanged =
-    updates.due_date !== undefined
-    && (item.due_date ?? null) !== (updated?.due_date ?? null);
+    updates.due_date !== undefined && (item.due_date ?? null) !== (updated?.due_date ?? null);
 
-  if ((checkedChanged || assigneeChanged || dueDateChanged) && updateCardId) {
-    const actorId = (req as AuthenticatedRequest & { currentUser: { id: string } }).currentUser.id;
+  if ((checkedChanged || assigneeChanged || dueDateChanged) && updateCardId && updateContext) {
+    const actorId = (req as AuthenticatedRequest).currentUser!.id;
     const [card, checklist] = await Promise.all([
-      db<CardRow>('cards').where({ id: updateCardId }).select('title').first(),
+      db('cards').where({ id: updateCardId }).select('title').first(),
       updated?.checklist_id
-        ? db<ChecklistRow>('checklists').where({ id: updated.checklist_id }).select('title').first()
+        ? db('checklists').where({ id: updated.checklist_id }).select('title').first()
         : Promise.resolve(null),
     ]);
 
@@ -355,7 +329,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     if (checkedChanged) {
       await emitActivity(
         updated?.checked ? 'checklist_item_checked' : 'checklist_item_unchecked',
-        basePayload,
+        basePayload
       );
     }
 
@@ -364,7 +338,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
       const nextAssigneeId = updated?.assigned_member_id ?? null;
       let assigneeName = '';
       if (nextAssigneeId) {
-        const assignee = await db<UserRow>('users')
+        const assignee = await db('users')
           .where({ id: nextAssigneeId })
           .select('name', 'email')
           .first();
@@ -389,16 +363,13 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
         },
       });
 
-      await emitActivity(
-        assignmentEventType,
-        {
-          ...basePayload,
-          checklistItemId: itemId,
-          previousUserId: previousAssigneeId,
-          userId: nextAssigneeId,
-          assigneeName,
-        },
-      );
+      await emitActivity(assignmentEventType, {
+        ...basePayload,
+        checklistItemId: itemId,
+        previousUserId: previousAssigneeId,
+        userId: nextAssigneeId,
+        assigneeName,
+      });
     }
 
     if (dueDateChanged) {
@@ -438,11 +409,11 @@ export async function handleDeleteChecklistItem(req: Request, itemId: string): P
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const item = await db<ChecklistItemRow>('checklist_items').where({ id: itemId }).first();
+  const item = await db('checklist_items').where({ id: itemId }).first();
   if (!item) {
     return Response.json(
       { error: { code: 'checklist-item-not-found', message: 'Checklist item not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -450,7 +421,7 @@ export async function handleDeleteChecklistItem(req: Request, itemId: string): P
   if (!deleteContext) {
     return Response.json(
       { error: { code: 'checklist-item-not-found', message: 'Checklist item context not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -461,20 +432,23 @@ export async function handleDeleteChecklistItem(req: Request, itemId: string): P
   const roleError = await requireMemberOrBoardGuestMember(scopedReq, deleteContext.boardId);
   if (roleError) return roleError;
 
-  await db<ChecklistItemRow>('checklist_items').where({ id: itemId }).delete();
+  await db('checklist_items').where({ id: itemId }).delete();
   return new Response(null, { status: 204 });
 }
 
 // POST /api/v1/checklist-items/:id/convert — convert checklist item into a card
-export async function handleConvertChecklistItemToCard(req: Request, itemId: string): Promise<Response> {
+export async function handleConvertChecklistItemToCard(
+  req: Request,
+  itemId: string
+): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const item = await db<ChecklistItemRow>('checklist_items').where({ id: itemId }).first();
+  const item = await db('checklist_items').where({ id: itemId }).first();
   if (!item) {
     return Response.json(
       { error: { code: 'checklist-item-not-found', message: 'Checklist item not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -482,7 +456,7 @@ export async function handleConvertChecklistItemToCard(req: Request, itemId: str
   if (!context) {
     return Response.json(
       { error: { code: 'checklist-item-not-found', message: 'Checklist item context not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -494,30 +468,33 @@ export async function handleConvertChecklistItemToCard(req: Request, itemId: str
   if (roleError) return roleError;
 
   if (item.linked_card_id) {
-    const existingCard = await db<CardRow>('cards').where({ id: item.linked_card_id }).first();
+    const existingCard = await db('cards').where({ id: item.linked_card_id }).first();
     if (existingCard) {
       const existingWithCover = await resolveCoverImageUrl(
-        existingCard as { id: string; cover_attachment_id?: string | null },
+        existingCard as { id: string; cover_attachment_id?: string | null }
       );
       return Response.json(
         {
-          error: { code: 'checklist-item-already-converted', message: 'Checklist item has already been converted' },
+          error: {
+            code: 'checklist-item-already-converted',
+            message: 'Checklist item has already been converted',
+          },
           data: { item, card: existingWithCover },
         },
-        { status: 409 },
+        { status: 409 }
       );
     }
   }
 
-  const parentCard = await db<CardRow>('cards').where({ id: item.card_id }).first();
+  const parentCard = await db('cards').where({ id: item.card_id }).first();
   if (!parentCard) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Parent card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
-  const lastCard = await db<CardRow>('cards')
+  const lastCard = await db('cards')
     .where({ list_id: parentCard.list_id, archived: false })
     .orderBy('position', 'desc')
     .first();
@@ -525,7 +502,7 @@ export async function handleConvertChecklistItemToCard(req: Request, itemId: str
 
   const newCardId = randomUUID();
   const shortId = await generateUniqueShortId('cards');
-  await db<CardRow>('cards').insert({
+  await db('cards').insert({
     id: newCardId,
     short_id: shortId,
     list_id: parentCard.list_id,
@@ -535,11 +512,11 @@ export async function handleConvertChecklistItemToCard(req: Request, itemId: str
     archived: false,
   });
 
-  await db<ChecklistItemRow>('checklist_items').where({ id: itemId }).delete();
+  await db('checklist_items').where({ id: itemId }).delete();
 
-  const createdCard = await db<CardRow>('cards').where({ id: newCardId }).first();
+  const createdCard = await db('cards').where({ id: newCardId }).first();
   const cardWithCover = await resolveCoverImageUrl(
-    createdCard as { id: string; cover_attachment_id?: string | null },
+    createdCard as { id: string; cover_attachment_id?: string | null }
   );
 
   const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
@@ -564,6 +541,6 @@ export async function handleConvertChecklistItemToCard(req: Request, itemId: str
         removedChecklistId: item.checklist_id,
       },
     },
-    { status: 201 },
+    { status: 201 }
   );
 }

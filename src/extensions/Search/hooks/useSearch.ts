@@ -51,7 +51,7 @@ export function useSearch({ workspaceId, token, type }: UseSearchOptions): UseSe
         setLoading(false);
       }
     },
-    [workspaceId, token, type],
+    [workspaceId, token, type]
   );
 
   // Re-run search when query or type changes
@@ -59,7 +59,9 @@ export function useSearch({ workspaceId, token, type }: UseSearchOptions): UseSe
     const timer = setTimeout(() => {
       doSearch(query).catch(() => {});
     }, DEBOUNCE_MS);
-    return () => { clearTimeout(timer); };
+    return () => {
+      clearTimeout(timer);
+    };
   }, [query, type, doSearch]);
 
   return { query, setQuery, results, loading, error };

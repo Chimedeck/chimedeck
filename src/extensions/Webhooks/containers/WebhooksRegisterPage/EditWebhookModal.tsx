@@ -129,7 +129,9 @@ export default function EditWebhookModal({ webhook, onClose, onUpdated }: Props)
       role="dialog"
       aria-modal="true"
       aria-labelledby="edit-webhook-title"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="relative w-full max-w-lg rounded-lg bg-bg-surface shadow-xl mx-4">
         {/* Header */}
@@ -138,7 +140,7 @@ export default function EditWebhookModal({ webhook, onClose, onUpdated }: Props)
             {translations['EditWebhookModal.title']}
           </h3>
           <IconButton
-            aria-label="Close modal"
+            aria-label={translations['EditWebhookModal.closeAria']}
             icon={<XMarkIcon className="h-4 w-4" />}
             variant="ghost"
             onClick={onClose}
@@ -146,15 +148,17 @@ export default function EditWebhookModal({ webhook, onClose, onUpdated }: Props)
         </div>
 
         {/* Body */}
-        <form onSubmit={(e) => { void handleSubmit(e); }}>
+        <form onSubmit={handleSubmit}>
           <div className="space-y-5 px-6 py-5">
             <Input
               label={translations['RegisterWebhookModal.labelField']}
               value={label}
-              onChange={(e) => { setLabel(e.target.value); }}
+              onChange={(e) => {
+                setLabel(e.target.value);
+              }}
               maxLength={100}
               required
-              placeholder="e.g. My production server"
+              placeholder={translations['EditWebhookModal.labelPlaceholder']}
               data-testid="webhook-label-input"
             />
 
@@ -167,7 +171,7 @@ export default function EditWebhookModal({ webhook, onClose, onUpdated }: Props)
               }}
               error={urlError}
               required
-              placeholder="https://example.com/webhook"
+              placeholder={translations['EditWebhookModal.urlPlaceholder']}
               type="url"
               data-testid="webhook-url-input"
             />
@@ -178,7 +182,9 @@ export default function EditWebhookModal({ webhook, onClose, onUpdated }: Props)
                 type="button"
                 role="switch"
                 aria-checked={isActive}
-                onClick={() => { setIsActive((prev) => !prev); }}
+                onClick={() => {
+                  setIsActive((prev) => !prev);
+                }}
                 className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
                   isActive ? 'bg-primary' : 'bg-border'
                 }`}
@@ -218,22 +224,18 @@ export default function EditWebhookModal({ webhook, onClose, onUpdated }: Props)
                         <span className="text-xs font-semibold uppercase tracking-wide text-subtle">
                           {group.label}
                         </span>
-                        <button
-                          type="button"
-                          className="text-xs text-primary hover:underline"
+                        <Button
+                          variant="link"
+                          size="sm"
                           onClick={() => {
-                            if (allSelected) {
-                              clearAllInGroup(available);
-                            } else {
-                              selectAllInGroup(available);
-                            }
+                            allSelected ? clearAllInGroup(available) : selectAllInGroup(available);
                           }}
                           data-testid={`group-toggle-${group.label.replace(/\s+/g, '-').toLowerCase()}`}
                         >
                           {allSelected
                             ? translations['RegisterWebhookModal.clearAll']
                             : translations['RegisterWebhookModal.selectAll']}
-                        </button>
+                        </Button>
                       </div>
                       <div className="space-y-1">
                         {available.map((event) => (
@@ -244,7 +246,9 @@ export default function EditWebhookModal({ webhook, onClose, onUpdated }: Props)
                             <input
                               type="checkbox"
                               checked={selectedEvents.has(event)}
-                              onChange={() => { toggleEvent(event); }}
+                              onChange={() => {
+                                toggleEvent(event);
+                              }}
                               className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary"
                               data-testid={`event-checkbox-${event}`}
                             />

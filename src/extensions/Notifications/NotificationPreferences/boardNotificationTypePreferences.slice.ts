@@ -23,7 +23,8 @@ export const boardNotificationTypePreferencesApi = createApi({
     baseUrl: '/api/v1',
     // [why] Attach Bearer token from Redux auth state so the API request is authenticated.
     prepareHeaders(headers, { getState }) {
-      const token = (getState() as { auth: { accessToken: string | null } }).auth?.accessToken ?? null;
+      const token =
+        (getState() as { auth: { accessToken: string | null } }).auth?.accessToken ?? null;
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }

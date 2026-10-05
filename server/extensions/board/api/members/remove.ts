@@ -19,7 +19,7 @@ type BoardMemberRow = {
 export async function handleRemoveBoardMember(
   req: Request,
   boardId: string,
-  userId: string,
+  userId: string
 ): Promise<Response> {
   const scopedReq = req as BoardVisibilityScopedRequest;
 
@@ -31,8 +31,11 @@ export async function handleRemoveBoardMember(
     .first();
   if (!existing) {
     return Response.json(
-      { name: 'board-member-not-found', data: { message: 'This user is not a member of the board' } },
-      { status: 404 },
+      {
+        name: 'board-member-not-found',
+        data: { message: 'This user is not a member of the board' },
+      },
+      { status: 404 }
     );
   }
 
@@ -46,8 +49,13 @@ export async function handleRemoveBoardMember(
     const count = Number((adminCount as { count: string | number } | undefined)?.count ?? 0);
     if (count <= 1) {
       return Response.json(
-        { name: 'last-board-admin', data: { message: 'Cannot remove the last board admin. Promote another member to ADMIN first.' } },
-        { status: 409 },
+        {
+          name: 'last-board-admin',
+          data: {
+            message: 'Cannot remove the last board admin. Promote another member to ADMIN first.',
+          },
+        },
+        { status: 409 }
       );
     }
   }

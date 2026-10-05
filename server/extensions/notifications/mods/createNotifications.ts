@@ -14,43 +14,31 @@ import { dispatchNotificationEmail } from './emailDispatch';
 import { env } from '../../../config/env';
 import { getActiveWebhooksForEvent } from '../../webhooks/mods/registry';
 import { dispatchWebhook } from '../../webhooks/mods/dispatch';
-import { randomUUID } from 'node:crypto';
-import { buildMentionWebhookPayload, type MentionWebhookPayload } from './mentionWebhookContext';
 import type { Knex } from 'knex';
 
-// [why] narrow shape of the `notifications` row actually consumed here (db/migrations/0017_notifications.ts),
-// avoiding an implicit `any` from the untyped Knex insert result.
-interface NotificationRow {
-  id: string;
-  user_id: string;
-  type: string;
-  source_type: string;
-  source_id: string;
-  card_id: string | null;
-  board_id: string | null;
-  actor_id: string;
-  read: boolean;
-  created_at: string;
-}
-
-// [why] narrow shape of the `users` row actually selected here (db/migrations/0002_auth.ts,
-// 0015_user_profile.ts) — id/nickname/name/avatar_url are the only fields projected.
-interface ActorRow {
-  id: string;
-  nickname: string | null;
-  name: string | null;
-  avatar_url: string | null;
-}
-
 // [why] extracted to keep createNotificationsForMentions within the cognitive complexity limit.
-async function fireMentionWebhooks({ payload }: { payload: MentionWebhookPayload }): Promise<void> {
+async function fireMentionWebhooks({
+  boardId,
+  cardId,
+  sourceType,
+  sourceId,
+  actorId,
+  recipients,
+}: {
+  boardId: string;
+  cardId: string | null;
+  sourceType: string;
+  sourceId: string;
+  actorId: string;
+  recipients: string[];
+}): Promise<void> {
   const webhooks = await getActiveWebhooksForEvent({ knex: db, eventType: 'mention' });
   for (const wh of webhooks) {
-    void dispatchWebhook({
+    dispatchWebhook({
       endpoint: wh.endpoint_url,
       signingSecret: wh.signing_secret,
       eventType: 'mention',
-      payload,
+      payload: { boardId, cardId, sourceType, sourceId, actorId, mentionedUserIds: recipients },
       webhookId: wh.id,
       knex: db,
     });
@@ -120,8 +108,8 @@ async function notifyMentionedUser({
   }
   if (!inAppEnabled) return;
 
-  const [inserted] = await trx<NotificationRow>('notifications')
-    .insert({
+  const [inserted] = await trx('notifications').insert(
+    {
       user_id: userId,
       type: 'mention',
       source_type: sourceType,
@@ -131,8 +119,9 @@ async function notifyMentionedUser({
       actor_id: actorId,
       read: false,
       created_at: now,
-    })
-    .returning<NotificationRow[]>('*');
+    },
+    ['*']
+  );
 
   await publishToUser(userId, {
     type: 'notification_created',
@@ -184,8 +173,8 @@ export async function createNotificationsForMentions({
   // Fetch actor details once for the WS payload (read-only, outside transaction is fine)
   const actor = await db('users')
     .where({ id: actorId })
-    .select('id', 'nickname', db.raw("COALESCE(name, email) as name"), 'avatar_url')
-    .first<ActorRow | undefined>();
+    .select('id', 'nickname', db.raw('COALESCE(name, email) as name'), 'avatar_url')
+    .first();
 
   const actorPayload = actor
     ? {
@@ -216,29 +205,10 @@ export async function createNotificationsForMentions({
   // Fire-and-forget mention webhook — dispatched once per mention event (not per recipient).
   // [why] webhook subscribers receive the full mention context rather than a per-user notification.
   if (env.WEBHOOKS_ENABLED) {
-    // [why] enrich the mention webhook with stable, backward-compatible context
-    //       built from data already fetched above — no extra DB round-trips.
-    const payload = buildMentionWebhookPayload({
-      boardId,
-      cardId,
-      sourceType,
-      sourceId,
-      actorId,
-      recipients,
-      cardTitle,
-      boardName,
-      sourceText,
-      actor: actorPayload as Record<string, unknown>,
-      // [why] Mint ONE durable id per logical mention emission — NOT per
-      // recipient, and deliberately NOT sourceId (card-description mentions are
-      // 1:N across edits and would false-collapse legitimate repeat mentions
-      // at the receiver's semantic dedupe).
-      eventId: randomUUID(),
-    });
-    fireMentionWebhooks({
-      payload,
-    }).catch(() => {
-      // Webhook errors must never propagate to the caller.
-    });
+    fireMentionWebhooks({ boardId, cardId, sourceType, sourceId, actorId, recipients }).catch(
+      () => {
+        // Webhook errors must never propagate to the caller.
+      }
+    );
   }
 }

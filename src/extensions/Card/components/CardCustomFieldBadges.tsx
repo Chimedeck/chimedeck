@@ -27,7 +27,7 @@ function hasNonNullValue(v: CustomFieldValue): boolean {
 
 function resolveDisplayValue(
   field: CustomField,
-  v: CustomFieldValue,
+  v: CustomFieldValue
 ): string | number | boolean | null {
   switch (field.field_type) {
     case 'TEXT':
@@ -54,9 +54,7 @@ const CardCustomFieldBadges = ({ boardId, values: valuesFromProps }: Props) => {
   const values = valuesFromProps ?? [];
 
   const badgeFields = fields.filter(
-    (f) =>
-      f.show_on_card &&
-      values.some((v) => v.custom_field_id === f.id && hasNonNullValue(v)),
+    (f) => f.show_on_card && values.some((v) => v.custom_field_id === f.id && hasNonNullValue(v))
   );
 
   if (badgeFields.length === 0) return null;
@@ -69,7 +67,7 @@ const CardCustomFieldBadges = ({ boardId, values: valuesFromProps }: Props) => {
         const displayValue = resolveDisplayValue(field, val);
         const dropdownOption =
           field.field_type === 'DROPDOWN' && field.options
-            ? field.options.find((o) => o.id === val.value_option_id) ?? null
+            ? (field.options.find((o) => o.id === val.value_option_id) ?? null)
             : null;
         return (
           <CustomFieldBadge

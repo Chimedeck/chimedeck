@@ -136,9 +136,10 @@ function resolveUserTarget({
 }
 
 const COPY_BUILDERS: Record<ActivityAction, (ctx: CopyContext) => string> = {
-  card_created: ({ actorName, payload, card }) => (payload.listName
-    ? `${actorName} created ${card} in ${payload.listName}`
-    : `${actorName} created ${card}`),
+  card_created: ({ actorName, payload, card }) =>
+    payload.listName
+      ? `${actorName} created ${card} in ${payload.listName}`
+      : `${actorName} created ${card}`,
   card_moved: ({ actorName, payload, card }) => {
     if (payload.fromListName && payload.toListName) {
       return `${actorName} moved ${card} from ${payload.fromListName} to ${payload.toListName}`;
@@ -147,30 +148,37 @@ const COPY_BUILDERS: Record<ActivityAction, (ctx: CopyContext) => string> = {
       ? `${actorName} moved ${card} to ${payload.toListName}`
       : `${actorName} moved ${card}`;
   },
-  card_commented: ({ actorName, payload, card }) => (payload.commentPreview
-    ? `${actorName} commented on ${card}: "${payload.commentPreview}"`
-    : `${actorName} commented on ${card}`),
-  card_member_assigned: ({ actorName, card, isTargetCurrentUser, targetUserName }) => (isTargetCurrentUser
-    ? `${actorName} assigned you to ${card}`
-    : `${actorName} assigned ${targetUserName} to ${card}`),
-  card_member_unassigned: ({ actorName, card, isTargetCurrentUser, targetUserName }) => (isTargetCurrentUser
-    ? `${actorName} removed you from ${card}`
-    : `${actorName} removed ${targetUserName} from ${card}`),
-  checklist_item_assigned: ({ actorName, card, isTargetCurrentUser, targetUserName }) => (isTargetCurrentUser
-    ? `${actorName} assigned you to a checklist item in ${card}`
-    : `${actorName} assigned ${targetUserName} to a checklist item in ${card}`),
-  checklist_item_unassigned: ({ actorName, card, isTargetCurrentUser, targetUserName }) => (isTargetCurrentUser
-    ? `${actorName} removed you from a checklist item in ${card}`
-    : `${actorName} removed ${targetUserName} from a checklist item in ${card}`),
-  checklist_item_due_date_updated: ({ actorName, card }) => `${actorName} updated a checklist due date in ${card}`,
+  card_commented: ({ actorName, payload, card }) =>
+    payload.commentPreview
+      ? `${actorName} commented on ${card}: "${payload.commentPreview}"`
+      : `${actorName} commented on ${card}`,
+  card_member_assigned: ({ actorName, card, isTargetCurrentUser, targetUserName }) =>
+    isTargetCurrentUser
+      ? `${actorName} assigned you to ${card}`
+      : `${actorName} assigned ${targetUserName} to ${card}`,
+  card_member_unassigned: ({ actorName, card, isTargetCurrentUser, targetUserName }) =>
+    isTargetCurrentUser
+      ? `${actorName} removed you from ${card}`
+      : `${actorName} removed ${targetUserName} from ${card}`,
+  checklist_item_assigned: ({ actorName, card, isTargetCurrentUser, targetUserName }) =>
+    isTargetCurrentUser
+      ? `${actorName} assigned you to a checklist item in ${card}`
+      : `${actorName} assigned ${targetUserName} to a checklist item in ${card}`,
+  checklist_item_unassigned: ({ actorName, card, isTargetCurrentUser, targetUserName }) =>
+    isTargetCurrentUser
+      ? `${actorName} removed you from a checklist item in ${card}`
+      : `${actorName} removed ${targetUserName} from a checklist item in ${card}`,
+  checklist_item_due_date_updated: ({ actorName, card }) =>
+    `${actorName} updated a checklist due date in ${card}`,
   card_updated: ({ actorName, payload, card }) => {
     const fields = payload.changedFields?.join(', ');
     return fields ? `${actorName} updated ${card} (${fields})` : `${actorName} updated ${card}`;
   },
   card_deleted: ({ actorName, card }) => `${actorName} deleted ${card}`,
-  card_archived: ({ actorName, payload, card }) => (payload.archived === false
-    ? `${actorName} unarchived ${card}`
-    : `${actorName} archived ${card}`),
+  card_archived: ({ actorName, payload, card }) =>
+    payload.archived === false
+      ? `${actorName} unarchived ${card}`
+      : `${actorName} archived ${card}`,
 };
 
 function buildCopy({

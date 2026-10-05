@@ -19,10 +19,12 @@ out/
 # Environment variables
 .env
 .env.local
+.env.commercial
 .env.*.local
 .env.development
 .env.test
 .env.production
+.env.agent
 
 # Logs
 logs/
@@ -71,3 +73,5 @@ test-results/
 test-screenshots-tmp/
 playwright-report/
 .playwright-mcp/
+
+/specs/tests/TEST_CREDENTIALS.md

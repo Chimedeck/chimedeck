@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
-import type { db as dbFunction } from '../../../../common/db';
 
 type Row = Record<string, unknown>;
 type DataStore = {
@@ -15,10 +14,15 @@ class QueryBuilder {
   private orderedBy: string | null = null;
   private orderDirection: 'asc' | 'desc' = 'asc';
 
-  constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
+  constructor(
+    private readonly store: DataStore,
+    private readonly tableName: keyof DataStore
+  ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -45,29 +49,29 @@ class QueryBuilder {
       this.store[this.tableName].push(row);
     }
     return {
-      returning: () => Promise.resolve(inserted.map((row) => ({ ...row }))),
+      returning: async () => inserted.map((row) => ({ ...row })),
     };
   }
 
-  update(patch: Row, returning?: string[]): Promise<Row[] | number> {
+  async update(patch: Row, returning?: string[]): Promise<Row[] | number> {
     const rows = this.executeSync(false);
     for (const row of rows) Object.assign(row, patch);
     if (returning && returning.length > 0) {
-      return Promise.resolve(rows.map((row) => ({ ...row })));
+      return rows.map((row) => ({ ...row }));
     }
-    return Promise.resolve(rows.length);
+    return rows.length;
   }
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     return this.execute().then(onfulfilled, onrejected);
   }
 
   private executeSync(clone = true): Row[] {
     let rows = this.store[this.tableName].filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+      this.filters.every((predicate) => predicate(row))
     );
 
     if (this.orderedBy) {
@@ -81,11 +85,10 @@ class QueryBuilder {
       });
     }
 
-    const selectedColumns = this.selectedColumns;
-    if (selectedColumns) {
+    if (this.selectedColumns) {
       rows = rows.map((row) => {
         const next: Row = {};
-        for (const key of selectedColumns) next[key] = row[key];
+        for (const key of this.selectedColumns!) next[key] = row[key];
         return next;
       });
     }
@@ -93,8 +96,8 @@ class QueryBuilder {
     return clone ? rows.map((row) => ({ ...row })) : rows;
   }
 
-  private execute(): Promise<Row[]> {
-    return Promise.resolve(this.executeSync());
+  private async execute(): Promise<Row[]> {
+    return this.executeSync();
   }
 }
 
@@ -113,50 +116,50 @@ function resetStore(): DataStore {
   };
 }
 
-void mock.module('../../../../config/featureFlags', () => ({
+mock.module('../../../../config/featureFlags', () => ({
   featureFlags: {
     STATE_TRANSITIONS_ENABLED: true,
   },
 }));
 
-void mock.module('../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof dbFunction,
+mock.module('../../../../common/db', () => ({
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
 }));
 
-void mock.module('../../../auth/middlewares/authentication', () => ({
-  authenticate: (req: Request & { currentUser?: { id: string; email: string } }) => {
+mock.module('../../../auth/middlewares/authentication', () => ({
+  authenticate: async (req: Request & { currentUser?: { id: string; email: string } }) => {
     req.currentUser = { id: 'user-admin', email: 'admin@example.com' };
-    return Promise.resolve(null);
+    return null;
   },
 }));
 
-void mock.module('../../../board/middlewares/requireBoardWritable', () => ({
-  requireBoardWritable: (
+mock.module('../../../board/middlewares/requireBoardWritable', () => ({
+  requireBoardWritable: async (
     req: Request & { board?: { id: string; workspace_id: string } },
-    boardId: string,
+    boardId: string
   ) => {
     req.board = { id: boardId, workspace_id: 'ws-1' };
-    return Promise.resolve(null);
+    return null;
   },
 }));
 
-void mock.module('../../../../middlewares/permissionManager', () => ({
-  requireWorkspaceMembership: () => Promise.resolve(null),
+mock.module('../../../../middlewares/permissionManager', () => ({
+  requireWorkspaceMembership: async () => null,
   requireRole: () => null,
 }));
 
-void mock.module('../../../../common/uuid', () => ({
+mock.module('../../../../common/uuid', () => ({
   generateId: () => 'state-transition-generated',
 }));
 
-void mock.module('../../common/ws', () => ({
-  broadcastStateTransitionUpdated: (input: {
+mock.module('../../common/ws', () => ({
+  broadcastStateTransitionUpdated: async (input: {
     boardId: string;
     actorId: string;
     enabled: boolean;
   }) => {
     broadcasts.push({ boardId: input.boardId, actorId: input.actorId, enabled: input.enabled });
-    return Promise.resolve();
   },
 }));
 
@@ -177,8 +180,6 @@ describe('PUT /api/v1/boards/:boardId/state-transitions ws broadcast', () => {
 
     const res = await handlePutStateTransitions(req, 'board-1');
     expect(res.status).toBe(200);
-    expect(broadcasts).toEqual([
-      { boardId: 'board-1', actorId: 'user-admin', enabled: true },
-    ]);
+    expect(broadcasts).toEqual([{ boardId: 'board-1', actorId: 'user-admin', enabled: true }]);
   });
 });

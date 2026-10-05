@@ -9,7 +9,7 @@ export async function handleConfirmEmailChange(req: Request): Promise<Response> 
   if (!token) {
     return Response.json(
       { error: { code: 'invalid-or-expired-token', message: 'Token is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -18,7 +18,7 @@ export async function handleConfirmEmailChange(req: Request): Promise<Response> 
   if (!user) {
     return Response.json(
       { error: { code: 'invalid-or-expired-token', message: 'Token is invalid or has expired' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -26,7 +26,7 @@ export async function handleConfirmEmailChange(req: Request): Promise<Response> 
   if (!user.email_change_token_expires_at || new Date(user.email_change_token_expires_at) < now) {
     return Response.json(
       { error: { code: 'invalid-or-expired-token', message: 'Token is invalid or has expired' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -34,7 +34,7 @@ export async function handleConfirmEmailChange(req: Request): Promise<Response> 
   if (!newEmail) {
     return Response.json(
       { error: { code: 'invalid-or-expired-token', message: 'No pending email change found' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -43,7 +43,7 @@ export async function handleConfirmEmailChange(req: Request): Promise<Response> 
   if (conflict) {
     return Response.json(
       { error: { code: 'email-already-in-use', message: 'That email address is already in use' } },
-      { status: 409 },
+      { status: 409 }
     );
   }
 

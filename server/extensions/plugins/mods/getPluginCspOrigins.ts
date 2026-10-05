@@ -6,19 +6,21 @@
 // connect-src so scripts inside the plugin iframe can reach their declared APIs.
 import { db } from '../../../common/db';
 
-// Migrations 0021/0023: nullable connector text, required active flag,
-// and unconstrained nullable JSONB (not necessarily an array of strings).
-interface PluginCspRow {
-  connector_url: string | null;
-  is_active: boolean;
-  whitelisted_domains: unknown;
-}
-
 export interface PluginCspOrigins {
   /** Origins to add to frame-src (connector_url of each active plugin). */
   frameSrc: string[];
   /** Origins to add to connect-src (whitelisted_domains across all active plugins). */
   connectSrc: string[];
+  /**
+   * Origins to add to frame-ancestors (connector_url of each active plugin
+   * plus workspace-level plugin_domains).
+   * [why] Plugin connector URLs and workspace plugin domains must appear in
+   * frame-ancestors so the browser permits plugin iframes to embed our board
+   * pages. Without this, the browser blocks the embed with "Unsafe attempt to
+   * load URL from frame with URL chrome-error://chromewebdata/."
+   */
+  frameAncestors: string[];
+  imageSrc: string[]; // [future] Origins to add to img-src (e.g. S3 bucket URL, CDN)
 }
 
 function toOrigin(url: string): string | null {
@@ -30,40 +32,89 @@ function toOrigin(url: string): string | null {
   }
 }
 
-/**
- * Queries the database for all active plugins and returns the set of origins
- * that must be added to frame-src and connect-src in the CSP.
- *
- * Called on every HTML-serving request; results should be cached by the caller
- * if performance becomes a concern.
- */
-export async function getPluginCspOrigins(): Promise<PluginCspOrigins> {
-  const plugins = await db<PluginCspRow>('plugins')
-    .where({ is_active: true })
-    .select('connector_url', 'whitelisted_domains');
+/** Normalises a plugin domain entry (hostname or full origin) to an origin string. */
+function normaliseDomain(d: string): string | null {
+  return toOrigin(d.startsWith('http') ? d : `https://${d}`);
+}
 
-  const frameSrcSet = new Set<string>();
-  const connectSrcSet = new Set<string>();
+/** Collects frame-src, connect-src, and image-src origins from plugin rows. */
+function collectPluginOrigins(plugins: Record<string, unknown>[]): {
+  frameSrc: Set<string>;
+  connectSrc: Set<string>;
+  imageSrc: Set<string>;
+} {
+  const frameSrc = new Set<string>();
+  const connectSrc = new Set<string>();
+  const imageSrc = new Set<string>();
 
-  for (const plugin of plugins) {
-    // connector_url → frame-src so the iframe can be loaded.
-    if (plugin.connector_url) {
-      const origin = toOrigin(plugin.connector_url);
-      if (origin) frameSrcSet.add(origin);
-    }
+  for (const p of plugins) {
+    addOrigin(frameSrc, p.connector_url);
+    addOrigins(connectSrc, p.whitelisted_domains);
+    addOrigin(imageSrc, p.connector_url);
+  }
 
-    // whitelisted_domains → connect-src so the plugin can call its declared APIs.
-    const domains: unknown = plugin.whitelisted_domains;
+  return { frameSrc, connectSrc, imageSrc };
+}
+
+/** Collects frame-ancestors origins from workspace-level plugin_domains. */
+function collectWorkspaceOrigins(rows: Record<string, unknown>[]): Set<string> {
+  const origins = new Set<string>();
+
+  for (const row of rows) {
+    const domains: unknown = row.plugin_domains;
     if (Array.isArray(domains)) {
       for (const d of domains as string[]) {
-        const origin = toOrigin(d);
-        if (origin) connectSrcSet.add(origin);
+        const origin = normaliseDomain(d);
+        if (origin) origins.add(origin);
       }
     }
   }
 
+  return origins;
+}
+
+/** Adds a single origin to a set if the value is a valid URL string. */
+function addOrigin(set: Set<string>, value: unknown): void {
+  if (typeof value !== 'string') return;
+  // [why] connector_url may be stored without a protocol (e.g. "plugin.com/connector.html").
+  // Prepend https:// so new URL() can parse it — same approach as normaliseDomain.
+  const normalised = value.startsWith('http') ? value : `https://${value}`;
+  const origin = toOrigin(normalised);
+  if (origin) set.add(origin);
+}
+
+/** Adds origins from an array-like unknown value to a set using normaliseDomain. */
+function addOrigins(set: Set<string>, value: unknown): void {
+  if (!Array.isArray(value)) return;
+  for (const d of value as string[]) {
+    const origin = normaliseDomain(d);
+    if (origin) set.add(origin);
+  }
+}
+
+/**
+ * Queries the database for all active plugins and returns the set of origins
+ * that must be added to frame-src, connect-src, and frame-ancestors in the CSP.
+ */
+export async function getPluginCspOrigins(): Promise<PluginCspOrigins> {
+  const plugins = await db('plugins')
+    .where({ is_active: true })
+    .select('connector_url', 'whitelisted_domains');
+
+  const workspaceDomains = await db('workspaces')
+    .whereNotNull('plugin_domains')
+    .select('plugin_domains');
+
+  const pluginOrigins = collectPluginOrigins(plugins as Record<string, unknown>[]);
+  const workspaceOrigins = collectWorkspaceOrigins(workspaceDomains as Record<string, unknown>[]);
+
+  // frame-ancestors = plugin connector_urls + workspace-level plugin domains
+  const frameAncestors = new Set([...pluginOrigins.frameSrc, ...workspaceOrigins]);
+
   return {
-    frameSrc: [...frameSrcSet],
-    connectSrc: [...connectSrcSet],
+    frameSrc: [...pluginOrigins.frameSrc],
+    connectSrc: [...pluginOrigins.connectSrc],
+    frameAncestors: [...frameAncestors],
+    imageSrc: [...pluginOrigins.imageSrc], // [future] populate from plugin data as needed
   };
 }

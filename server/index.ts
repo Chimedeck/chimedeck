@@ -5,7 +5,10 @@ import { appConfig } from './config/app';
 import { flags } from './mods/flags';
 import { logRequest } from './mods/logger';
 import { applySecurityHeaders } from './mods/helmet';
-import { getPluginCspOrigins, type PluginCspOrigins } from './extensions/plugins/mods/getPluginCspOrigins';
+import {
+  getPluginCspOrigins,
+  type PluginCspOrigins,
+} from './extensions/plugins/mods/getPluginCspOrigins';
 import { parseJsonBody } from './middlewares/parser';
 import { csrfGuard } from './middlewares/csrfGuard';
 import { authRouter } from './extensions/auth/api/index';
@@ -14,6 +17,11 @@ import { workspaceRouter } from './extensions/workspace/api/index';
 import { boardRouter } from './extensions/board/api/index';
 import { listRouter } from './extensions/list/api/index';
 import { cardRouter } from './extensions/card/api/index';
+import { cardChatRouter } from './extensions/cardChat/api/index';
+import { aiContextRouter } from './extensions/aiContext/api/index';
+import { aiEditOrchestratorRouter } from './extensions/aiEditOrchestrator/api/index';
+import { sprintGenerationRouter } from './extensions/sprintGeneration/api/index';
+import { asBuiltSyncRouter } from './extensions/asBuiltSync/api/index';
 import { labelRouter } from './extensions/label/api/index';
 import { handleWsUpgrade, wsHandlers } from './extensions/realtime/api/index';
 import { handlePropagationPing } from './extensions/realtime/api/metrics';
@@ -39,9 +47,15 @@ import { automationRouter } from './extensions/automation/api/index';
 import { offlineDraftsRouter } from './extensions/offlineDrafts/api/index';
 import { apiTokenRouter } from './extensions/apiToken/api/index';
 import { webhooksRouter } from './extensions/webhooks/api/index';
+import { githubAppRouter } from './extensions/githubApp/api/index';
 import { mcpHttpHandler } from './extensions/mcp/http/index';
 import { healthCheckExtensionRouter } from './extensions/healthCheck/index';
+import { applyFeatureGate } from './middlewares/featureGate';
+import { applyRateLimit, rateLimiterClient } from './middlewares/rateLimiter';
+import { resolveRequestWorkspaceContext } from './common/requestContext';
+import { applySubscriptionAccessGuard } from './middlewares/subscriptionAccessGuard';
 import { trelloCompatRouter } from './extensions/trelloCompat';
+import { subscriptionRouter } from './extensions/subscription/api';
 // Register all automation trigger handlers at startup.
 import './extensions/automation/engine/triggers/index';
 import { startAutomationScheduler } from './extensions/automation/scheduler/index';
@@ -88,10 +102,7 @@ async function serveOpenApiSpec(specFileName: string, notFoundMessage: string): 
     }
   }
 
-  return Response.json(
-    { error: { code: 'not-found', message: notFoundMessage } },
-    { status: 404 }
-  );
+  return Response.json({ error: { code: 'not-found', message: notFoundMessage } }, { status: 404 });
 }
 
 async function router(req: Request): Promise<Response> {
@@ -106,18 +117,25 @@ async function router(req: Request): Promise<Response> {
     return serveOpenApiSpec('trello-openapi.yaml', 'Trello OpenAPI spec not found');
   }
 
-
-
-
   if (path === '/health' && req.method === 'GET') {
     return Response.json({ status: 'ok' });
   }
 
   if (path === '/api/v1/flags' && req.method === 'GET') {
     const sesEnabled = await flags.isEnabled('SES_ENABLED');
-    const notificationPreferencesEnabled = await flags.isEnabled('NOTIFICATION_PREFERENCES_ENABLED');
+    const notificationPreferencesEnabled = await flags.isEnabled(
+      'NOTIFICATION_PREFERENCES_ENABLED'
+    );
     const emailNotificationsEnabled = await flags.isEnabled('EMAIL_NOTIFICATIONS_ENABLED');
     const emailVerificationEnabled = await flags.isEnabled('EMAIL_VERIFICATION_ENABLED');
+    const boardChatEnabled = await flags.isEnabled('BOARD_CHAT_ENABLED');
+    const githubEditingEnabled = await flags.isEnabled('GITHUB_EDITING_ENABLED');
+    const innerCardChatEnabled = await flags.isEnabled('INNER_CARD_CHAT_ENABLED');
+    const agenticWorkflowEnabled = await flags.isEnabled('AGENTIC_WORKFLOW_ENABLED');
+    const aiContextEnabled = await flags.isEnabled('AI_CONTEXT_ENABLED');
+    const aiEditEnabled = await flags.isEnabled('AI_EDIT_ENABLED');
+    const sprintGenerationEnabled = await flags.isEnabled('SPRINT_GENERATION_ENABLED');
+    const asBuiltSyncEnabled = await flags.isEnabled('AS_BUILT_SYNC_ENABLED');
     return Response.json({
       data: {
         sesEnabled,
@@ -127,6 +145,18 @@ async function router(req: Request): Promise<Response> {
         emailNotificationsEnabled,
         emailVerificationEnabled,
         stateTransitionsEnabled: featureFlags.STATE_TRANSITIONS_ENABLED,
+        subscriptionsEnabled: featureFlags.SUBSCRIPTIONS_ENABLED,
+        // [why] Distinct from boardChatEnabled: chat can be on while embeddings
+        // are off (e.g. Ollama Cloud has chat models but no /v1/embeddings).
+        chatEmbeddingEnabled: env.CHAT_EMBEDDING_ENABLED,
+        boardChatEnabled,
+        githubEditingEnabled,
+        innerCardChatEnabled,
+        agenticWorkflowEnabled,
+        aiContextEnabled,
+        aiEditEnabled,
+        sprintGenerationEnabled,
+        asBuiltSyncEnabled,
       },
     });
   }
@@ -134,6 +164,21 @@ async function router(req: Request): Promise<Response> {
   if (path === '/api/v1/metrics/propagation') {
     return handlePropagationPing(req);
   }
+
+  // Resolve the request workspace context once, then reuse it for rate limiting
+  // and feature gating so workspace-scoped requests share the same lookup.
+  const workspaceContext = await resolveRequestWorkspaceContext(path);
+
+  const rateLimitResponse = await applyRateLimit(req, workspaceContext, rateLimiterClient);
+  if (rateLimitResponse) return rateLimitResponse;
+
+  // Feature-gate: enforce tier-based feature access after shedding abusive traffic.
+  // Returns 402 if the tier doesn't include the feature.
+  const gateResponse = await applyFeatureGate(req, workspaceContext.workspaceId ?? undefined);
+  if (gateResponse) return gateResponse;
+
+  const subscriptionAccessResponse = await applySubscriptionAccessGuard(req, workspaceContext);
+  if (subscriptionAccessResponse) return subscriptionAccessResponse;
 
   const authResponse = await authRouter(req, path);
   if (authResponse) return authResponse;
@@ -161,6 +206,36 @@ async function router(req: Request): Promise<Response> {
 
   const cardResponse = await cardRouter(req, path);
   if (cardResponse) return cardResponse;
+
+  // Card-chat routes must run before the label router because they match
+  // /api/v1/cards/:cardId/chat which the card router intentionally ignores.
+  const cardChatResponse = await cardChatRouter(req, path);
+  if (cardChatResponse) return cardChatResponse;
+
+  // AI Context routes — match /api/v1/cards/:cardId/ai/context and
+  // /api/v1/cards/:cardId/ai/file-scope.
+  // [why] Placed after cardChat (same card-scoped path prefix) and before
+  // label router to avoid conflicts.
+  const aiContextResponse = await aiContextRouter(req, path);
+  if (aiContextResponse) return aiContextResponse;
+
+  // AI Edit Orchestrator routes — match /api/v1/cards/:cardId/ai/edit.
+  // [why] Placed after aiContext (same /ai/ prefix) and before label router
+  // to avoid route conflicts.
+  const aiEditResponse = await aiEditOrchestratorRouter(req, path);
+  if (aiEditResponse) return aiEditResponse;
+
+  // Sprint generation routes — match /api/v1/cards/:cardId/sprint/generate.
+  // [why] Placed after aiEditOrchestrator and before label router to avoid
+  // route conflicts.
+  const sprintGenResponse = await sprintGenerationRouter(req, path);
+  if (sprintGenResponse) return sprintGenResponse;
+
+  // As-Built Sync routes — match /api/v1/cards/:cardId/as-built/sync.
+  // [why] Placed after sprintGeneration (same card-scoped path prefix) and
+  // before label router to avoid route conflicts.
+  const asBuiltSyncResponse = await asBuiltSyncRouter(req, path);
+  if (asBuiltSyncResponse) return asBuiltSyncResponse;
 
   const labelResponse = await labelRouter(req, path);
   if (labelResponse) return labelResponse;
@@ -198,6 +273,12 @@ async function router(req: Request): Promise<Response> {
   const webhooksResponse = await webhooksRouter(req, path);
   if (webhooksResponse) return webhooksResponse;
 
+  const githubAppResponse = await githubAppRouter(req, path);
+  if (githubAppResponse) return githubAppResponse;
+
+  const subscriptionResponse = await subscriptionRouter(req, path);
+  if (subscriptionResponse) return subscriptionResponse;
+
   const healthCheckResponse = await healthCheckExtensionRouter(req, path);
   if (healthCheckResponse) return healthCheckResponse;
 
@@ -207,8 +288,11 @@ async function router(req: Request): Promise<Response> {
   const mcpResponse = await mcpHttpHandler(req);
   if (mcpResponse) return mcpResponse;
 
-  // Serve the SDK static bundle at /sdk/jh-instance.js
-  if (path === pluginsConfig.sdkServePath && req.method === 'GET') {
+  // Serve the SDK static bundle from both the legacy and API plugin script paths.
+  if (
+    req.method === 'GET' &&
+    (path === pluginsConfig.sdkServePath || path === pluginsConfig.sdkApiServePath)
+  ) {
     const sdkFile = Bun.file(pluginsConfig.sdkBundlePath);
     if (await sdkFile.exists()) {
       return new Response(sdkFile, {
@@ -219,7 +303,7 @@ async function router(req: Request): Promise<Response> {
 
   // In production serve the built React SPA so client-side routing works.
   // Try the exact asset path first (JS/CSS chunks), then fall back to index.html.
-  if (appConfig.isDev === false) {
+  if (!appConfig.isDev) {
     const distRoot = `${import.meta.dir}/../dist`;
     const assetFile = await serveStatic(`${distRoot}${path}`);
     if (assetFile) return assetFile;
@@ -238,7 +322,12 @@ async function router(req: Request): Promise<Response> {
 // frame-src / connect-src directives so the browser permits loading plugin
 // iframes and their outbound API calls. We cache for 60 s to avoid a DB hit
 // on every request while still reflecting new plugin registrations promptly.
-let _pluginOriginCache: PluginCspOrigins = { frameSrc: [], connectSrc: [] };
+let _pluginOriginCache: PluginCspOrigins = {
+  frameSrc: [],
+  connectSrc: [],
+  frameAncestors: [],
+  imageSrc: [],
+};
 let _pluginOriginCacheExpiry = 0;
 const PLUGIN_ORIGIN_TTL_MS = 60_000;
 
@@ -295,10 +384,14 @@ Bun.serve({
     applySecurityHeaders(headers, {
       extraFrameSrc: pluginOrigins.frameSrc,
       extraConnectSrc: [s3ImgOrigin, 'https://sentry.jhorizon.io', ...pluginOrigins.connectSrc],
-      extraImgSrc: [s3ImgOrigin, 'https://chimedeck.jhorizon.io'],
+      extraImgSrc: [s3ImgOrigin, 'https://chimedeck.jhorizon.io', ...pluginOrigins.imageSrc],
       extraStyleSrc: isDeveloperApiDocsPath ? ['https://unpkg.com'] : [],
       extraScriptSrc: isDeveloperApiDocsPath ? ['https://unpkg.com'] : [],
       frameAncestors: isAttachmentViewPath ? "'self'" : "'none'",
+      // [why] Plugin connector_url origins must appear in frame-ancestors so
+      // the plugin iframe can embed our board pages without the browser blocking
+      // it with "Unsafe attempt to load URL from frame with URL chrome-error://..."
+      extraFrameAncestors: pluginOrigins.frameAncestors,
     });
     const response = new Response(res.body, {
       status: res.status,

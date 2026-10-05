@@ -8,39 +8,23 @@ import {
 import { buildAvatarProxyUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
 import { resolveCoverImageUrls } from '../../../common/cards/cover';
 
-interface ListRow {
-  id: string;
-  board_id: string;
-}
-
-interface BoardRow {
-  id: string;
-  workspace_id: string;
-}
-
-interface CardListRow extends Record<string, unknown> {
-  id: string;
-  cover_attachment_id: string | null;
-  members: Array<{ avatar_url?: string | null } & Record<string, unknown>>;
-}
-
 export async function handleListCards(req: Request, listId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const list = await db<ListRow>('lists').where({ id: listId }).first();
+  const list = await db('lists').where({ id: listId }).first();
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'List not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
-  const board = await db<BoardRow>('boards').where({ id: list.board_id }).first();
+  const board = await db('boards').where({ id: list.board_id }).first();
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -63,7 +47,7 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
 
   // WHY: aggregate labels and members in a single query so card tiles have
   // all data needed for Sprint 27 (label chips) and Sprint 28 (member avatars).
-  const cardsBaseQuery = db<CardListRow>('cards as c')
+  const cardsBaseQuery = db('cards as c')
     .where({ 'c.list_id': listId, 'c.archived': false })
     .orderBy('c.position', 'asc')
     .select(
@@ -97,7 +81,7 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
           FILTER (WHERE u.id IS NOT NULL),
           '[]'::json
         ) as members
-      `),
+      `)
     )
     .leftJoin('card_labels as cl', 'cl.card_id', 'c.id')
     .leftJoin('labels as l', 'l.id', 'cl.label_id')
@@ -109,15 +93,21 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
     cardsBaseQuery.limit(limit).offset(offset);
   }
 
-  const rows = (await cardsBaseQuery) as CardListRow[];
+  const rows = await cardsBaseQuery;
 
-  const data = rows.map((row) => ({
-    ...row,
-    members: buildAvatarProxyUrlsInCollection(row.members),
-  }));
+  const data = await Promise.all(
+    rows.map(async (row) => ({
+      ...row,
+      members: buildAvatarProxyUrlsInCollection(
+        Array.isArray(row.members)
+          ? (row.members as Array<{ avatar_url?: string | null } & Record<string, unknown>>)
+          : []
+      ),
+    }))
+  );
 
   const cardsWithCovers = await resolveCoverImageUrls(
-    data as Array<{ id: string; cover_attachment_id?: string | null } & Record<string, unknown>>,
+    data as Array<{ id: string; cover_attachment_id?: string | null } & Record<string, unknown>>
   );
 
   if (!hasPagination || limit === null) {

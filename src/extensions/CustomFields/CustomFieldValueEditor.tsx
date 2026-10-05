@@ -17,10 +17,7 @@ interface Props {
 }
 
 // Derive a display string from a raw CustomFieldValue for a given field.
-function resolvedDisplayValue(
-  field: CustomField,
-  value: CustomFieldValue | null,
-): string {
+function resolvedDisplayValue(field: CustomField, value: CustomFieldValue | null): string {
   if (!value) return '';
   switch (field.field_type) {
     case 'TEXT':
@@ -73,7 +70,7 @@ const CustomFieldValueEditor = ({
         setSaving(false);
       }
     },
-    [api, cardId, field.id, onValueChange],
+    [api, cardId, field.id, onValueChange]
   );
 
   const handleClear = useCallback(async () => {
@@ -102,10 +99,12 @@ const CustomFieldValueEditor = ({
           placeholder={translations['CustomFieldValue.textPlaceholder']}
           disabled={disabled || saving}
           aria-label={`${field.name} value`}
-          onChange={(e) => { setDraft(e.target.value); }}
+          onChange={(e) => {
+            setDraft(e.target.value);
+          }}
           onBlur={() => {
             if (draft !== resolvedDisplayValue(field, value)) {
-              void save({ value_text: draft || null });
+              save({ value_text: draft || null });
             }
           }}
           onKeyDown={(e) => {
@@ -118,7 +117,7 @@ const CustomFieldValueEditor = ({
           <button
             type="button"
             className="text-xs text-muted hover:text-danger transition-colors flex-shrink-0"
-            onClick={() => void handleClear()}
+            onClick={handleClear}
             aria-label={`Clear ${field.name}`}
           >
             ✕
@@ -138,14 +137,16 @@ const CustomFieldValueEditor = ({
           placeholder={translations['CustomFieldValue.numberPlaceholder']}
           disabled={disabled || saving}
           aria-label={`${field.name} value`}
-          onChange={(e) => { setDraft(e.target.value); }}
+          onChange={(e) => {
+            setDraft(e.target.value);
+          }}
           onBlur={() => {
             const num = parseFloat(draft);
             const current = value?.value_number ? parseFloat(value.value_number) : null;
             if (draft === '' && current !== null) {
-              void handleClear();
+              handleClear();
             } else if (!isNaN(num) && num !== current) {
-              void save({ value_number: num });
+              save({ value_number: num });
             }
           }}
           onKeyDown={(e) => {
@@ -156,7 +157,7 @@ const CustomFieldValueEditor = ({
           <button
             type="button"
             className="text-xs text-muted hover:text-danger transition-colors flex-shrink-0"
-            onClick={() => void handleClear()}
+            onClick={handleClear}
             aria-label={`Clear ${field.name}`}
           >
             ✕
@@ -178,9 +179,9 @@ const CustomFieldValueEditor = ({
           onChange={(e) => {
             setDraft(e.target.value);
             if (e.target.value) {
-              void save({ value_date: new Date(e.target.value).toISOString() });
+              save({ value_date: new Date(e.target.value).toISOString() });
             } else {
-              void handleClear();
+              handleClear();
             }
           }}
         />
@@ -188,7 +189,7 @@ const CustomFieldValueEditor = ({
           <button
             type="button"
             className="text-xs text-muted hover:text-danger transition-colors"
-            onClick={() => void handleClear()}
+            onClick={handleClear}
           >
             {translations['CustomFieldValue.clearDate']}
           </button>
@@ -208,7 +209,7 @@ const CustomFieldValueEditor = ({
           disabled={disabled || saving}
           aria-label={field.name}
           onChange={(e) => {
-            void save({ value_checkbox: e.target.checked });
+            save({ value_checkbox: e.target.checked });
           }}
         />
       </label>
@@ -239,9 +240,9 @@ const CustomFieldValueEditor = ({
             onChange={(e) => {
               const val = e.target.value;
               if (val === '') {
-                void handleClear();
+                handleClear();
               } else {
-                void save({ value_option_id: val });
+                save({ value_option_id: val });
               }
             }}
           >
@@ -257,7 +258,7 @@ const CustomFieldValueEditor = ({
           <button
             type="button"
             className="text-xs text-muted hover:text-danger transition-colors flex-shrink-0"
-            onClick={() => void handleClear()}
+            onClick={handleClear}
             aria-label={`Clear ${field.name}`}
           >
             ✕

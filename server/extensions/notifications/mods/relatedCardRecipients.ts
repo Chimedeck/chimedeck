@@ -22,9 +22,7 @@ export async function getCardRelatedUserIds({
   if (!cardId) return new Set<string>();
 
   const [cardMemberRows, checklistAssigneeRows] = await Promise.all([
-    db('card_members')
-      .where({ card_id: cardId })
-      .select('user_id'),
+    db('card_members').where({ card_id: cardId }).select('user_id'),
     db('checklist_items')
       .where({ card_id: cardId })
       .whereNotNull('assigned_member_id')
@@ -64,9 +62,9 @@ export function isRecipientRelatedCardNotification({
   }
 
   if (
-    (type === 'card_member_assigned' || type === 'card_member_unassigned')
-    && targetUserId
-    && recipientId === targetUserId
+    (type === 'card_member_assigned' || type === 'card_member_unassigned') &&
+    targetUserId &&
+    recipientId === targetUserId
   ) {
     return true;
   }

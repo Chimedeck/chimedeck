@@ -10,7 +10,12 @@ import { handleDuplicateBoard } from './duplicate';
 import { handleGetBoardEvents } from '../../realtime/api/events';
 import { handleGetPresence } from '../../realtime/api/presence';
 import { handleGetBoardLabels, handleCreateBoardLabel } from './labels';
-import { handleGetBoardMembers, handleAddBoardMember, handleUpdateBoardMember, handleRemoveBoardMember } from './members';
+import {
+  handleGetBoardMembers,
+  handleAddBoardMember,
+  handleUpdateBoardMember,
+  handleRemoveBoardMember,
+} from './members';
 import { handleJoinBoard } from './members/join';
 import { handleGetMemberSuggestions } from './members/suggestions';
 import { handleStarBoard, handleUnstarBoard } from './star';
@@ -20,12 +25,32 @@ import { handleGetBoardActivity } from './activity';
 import { handleGetBoardComments } from './comments';
 import { handleGetBoardActivities } from './boardActivities';
 import { handleGetArchivedCards } from './archived-cards';
-import { handleInviteGuest, handleRevokeGuest, handleListGuests, handleUpdateGuestType } from './guests/index';
+import {
+  handleInviteGuest,
+  handleRevokeGuest,
+  handleListGuests,
+  handleUpdateGuestType,
+} from './guests/index';
 import { handleGetWorkspaceBoards } from './workspaceBoards';
 import { handleUploadBackground } from './uploadBackground';
 import { handleDeleteBackground } from './deleteBackground';
 import { handleGetBackground } from './backgroundProxy';
+import { handleGetChatPermissions, handlePatchChatPermissions } from './chatPermissions/index';
+import { handleGetChatMessages, handleCreateChatMessage } from './chatMessages/index';
+import { handleCreateChatSearch } from './chatSearch/index';
+import { handleCreateChatAssist } from './chatAssist/index';
+import { handleCommitDocumentProposals } from './chatAssist/commit';
+import {
+  handleCreateSession,
+  handleListSessions,
+  handleGetSession,
+  handleUpdateSession,
+} from './chatSessions/index';
+import { handleGetBoardIntegrations, handlePatchBoardIntegrations } from './integrations/index';
+import { handleLoadSpecsManifest, handleReadSpecsFile } from './specs/index';
+import { handlePutSpecsFile, handleCommitSpecs } from './github/specs/index';
 import { resolveBoardId } from '../../../common/ids/resolveEntityId';
+import { flags } from '../../../mods/flags';
 
 // Returns a Response if the path matches a board route, otherwise null.
 export async function boardRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -51,10 +76,37 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
     if (!boardId) {
       return Response.json(
         { error: { code: 'board-not-found', message: 'Board not found' } },
-        { status: 404 },
+        { status: 404 }
       );
     }
     const sub = boardMatch[2] ?? '';
+
+    const isBoardChatRoute = sub === '/chat-permissions' || sub.startsWith('/chat/');
+    if (isBoardChatRoute) {
+      const boardChatEnabled = await flags.isEnabled('BOARD_CHAT_ENABLED');
+      if (!boardChatEnabled) {
+        return Response.json(
+          { error: { code: 'board-chat-disabled', message: 'Board chat feature is disabled' } },
+          { status: 404 }
+        );
+      }
+    }
+
+    const isGithubEditingRoute = sub.startsWith('/specs/') || sub.startsWith('/github/specs/');
+    if (isGithubEditingRoute) {
+      const githubEditingEnabled = await flags.isEnabled('GITHUB_EDITING_ENABLED');
+      if (!githubEditingEnabled) {
+        return Response.json(
+          {
+            error: {
+              code: 'github-editing-disabled',
+              message: 'GitHub editing feature is disabled',
+            },
+          },
+          { status: 404 }
+        );
+      }
+    }
 
     // Enforce board visibility before dispatching to any board-scoped handler.
     // Populates req.board (and req.currentUser, req.workspaceId, req.callerRole for non-public boards).
@@ -77,7 +129,8 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
     if (sub === '/duplicate' && req.method === 'POST') return handleDuplicateBoard(req, boardId);
 
     // GET /api/v1/boards/:id/events?since=
-    if (sub.startsWith('/events') && req.method === 'GET') return handleGetBoardEvents(req, boardId);
+    if (sub.startsWith('/events') && req.method === 'GET')
+      return handleGetBoardEvents(req, boardId);
 
     // GET /api/v1/boards/:id/presence
     if (sub === '/presence' && req.method === 'GET') return handleGetPresence(req, boardId);
@@ -95,7 +148,8 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
     if (sub === '/members' && req.method === 'POST') return handleAddBoardMember(req, boardId);
 
     // GET /api/v1/boards/:id/members/suggestions?q=
-    if (sub === '/members/suggestions' && req.method === 'GET') return handleGetMemberSuggestions(req, boardId);
+    if (sub === '/members/suggestions' && req.method === 'GET')
+      return handleGetMemberSuggestions(req, boardId);
 
     // POST /api/v1/boards/:id/members/join — self-join a WORKSPACE or PUBLIC board
     if (sub === '/members/join' && req.method === 'POST') return handleJoinBoard(req, boardId);
@@ -127,10 +181,12 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
     if (sub === '/comments' && req.method === 'GET') return handleGetBoardComments(req, boardId);
 
     // GET /api/v1/boards/:id/activities — merged activity + comments timeline, sorted by created_at
-    if (sub === '/activities' && req.method === 'GET') return handleGetBoardActivities(req, boardId);
+    if (sub === '/activities' && req.method === 'GET')
+      return handleGetBoardActivities(req, boardId);
 
     // GET /api/v1/boards/:id/archived-cards — all archived cards in the board
-    if (sub === '/archived-cards' && req.method === 'GET') return handleGetArchivedCards(req, boardId);
+    if (sub === '/archived-cards' && req.method === 'GET')
+      return handleGetArchivedCards(req, boardId);
 
     // POST /api/v1/boards/:id/guests — invite a user as a guest (ADMIN+ only)
     if (sub === '/guests' && req.method === 'POST') return handleInviteGuest(req, boardId);
@@ -148,7 +204,8 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
     }
 
     // GET /api/v1/boards/:id/workspace/boards — list all ACTIVE boards in the same workspace
-    if (sub === '/workspace/boards' && req.method === 'GET') return handleGetWorkspaceBoards(req, boardId);
+    if (sub === '/workspace/boards' && req.method === 'GET')
+      return handleGetWorkspaceBoards(req, boardId);
 
     // GET /api/v1/boards/:id/background — stream S3 background through auth proxy
     if (sub === '/background' && req.method === 'GET') return handleGetBackground(req, boardId);
@@ -157,7 +214,80 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
     if (sub === '/background' && req.method === 'POST') return handleUploadBackground(req, boardId);
 
     // DELETE /api/v1/boards/:id/background — remove the background image (Owner/Admin only)
-    if (sub === '/background' && req.method === 'DELETE') return handleDeleteBackground(req, boardId);
+    if (sub === '/background' && req.method === 'DELETE')
+      return handleDeleteBackground(req, boardId);
+
+    // GET /api/v1/boards/:id/chat-permissions — read board chat permission settings
+    if (sub === '/chat-permissions' && req.method === 'GET')
+      return handleGetChatPermissions(req, boardId);
+
+    // PATCH /api/v1/boards/:id/chat-permissions — update guest chat toggles (ADMIN/OWNER only)
+    if (sub === '/chat-permissions' && req.method === 'PATCH')
+      return handlePatchChatPermissions(req, boardId);
+
+    // GET /api/v1/boards/:id/settings/integrations — read board integration settings
+    if (sub === '/settings/integrations' && req.method === 'GET')
+      return handleGetBoardIntegrations(req, boardId);
+
+    // PATCH /api/v1/boards/:id/settings/integrations — update board integration settings
+    if (sub === '/settings/integrations' && req.method === 'PATCH')
+      return handlePatchBoardIntegrations(req, boardId);
+
+    // Sprint 199 — session-scoped board chat
+    // GET /api/v1/boards/:id/chat/sessions — list all chat sessions for this board
+    if (sub === '/chat/sessions' && req.method === 'GET') return handleListSessions(req, boardId);
+
+    // POST /api/v1/boards/:id/chat/sessions — create a new chat session
+    if (sub === '/chat/sessions' && req.method === 'POST') return handleCreateSession(req, boardId);
+
+    // GET /api/v1/boards/:id/chat/sessions/:sessionId — get a single session
+    // PATCH /api/v1/boards/:id/chat/sessions/:sessionId — update a session (e.g. rename)
+    const sessionDetailMatch = sub.match(/^\/chat\/sessions\/([^/]+)$/);
+    if (sessionDetailMatch && req.method === 'GET') {
+      return handleGetSession(req, boardId, sessionDetailMatch[1] as string);
+    }
+    if (sessionDetailMatch && req.method === 'PATCH') {
+      return handleUpdateSession(req, boardId, sessionDetailMatch[1] as string);
+    }
+
+    // POST /api/v1/boards/:id/chat/messages — persist a board chat message (session-scoped)
+    if (sub === '/chat/messages' && req.method === 'POST')
+      return handleCreateChatMessage(req, boardId);
+
+    // GET /api/v1/boards/:id/chat/messages — load board chat history
+    if (sub === '/chat/messages' && req.method === 'GET')
+      return handleGetChatMessages(req, boardId);
+
+    // POST /api/v1/boards/:id/chat/search — semantic board-chat retrieval
+    if (sub === '/chat/search' && req.method === 'POST')
+      return handleCreateChatSearch(req, boardId);
+
+    // POST /api/v1/boards/:id/chat/assist — board-chat assist response
+    if (sub === '/chat/assist' && req.method === 'POST')
+      return handleCreateChatAssist(req, boardId);
+
+    // POST /api/v1/boards/:id/chat/assist/commit — commit confirmed document proposals to GitHub
+    if (sub === '/chat/assist/commit' && req.method === 'POST')
+      return handleCommitDocumentProposals(req, boardId);
+
+    // GET /api/v1/boards/:id/specs/manifest — load specs manifest (members only)
+    if (sub === '/specs/manifest' && req.method === 'GET')
+      return handleLoadSpecsManifest(req, boardId);
+
+    // GET /api/v1/boards/:id/specs/files?path=... — read a single specs file (members only)
+    if (sub === '/specs/files' && req.method === 'GET') return handleReadSpecsFile(req, boardId);
+
+    // PUT /api/v1/boards/:id/github/specs/file — delta-save a markdown file
+    if (sub === '/github/specs/file' && req.method === 'PUT')
+      return handlePutSpecsFile(req, boardId);
+
+    // POST /api/v1/boards/:id/github/specs/commit — stage and commit specs changes
+    if (sub === '/github/specs/commit' && req.method === 'POST')
+      return handleCommitSpecs(req, boardId);
+
+    // POST /api/v1/boards/:id/github/specs/commit — stage and commit specs changes
+    if (sub === '/github/specs/commit' && req.method === 'POST')
+      return handleCommitDocumentProposals(req, boardId);
   }
 
   return null;

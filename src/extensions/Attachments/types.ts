@@ -121,7 +121,7 @@ export interface PatchAttachmentRequest {
 // ---------- In-flight upload state (client-only) ----------
 
 export type UploadPhase =
-  | 'pending'          // buffered locally, not yet started (deferred mode)
+  | 'pending' // buffered locally, not yet started (deferred mode)
   | 'requesting-url'
   | 'uploading'
   | 'confirming'

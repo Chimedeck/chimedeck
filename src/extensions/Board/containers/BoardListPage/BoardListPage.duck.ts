@@ -76,7 +76,7 @@ export const fetchBoardsThunk = createAppAsyncThunk(
   async ({ workspaceId }: { workspaceId: string }, { extra }) => {
     const res = await listBoards({ api: getBoardApi(extra), workspaceId });
     return res.data;
-  },
+  }
 );
 
 export const createBoardThunk = createAppAsyncThunk(
@@ -84,7 +84,7 @@ export const createBoardThunk = createAppAsyncThunk(
   async ({ workspaceId, title }: { workspaceId: string; title: string }, { extra }) => {
     const res = await createBoard({ api: getBoardApi(extra), workspaceId, title });
     return res.data;
-  },
+  }
 );
 
 export const archiveBoardThunk = createAppAsyncThunk(
@@ -92,7 +92,7 @@ export const archiveBoardThunk = createAppAsyncThunk(
   async ({ boardId }: { boardId: string }, { extra }) => {
     const res = await archiveBoard({ api: getBoardApi(extra), boardId });
     return res.data;
-  },
+  }
 );
 
 export const deleteBoardThunk = createAppAsyncThunk(
@@ -100,7 +100,7 @@ export const deleteBoardThunk = createAppAsyncThunk(
   async ({ boardId }: { boardId: string }, { extra }) => {
     await deleteBoard({ api: getBoardApi(extra), boardId });
     return boardId;
-  },
+  }
 );
 
 export const duplicateBoardThunk = createAppAsyncThunk(
@@ -108,7 +108,7 @@ export const duplicateBoardThunk = createAppAsyncThunk(
   async ({ boardId }: { boardId: string }, { extra }) => {
     const res = await duplicateBoard({ api: getBoardApi(extra), boardId });
     return res.data;
-  },
+  }
 );
 
 export const starBoardThunk = createAppAsyncThunk(
@@ -116,7 +116,7 @@ export const starBoardThunk = createAppAsyncThunk(
   async ({ boardId }: { boardId: string }, { extra }) => {
     await starBoard({ api: getBoardApi(extra), boardId });
     return boardId;
-  },
+  }
 );
 
 export const unstarBoardThunk = createAppAsyncThunk(
@@ -124,7 +124,7 @@ export const unstarBoardThunk = createAppAsyncThunk(
   async ({ boardId }: { boardId: string }, { extra }) => {
     await unstarBoard({ api: getBoardApi(extra), boardId });
     return boardId;
-  },
+  }
 );
 
 // ---------- Slice ----------
@@ -238,17 +238,13 @@ const selectBoardListPage = (state: RootState) =>
 export const boardsSelector = createSelector(selectBoardListPage, (s) => s.boards);
 export const showStarredOnlySelector = createSelector(
   selectBoardListPage,
-  (s) => s.showStarredOnly,
+  (s) => s.showStarredOnly
 );
-export const visibleBoardsSelector = createSelector(
-  selectBoardListPage,
-  (s) => (s.showStarredOnly ? s.boards.filter((b) => b.isStarred) : s.boards),
+export const visibleBoardsSelector = createSelector(selectBoardListPage, (s) =>
+  s.showStarredOnly ? s.boards.filter((b) => b.isStarred) : s.boards
 );
 export const fetchBoardsInProgressSelector = createSelector(
   selectBoardListPage,
-  (s) => s.fetchInProgress,
+  (s) => s.fetchInProgress
 );
-export const fetchBoardsErrorSelector = createSelector(
-  selectBoardListPage,
-  (s) => s.fetchError,
-);
+export const fetchBoardsErrorSelector = createSelector(selectBoardListPage, (s) => s.fetchError);

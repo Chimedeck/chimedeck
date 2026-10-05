@@ -28,6 +28,6 @@ export function registerGetStateTransitionRules(server: McpServer, token: string
       return {
         content: [{ type: 'text', text: JSON.stringify(result.data) }],
       };
-    },
+    }
   );
 }

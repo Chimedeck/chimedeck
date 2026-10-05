@@ -6,25 +6,26 @@ import { boardMemberGuard, type BoardAdminRequest } from '../../middlewares/boar
 export async function handleDisableBoardPlugin(
   req: Request,
   boardId: string,
-  pluginId: string,
+  pluginId: string
 ): Promise<Response> {
   const guardError = await boardMemberGuard(req as BoardAdminRequest, boardId);
   if (guardError) return guardError;
 
-  const row = await db('board_plugins')
-    .where({ board_id: boardId, plugin_id: pluginId })
-    .first();
+  const row = await db('board_plugins').where({ board_id: boardId, plugin_id: pluginId }).first();
 
   if (!row || row.disabled_at) {
     return Response.json(
-      { error: { code: 'plugin-not-enabled', message: 'Plugin is not currently enabled on this board' } },
-      { status: 404 },
+      {
+        error: {
+          code: 'plugin-not-enabled',
+          message: 'Plugin is not currently enabled on this board',
+        },
+      },
+      { status: 404 }
     );
   }
 
-  await db('board_plugins')
-    .where({ id: row.id })
-    .update({ disabled_at: db.fn.now() });
+  await db('board_plugins').where({ id: row.id }).update({ disabled_at: db.fn.now() });
 
   return Response.json({ data: {} });
 }

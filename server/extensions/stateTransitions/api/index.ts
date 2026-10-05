@@ -5,7 +5,10 @@ import { handleGetStateTransitions } from './get';
 import { handleGetStateTransitionRules } from './getRules';
 import { handlePutStateTransitions } from './put';
 
-export async function stateTransitionsRouter(req: Request, pathname: string): Promise<Response | null> {
+export async function stateTransitionsRouter(
+  req: Request,
+  pathname: string
+): Promise<Response | null> {
   const baseMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/state-transitions$/);
   const rulesMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/state-transitions\/rules$/);
   const match = baseMatch ?? rulesMatch;
@@ -14,7 +17,7 @@ export async function stateTransitionsRouter(req: Request, pathname: string): Pr
   if (!featureFlags.STATE_TRANSITIONS_ENABLED) {
     return Response.json(
       { name: 'not-implemented', data: { message: 'State transitions feature is not enabled' } },
-      { status: 501 },
+      { status: 501 }
     );
   }
 
@@ -23,7 +26,7 @@ export async function stateTransitionsRouter(req: Request, pathname: string): Pr
   if (!boardId) {
     return Response.json(
       { name: 'board-not-found', data: { message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

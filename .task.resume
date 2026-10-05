@@ -1,0 +1,68 @@
+Iteration 4: Tier Config + Limit Helpers (Sprint 159)
+- Objective: Add single source of truth tier map (number or 'unlimited') and reusable limit utilities.
+- Files: server/config/subscription-tiers.ts, server/common/limits.ts, server/extensions/subscription/common/featureKeys.ts.
+- Tests: Config validation tests for required keys/type safety and helper behavior (`exceeds`, `remaining`, unlimited sentinel).
+
+Iteration 5: Entitlements + Usage API (Sprint 159)
+- Objective: Build workspace entitlements resolver + usage aggregation and expose GET /api/v1/workspaces/:workspaceId/entitlements.
+- Files: server/extensions/subscription/common/entitlements.ts, server/extensions/subscription/common/usage.ts, server/extensions/subscription/api/getEntitlements.ts, server/extensions/subscription/api/index.ts.
+- Tests: Resolver and usage tests including SUBSCRIPTIONS_ENABLED=false fallback to SUBSCRIPTIONS_DEFAULT_UNLIMITED_TIER.
+
+Iteration 6: Conditional Feature Gate Middleware (Sprint 160)
+- Objective: Add endpoint-to-feature gate map and middleware enforcing tier features with 402 feature-not-in-plan envelope.
+- Files: server/config/feature-gates.ts, server/middlewares/featureGate.ts, server/index.ts, server/common/requestContext.ts.
+- Tests: Middleware matching and pass/block tests, requiredTier resolution, flag-off bypass tests.
+
+Iteration 7: Resource Limit Enforcement Part A (Sprint 161)
+- Objective: Add limitGuard and enforce maxWorkspaces/maxBoardsPerWorkspace/maxBoardsTotal/maxColumnsPerBoard.
+- Files: server/middlewares/limitGuard.ts, server/extensions/workspace/api/create.ts, server/extensions/board/api/create.ts, server/extensions/list/api/create.ts, server/extensions/subscription/common/usage.ts.
+- Tests: Integration tests for workspace/board/list creation caps and SUBSCRIPTIONS_ENABLED bypass.
+
+Iteration 8: Resource Limit Enforcement Part B (Sprint 161)
+- Objective: Enforce invited-member, guest, and storage limits with consistent 402 limit-reached response.
+- Files: server/extensions/board/api/members/*, server/extensions/board/api/guests/*, server/extensions/attachment/api/*, server/extensions/subscription/common/usage.ts, server/middlewares/limitGuard.ts.
+- Tests: Integration tests for member/guest/storage caps, upload over-limit handling, downgrade read-only-over-limit behavior.
+
+Iteration 9: Workspace-Wide Tier Rate Limiter (Sprint 162)
+- Objective: Extend rate limiter to workspace-shared READ/WRITE buckets from tier limits and preserve fallback behavior.
+- Files: server/middlewares/rateLimiter.ts, server/index.ts, server/common/requestContext.ts.
+- Tests: Multi-user shared bucket tests, workspace separation tests, read/write split tests, SUBSCRIPTIONS_ENABLED fallback tests.
+
+Iteration 10: Billing UI Foundation (Sprint 163)
+- Objective: Add workspace billing route + API slice and feature-flag-aware navigation entry.
+- Files: src/extensions/Subscription/api.ts, src/extensions/Subscription/containers/BillingPage/BillingPage.tsx, src/extensions/Subscription/translations/en.json, src/routes/*, src/layout/*.
+- Tests: UI routing and visibility tests including SUBSCRIPTIONS_ENABLED=false hide behavior.
+
+Iteration 11: Plan Comparison + Usage Meters + Stripe Actions (Sprint 163)
+- Objective: Implement current plan card, usage meters, comparison grid, checkout/portal flows.
+- Files: src/extensions/Subscription/components/CurrentPlanCard.tsx, src/extensions/Subscription/components/UsageMeters.tsx, src/extensions/Subscription/components/PlanComparisonGrid.tsx, src/extensions/Subscription/config/planPresentation.ts.
+- Tests: Component tests for unlimited rendering, thresholds, and owner/admin action visibility.
+
+Iteration 12: Upgrade Modal + 402 Integration + End-to-End Validation (Sprint 163)
+- Objective: Implement global upgrade modal path for 402 errors and verify full flows with Playwright MCP.
+- Files: src/extensions/Subscription/components/UpgradeModal.tsx, src/extensions/Subscription/hooks/usePlanGate.ts, src/store/api/* (base query/error handling), related feature entry-point components.
+- Tests: Playwright MCP flows for upgrade required scenarios, limit reached scenarios, and flag-off behavior.
+
+SPECS (read these before doing anything else):
+  - Requirements       : specs/architecture/requirements.md  – the authoritative
+    source of what this project must do. Read it on every iteration.
+  - Architecture specs : specs/architecture/   – read all .md files here to
+    understand the intended system design and constraints.
+  - Changelog          : specs/changelog/       – read the most recent entries
+    (sort by filename descending) to understand what has already been done,
+    what technical debt exists, and what was deferred.
+
+REFERENCE REPO (read-only): 'sample-project/'
+  - Read files inside it to understand how the upstream template handles
+    the area you are about to work on.
+  - Do NOT modify, run, or commit anything inside 'sample-project/'.
+
+Summarise in bullet points:
+- What has already been implemented in THIS project (check git log / existing files
+  and the changelogs in specs/changelog/).
+- Any outstanding technical debt or deferred items from previous changelogs.
+- How the reference repo in 'sample-project/' handles the same area (if relevant).
+- What still needs to be done to fulfil the task.
+- Any blockers or risks.
+Keep this concise – 5 to 10 bullets maximum.
+Do NOT write any code yet.

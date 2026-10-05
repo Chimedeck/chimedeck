@@ -93,7 +93,7 @@ export async function sortListCards({
 }): Promise<{ data: Array<{ id: string; list_id: string; position: string }> }> {
   return api.patch<{ data: Array<{ id: string; list_id: string; position: string }> }>(
     `/lists/${listId}/sort`,
-    { sortBy },
+    { sortBy }
   );
 }
 

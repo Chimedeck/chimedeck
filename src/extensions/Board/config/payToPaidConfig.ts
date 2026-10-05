@@ -19,5 +19,5 @@ const QUALIFYING_LIST_NAMES = [
  */
 export function shouldShowPaymentButtons(listName: string): boolean {
   const normalized = listName.trim().toLowerCase();
-  return QUALIFYING_LIST_NAMES.some(keyword => normalized.includes(keyword));
+  return QUALIFYING_LIST_NAMES.some((keyword) => normalized.includes(keyword));
 }

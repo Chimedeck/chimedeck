@@ -32,7 +32,15 @@ const StarIcon = ({ filled }: { filled: boolean }) => (
   </svg>
 );
 
-const BoardCard = ({ board, onClick, onArchive, onDelete, onDuplicate, onStar, onUnstar }: Props) => {
+const BoardCard = ({
+  board,
+  onClick,
+  onArchive,
+  onDelete,
+  onDuplicate,
+  onStar,
+  onUnstar,
+}: Props) => {
   const handleStarClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (board.isStarred) {
@@ -92,11 +100,13 @@ const BoardCard = ({ board, onClick, onArchive, onDelete, onDuplicate, onStar, o
           </div>
         </div>
 
-        <div className="flex gap-2" onClick={(e) => { e.stopPropagation(); }}>
-          <button
-            className="text-xs text-blue-600 hover:underline"
-            onClick={onDuplicate}
-          >
+        <div
+          className="flex gap-2"
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          <button className="text-xs text-blue-600 hover:underline" onClick={onDuplicate}>
             Duplicate
           </button>
           <button
@@ -105,10 +115,7 @@ const BoardCard = ({ board, onClick, onArchive, onDelete, onDuplicate, onStar, o
           >
             {board.state === 'ARCHIVED' ? 'Unarchive' : 'Archive'}
           </button>
-          <button
-            className="text-xs text-danger hover:underline"
-            onClick={onDelete}
-          >
+          <button className="text-xs text-danger hover:underline" onClick={onDelete}>
             Delete
           </button>
         </div>

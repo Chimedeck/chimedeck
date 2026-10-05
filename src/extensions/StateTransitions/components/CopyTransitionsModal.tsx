@@ -46,11 +46,10 @@ const CopyTransitionsModal = ({
     void listWorkspaces({ api: apiClient })
       .then(({ data }) => {
         setWorkspaces(data);
-        const defaultWorkspaceId = (
-          currentWorkspaceId && data.some((workspace) => workspace.id === currentWorkspaceId)
+        const defaultWorkspaceId =
+          (currentWorkspaceId && data.some((workspace) => workspace.id === currentWorkspaceId)
             ? currentWorkspaceId
-            : data[0]?.id
-        ) ?? '';
+            : data[0]?.id) ?? '';
         setWorkspaceId(defaultWorkspaceId);
       })
       .catch(() => {
@@ -75,7 +74,7 @@ const CopyTransitionsModal = ({
     void listBoards({ api: apiClient, workspaceId })
       .then(async ({ data }) => {
         const candidateBoards = data.filter(
-          (board) => board.id !== sourceBoardId && board.state === 'ACTIVE',
+          (board) => board.id !== sourceBoardId && board.state === 'ACTIVE'
         );
         if (candidateBoards.length === 0 || !currentUser?.id) {
           setBoards([]);
@@ -86,15 +85,15 @@ const CopyTransitionsModal = ({
         const roles = await Promise.all(
           candidateBoards.map(async (board) => {
             try {
-              const response = await apiClient.get<{ data: Array<{ user_id: string; role: string }> }>(
-                `/boards/${board.id}/members`,
-              );
+              const response = await apiClient.get<{
+                data: Array<{ user_id: string; role: string }>;
+              }>(`/boards/${board.id}/members`);
               const me = response.data.data.find((member) => member.user_id === currentUser.id);
               return ADMIN_ROLES.has(me?.role ?? '') ? board.id : null;
             } catch {
               return null;
             }
-          }),
+          })
         );
         const allowedIds = new Set(roles.filter((id): id is string => Boolean(id)));
         const filteredBoards = candidateBoards.filter((board) => allowedIds.has(board.id));
@@ -113,7 +112,7 @@ const CopyTransitionsModal = ({
 
   const selectedBoard = useMemo(
     () => boards.find((board) => board.id === targetBoardId) ?? null,
-    [boards, targetBoardId],
+    [boards, targetBoardId]
   );
 
   if (!open) return null;
@@ -121,8 +120,12 @@ const CopyTransitionsModal = ({
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 px-4">
       <div className="w-full max-w-lg rounded-xl border border-border bg-bg-surface p-6 shadow-xl">
-        <h2 className="text-lg font-semibold text-base">{translations['StateTransitions.copyModalTitle']}</h2>
-        <p className="mt-1 text-sm text-muted">{translations['StateTransitions.copyModalDescription']}</p>
+        <h2 className="text-lg font-semibold text-base">
+          {translations['StateTransitions.copyModalTitle']}
+        </h2>
+        <p className="mt-1 text-sm text-muted">
+          {translations['StateTransitions.copyModalDescription']}
+        </p>
 
         <form
           className="mt-4 space-y-4"
@@ -133,7 +136,10 @@ const CopyTransitionsModal = ({
           }}
         >
           <div>
-            <label htmlFor="copy-transitions-workspace" className="mb-1 block text-xs font-medium text-muted">
+            <label
+              htmlFor="copy-transitions-workspace"
+              className="mb-1 block text-xs font-medium text-muted"
+            >
               {translations['StateTransitions.copyModalWorkspaceLabel']}
             </label>
             <select
@@ -154,7 +160,10 @@ const CopyTransitionsModal = ({
           </div>
 
           <div>
-            <label htmlFor="copy-transitions-board" className="mb-1 block text-xs font-medium text-muted">
+            <label
+              htmlFor="copy-transitions-board"
+              className="mb-1 block text-xs font-medium text-muted"
+            >
               {translations['StateTransitions.copyModalBoardLabel']}
             </label>
             <select
@@ -167,9 +176,7 @@ const CopyTransitionsModal = ({
               className="w-full rounded border border-border bg-bg-base px-3 py-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60"
             >
               {boards.length === 0 && (
-                <option value="">
-                  {translations['StateTransitions.copyModalNoBoards']}
-                </option>
+                <option value="">{translations['StateTransitions.copyModalNoBoards']}</option>
               )}
               {boards.map((board) => (
                 <option key={board.id} value={board.id}>
@@ -212,7 +219,9 @@ const CopyTransitionsModal = ({
               size="md"
               disabled={busy || selectedBoard === null || loadingBoards || loadingWorkspaces}
             >
-              {busy ? translations['StateTransitions.copyModalCopying'] : translations['StateTransitions.copyModalConfirmButton']}
+              {busy
+                ? translations['StateTransitions.copyModalCopying']
+                : translations['StateTransitions.copyModalConfirmButton']}
             </Button>
           </div>
         </form>

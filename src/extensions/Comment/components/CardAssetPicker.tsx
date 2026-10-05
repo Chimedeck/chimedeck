@@ -31,7 +31,9 @@ export function CardAssetPicker({ attachments, onUploadNew, onInsert, onClose }:
       }
     };
     document.addEventListener('mousedown', handler);
-    return () => { document.removeEventListener('mousedown', handler); };
+    return () => {
+      document.removeEventListener('mousedown', handler);
+    };
   }, [onClose]);
 
   // Close on Escape
@@ -40,7 +42,9 @@ export function CardAssetPicker({ attachments, onUploadNew, onInsert, onClose }:
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', handler);
-    return () => { document.removeEventListener('keydown', handler); };
+    return () => {
+      document.removeEventListener('keydown', handler);
+    };
   }, [onClose]);
 
   return (
@@ -71,7 +75,10 @@ export function CardAssetPicker({ attachments, onUploadNew, onInsert, onClose }:
         <button
           type="button"
           data-testid="asset-picker-upload-new"
-          onClick={() => { onUploadNew(); onClose(); }}
+          onClick={() => {
+            onUploadNew();
+            onClose();
+          }}
           className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-base hover:bg-bg-surface transition-colors"
         >
           <ArrowUpTrayIcon className="h-4 w-4 text-muted flex-shrink-0" />
@@ -94,7 +101,14 @@ export function CardAssetPicker({ attachments, onUploadNew, onInsert, onClose }:
         {attachments.length > 0 && (
           <ul className="max-h-52 overflow-y-auto flex flex-col gap-0.5">
             {attachments.map((att) => (
-              <AssetRow key={att.id} attachment={att} onInsert={() => { onInsert(att); onClose(); }} />
+              <AssetRow
+                key={att.id}
+                attachment={att}
+                onInsert={() => {
+                  onInsert(att);
+                  onClose();
+                }}
+              />
             ))}
           </ul>
         )}
@@ -137,9 +151,7 @@ function AssetRow({ attachment, onInsert }: Readonly<AssetRowProps>) {
         )}
 
         {/* Name */}
-        <span className="min-w-0 flex-1 truncate text-xs text-base">
-          {attachment.name}
-        </span>
+        <span className="min-w-0 flex-1 truncate text-xs text-base">{attachment.name}</span>
 
         {/* Insert label */}
         <span className="flex-shrink-0 text-[10px] text-indigo-500 dark:text-indigo-400 font-medium">

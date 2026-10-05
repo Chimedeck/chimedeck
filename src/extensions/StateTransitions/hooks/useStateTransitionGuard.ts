@@ -76,7 +76,7 @@ export function buildStateTransitionGuardSnapshot({
 export function canMoveWithSnapshot(
   snapshot: StateTransitionGuardSnapshot,
   fromListId: string,
-  toListId: string,
+  toListId: string
 ): boolean {
   if (fromListId === toListId) return true;
   if (!snapshot.isEnforcementActive) return true;
@@ -90,7 +90,7 @@ export function canMoveWithSnapshot(
 
 export function getAllowedNextStatesWithSnapshot(
   snapshot: StateTransitionGuardSnapshot,
-  fromListId: string,
+  fromListId: string
 ): AllowedNextState[] {
   const rule = snapshot.ruleByCurrentStateId.get(fromListId);
   if (!rule) return [];
@@ -102,7 +102,7 @@ export function getAllowedNextStatesWithSnapshot(
 
 export function isListLockedWithSnapshot(
   snapshot: StateTransitionGuardSnapshot,
-  listId: string,
+  listId: string
 ): boolean {
   if (!snapshot.isEnforcementActive) return false;
   if (!snapshot.isRulesLoaded) return false;
@@ -115,7 +115,7 @@ export function isListLockedWithSnapshot(
 export function getRejectionReasonWithSnapshot(
   snapshot: StateTransitionGuardSnapshot,
   fromListId: string,
-  toListId: string,
+  toListId: string
 ): StateTransitionRejectionReason {
   return {
     fromListId,
@@ -131,7 +131,7 @@ export function useStateTransitionGuard(boardId: string) {
   const listsById = useAppSelector(selectLists);
   const knownLists = useMemo(
     () => Object.values(listsById).map((list) => ({ id: list.id, title: list.title })),
-    [listsById],
+    [listsById]
   );
   const {
     data: rulesData,
@@ -142,30 +142,31 @@ export function useStateTransitionGuard(boardId: string) {
   });
 
   const snapshot = useMemo(
-    () => buildStateTransitionGuardSnapshot({
-      stateTransitionsFeatureEnabled,
-      boardEnforced: rulesData?.enabled ?? false,
-      rules: rulesData?.rules ?? null,
-      knownLists,
-    }),
-    [knownLists, rulesData?.enabled, rulesData?.rules, stateTransitionsFeatureEnabled],
+    () =>
+      buildStateTransitionGuardSnapshot({
+        stateTransitionsFeatureEnabled,
+        boardEnforced: rulesData?.enabled ?? false,
+        rules: rulesData?.rules ?? null,
+        knownLists,
+      }),
+    [knownLists, rulesData?.enabled, rulesData?.rules, stateTransitionsFeatureEnabled]
   );
 
   const canMove = useCallback(
-    (fromListId: string, toListId: string): boolean => canMoveWithSnapshot(snapshot, fromListId, toListId),
-    [snapshot],
+    (fromListId: string, toListId: string): boolean =>
+      canMoveWithSnapshot(snapshot, fromListId, toListId),
+    [snapshot]
   );
 
   const getRejectionReason = useCallback(
-    (fromListId: string, toListId: string): StateTransitionRejectionReason => (
-      getRejectionReasonWithSnapshot(snapshot, fromListId, toListId)
-    ),
-    [snapshot],
+    (fromListId: string, toListId: string): StateTransitionRejectionReason =>
+      getRejectionReasonWithSnapshot(snapshot, fromListId, toListId),
+    [snapshot]
   );
 
   const isListLocked = useCallback(
     (listId: string): boolean => isListLockedWithSnapshot(snapshot, listId),
-    [snapshot],
+    [snapshot]
   );
 
   return {

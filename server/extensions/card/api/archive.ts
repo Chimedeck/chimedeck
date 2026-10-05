@@ -39,7 +39,7 @@ export async function handleArchiveCard(req: Request, cardId: string): Promise<R
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -49,14 +49,14 @@ export async function handleArchiveCard(req: Request, cardId: string): Promise<R
   if (!list || !board) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card context not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   if (board.state === 'ARCHIVED') {
     return Response.json(
       { error: { code: 'board-archived', message: 'Board is archived and cannot be modified' } },
-      { status: 403 },
+      { status: 403 }
     );
   }
 

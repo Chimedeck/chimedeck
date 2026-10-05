@@ -43,7 +43,7 @@ const StateTransitionsEditorPage = () => {
               id: board.id,
               short_id: board.short_id ?? null,
               title: board.title,
-            }),
+            })
           );
           return;
         }

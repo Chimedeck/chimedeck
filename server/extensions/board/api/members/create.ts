@@ -9,6 +9,8 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
 import { dispatchEvent } from '../../../../mods/events/dispatch';
+import { applyLimitGuard } from '../../../../middlewares/limitGuard';
+import { getInvitedMemberCountForBoard } from '../../../subscription/common/usage';
 
 type BoardMemberRole = 'ADMIN' | 'MEMBER';
 const VALID_ROLES = new Set<BoardMemberRole>(['ADMIN', 'MEMBER']);
@@ -35,7 +37,7 @@ export async function handleAddBoardMember(req: Request, boardId: string): Promi
   if (!currentUserId) {
     return Response.json(
       { name: 'unauthorized', data: { message: 'Authentication required' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -56,7 +58,7 @@ export async function handleAddBoardMember(req: Request, boardId: string): Promi
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be valid JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -64,13 +66,21 @@ export async function handleAddBoardMember(req: Request, boardId: string): Promi
   if (!userId || typeof userId !== 'string') {
     return Response.json(
       { name: 'missing-user-id', data: { message: 'userId is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   const role: BoardMemberRole = VALID_ROLES.has(body.role as BoardMemberRole)
     ? (body.role as BoardMemberRole)
     : 'MEMBER';
+
+  const memberCount = await getInvitedMemberCountForBoard(boardId);
+  const limitError = await applyLimitGuard({
+    workspaceId: board.workspace_id,
+    limitKey: 'maxInvitedMembersPerBoard',
+    currentUsage: memberCount,
+  });
+  if (limitError) return limitError;
 
   // Target user must be a workspace member (not a guest) to be added to a board.
   const workspaceMembership = await db<MembershipRow>('memberships')
@@ -80,8 +90,11 @@ export async function handleAddBoardMember(req: Request, boardId: string): Promi
 
   if (!workspaceMembership) {
     return Response.json(
-      { name: 'user-not-workspace-member', data: { message: 'User must be a workspace member before being added to a board' } },
-      { status: 422 },
+      {
+        name: 'user-not-workspace-member',
+        data: { message: 'User must be a workspace member before being added to a board' },
+      },
+      { status: 422 }
     );
   }
 
@@ -108,10 +121,10 @@ export async function handleAddBoardMember(req: Request, boardId: string): Promi
     .select(
       db.raw('u.id as id'),
       'u.email',
-      db.raw("COALESCE(u.name, u.email) as name"),
+      db.raw('COALESCE(u.name, u.email) as name'),
       'u.nickname',
       'bm.role',
-      'bm.created_at',
+      'bm.created_at'
     )
     .first<MemberResponseRow>();
 

@@ -20,7 +20,7 @@ export async function handleRevokeToken(req: Request, tokenId: string): Promise<
   if (!token || token.user_id !== userId) {
     return Response.json(
       { name: 'token-not-found', data: { message: 'Token not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

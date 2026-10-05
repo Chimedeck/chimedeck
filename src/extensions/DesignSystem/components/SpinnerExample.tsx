@@ -5,7 +5,9 @@ export default function SpinnerExample() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">Sizes</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">
+          Sizes
+        </p>
         <div className="flex items-center gap-6">
           <div className="flex flex-col items-center gap-2">
             <Spinner size="sm" />

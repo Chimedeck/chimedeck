@@ -34,6 +34,6 @@ export async function sendViaSes({ to, subject, html, text }: EmailPayload): Pro
           Text: { Data: text, Charset: 'UTF-8' },
         },
       },
-    }),
+    })
   );
 }

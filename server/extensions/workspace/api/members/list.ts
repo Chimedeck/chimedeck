@@ -29,7 +29,7 @@ export async function handleListMembers(req: Request, workspaceId: string): Prom
       db.raw('users.id as "userId"'),
       'users.email',
       db.raw('COALESCE(users.name, users.email) as name'),
-      'memberships.role',
+      'memberships.role'
     );
 
   return Response.json({ data: members });

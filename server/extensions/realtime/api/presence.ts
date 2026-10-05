@@ -12,21 +12,28 @@ export async function handleGetPresence(req: Request, boardId: string): Promise<
 
   const resolvedBoardId = await resolveBoardId(boardId);
   if (!resolvedBoardId) {
-    return Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 });
+    return Response.json(
+      { error: { code: 'board-not-found', message: 'Board not found' } },
+      { status: 404 }
+    );
   }
 
   const board = await db('boards').where({ id: resolvedBoardId }).first();
   if (!board) {
-    return Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 });
+    return Response.json(
+      { error: { code: 'board-not-found', message: 'Board not found' } },
+      { status: 404 }
+    );
   }
 
   const keys = await cache.keys(`presence:${resolvedBoardId}:*`);
   const userIds = keys.map((k) => k.split(':')[2]).filter(Boolean) as string[];
 
   // Sprint 13: return full User objects including avatarUrl
-  const users = userIds.length > 0
-    ? await db('users').whereIn('id', userIds).select('id', 'email', 'name', 'avatar_url')
-    : [];
+  const users =
+    userIds.length > 0
+      ? await db('users').whereIn('id', userIds).select('id', 'email', 'name', 'avatar_url')
+      : [];
 
   const data = users.map((user) => ({
     ...user,

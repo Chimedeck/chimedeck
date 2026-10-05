@@ -9,8 +9,6 @@ import { automationConfig } from '../config';
 
 const BOARD_RUN_CAP = 200;
 const DEFAULT_PER_PAGE = 50;
-type BoardRow = { workspace_id: string };
-type BoardRunRow = Record<string, unknown>;
 
 export async function handleGetBoardRuns(req: Request, boardId: string): Promise<Response> {
   if (!automationConfig.enabled) {
@@ -20,22 +18,21 @@ export async function handleGetBoardRuns(req: Request, boardId: string): Promise
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const board = (await db('boards').where({ id: boardId }).first()) as BoardRow | undefined;
+  const board = await db('boards').where({ id: boardId }).first();
   if (!board) {
     return Response.json({ error: { name: 'board-not-found' } }, { status: 404 });
   }
 
   const membershipError = await requireWorkspaceMembership(
     req as AuthenticatedRequest,
-    board.workspace_id,
+    board.workspace_id
   );
   if (membershipError) {
-    const currentUser = (req as AuthenticatedRequest).currentUser;
-    if (!currentUser) return membershipError;
-    const guest = (await db('board_guests')
+    const currentUser = (req as AuthenticatedRequest).currentUser!;
+    const guest = await db('board_guests')
       .where({ board_id: boardId, user_id: currentUser.id })
       .first()
-      .catch(() => null)) as Record<string, unknown> | null;
+      .catch(() => null);
     if (!guest) return membershipError;
   }
 
@@ -64,16 +61,16 @@ export async function handleGetBoardRuns(req: Request, boardId: string): Promise
       'u.name as triggeredByUserName',
       'r.ran_at as ranAt',
       'r.context',
-      'r.error_message as errorMessage',
+      'r.error_message as errorMessage'
     );
 
-  const allRows = (await recentRuns) as BoardRunRow[];
+  const allRows = await recentRuns;
 
   const totalCount = allRows.length;
   const totalPage = Math.ceil(totalCount / perPage);
   const pageRows = allRows.slice((page - 1) * perPage, page * perPage);
 
-  const data = pageRows.map((row) => ({
+  const data = pageRows.map((row: Record<string, unknown>) => ({
     id: row.id,
     automationId: row.automationId,
     automationName: row.automationName,
@@ -81,12 +78,11 @@ export async function handleGetBoardRuns(req: Request, boardId: string): Promise
     status: row.status,
     cardId: row.cardId ?? null,
     cardName: row.cardName ?? null,
-    triggeredByUser:
-      row.triggeredByUserId
-        ? { id: row.triggeredByUserId, name: row.triggeredByUserName ?? null }
-        : null,
+    triggeredByUser: row.triggeredByUserId
+      ? { id: row.triggeredByUserId, name: row.triggeredByUserName ?? null }
+      : null,
     ranAt: row.ranAt,
-    context: typeof row.context === 'string' ? JSON.parse(row.context) as unknown : (row.context ?? {}),
+    context: typeof row.context === 'string' ? JSON.parse(row.context) : (row.context ?? {}),
     errorMessage: row.errorMessage ?? null,
   }));
 

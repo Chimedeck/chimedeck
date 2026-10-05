@@ -20,12 +20,7 @@ export default function TopbarContainer() {
     <div className="flex h-12 items-center justify-between border-b border-border bg-bg-surface px-4">
       <span className="font-semibold text-base">{translations['App.name']}</span>
       {user && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleLogout}
-          aria-label="Log out"
-        >
+        <Button variant="ghost" size="sm" onClick={handleLogout} aria-label="Log out">
           Log out
         </Button>
       )}

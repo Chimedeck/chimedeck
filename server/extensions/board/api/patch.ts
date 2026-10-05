@@ -41,13 +41,19 @@ export async function handlePatchBoard(req: Request, boardId: string): Promise<R
   const roleError = requireRole(scopedReq, 'ADMIN');
   if (roleError) return roleError;
 
-  let body: { title?: string; monetization_type?: MonetizationType | null; visibility?: BoardVisibility; description?: string | null; background?: string | null };
+  let body: {
+    title?: string;
+    monetization_type?: MonetizationType | null;
+    visibility?: BoardVisibility;
+    description?: string | null;
+    background?: string | null;
+  };
   try {
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -57,7 +63,7 @@ export async function handlePatchBoard(req: Request, boardId: string): Promise<R
     if (typeof body.title !== 'string' || body.title.trim() === '') {
       return Response.json(
         { error: { code: 'bad-request', message: 'title must be a non-empty string' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.title = sanitizeText(body.title.trim());
@@ -70,7 +76,7 @@ export async function handlePatchBoard(req: Request, boardId: string): Promise<R
           name: 'bad-request',
           data: { message: "monetization_type must be null, 'pre-paid', or 'pay-to-paid'" },
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.monetization_type = body.monetization_type ?? null;
@@ -79,8 +85,13 @@ export async function handlePatchBoard(req: Request, boardId: string): Promise<R
   if (body.visibility !== undefined) {
     if (!VALID_VISIBILITY.includes(body.visibility)) {
       return Response.json(
-        { error: { code: 'bad-request', message: "visibility must be 'PUBLIC', 'PRIVATE', or 'WORKSPACE'" } },
-        { status: 400 },
+        {
+          error: {
+            code: 'bad-request',
+            message: "visibility must be 'PUBLIC', 'PRIVATE', or 'WORKSPACE'",
+          },
+        },
+        { status: 400 }
       );
     }
     updates.visibility = body.visibility;
@@ -97,7 +108,7 @@ export async function handlePatchBoard(req: Request, boardId: string): Promise<R
   if (Object.keys(updates).length === 0) {
     return Response.json(
       { error: { code: 'bad-request', message: 'No valid fields provided for update' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 

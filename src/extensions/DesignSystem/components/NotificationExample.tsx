@@ -1,5 +1,10 @@
 // NotificationExample — static notification feed items; no API calls.
-import { BellIcon, CheckCircleIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import {
+  BellIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  InformationCircleIcon,
+} from '@heroicons/react/24/outline';
 
 interface StubNotification {
   id: string;
@@ -65,11 +70,16 @@ export default function NotificationExample() {
               <Icon className={`h-5 w-5 mt-0.5 shrink-0 ${color}`} aria-hidden="true" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className={`text-sm font-medium ${n.read ? 'text-text-secondary' : 'text-text-primary'}`}>
+                  <p
+                    className={`text-sm font-medium ${n.read ? 'text-text-secondary' : 'text-text-primary'}`}
+                  >
                     {n.title}
                   </p>
                   {!n.read && (
-                    <span className={`h-1.5 w-1.5 rounded-full ${dot} shrink-0`} aria-hidden="true" />
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${dot} shrink-0`}
+                      aria-hidden="true"
+                    />
                   )}
                 </div>
                 <p className="text-xs text-text-secondary truncate">{n.body}</p>

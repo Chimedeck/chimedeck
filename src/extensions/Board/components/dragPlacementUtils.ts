@@ -26,10 +26,10 @@ export function shouldRecomputeFromPointerDestination({
   resolvedFromPlaceholder: boolean;
 }): boolean {
   return (
-    disableLiveDragPreview
-    && pointerListId != null
-    && pointerListExists
-    && pointerListId !== fromListId
-    && (!resolvedFromPlaceholder || pointerListId !== resolvedToListId)
+    disableLiveDragPreview &&
+    pointerListId != null &&
+    pointerListExists &&
+    pointerListId !== fromListId &&
+    (!resolvedFromPlaceholder || pointerListId !== resolvedToListId)
   );
 }

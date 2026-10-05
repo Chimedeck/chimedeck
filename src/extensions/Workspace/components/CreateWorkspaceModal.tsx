@@ -25,6 +25,12 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
 
   const [name, setName] = useState('');
 
+  const isBlockedByWorkspaceLimit = error?.code === 'workspace-creation-limit-reached';
+
+  const errorText = isBlockedByWorkspaceLimit
+    ? translations['CreateWorkspaceModal.errorUpgradeAllOwnedWorkspaces']
+    : error?.message || translations['CreateWorkspaceModal.errorGeneric'];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -56,16 +62,21 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
             {translations['CreateWorkspaceModal.description']}
           </p>
 
-          <form onSubmit={(e) => { void handleSubmit(e); }} noValidate>
+          <form onSubmit={handleSubmit} noValidate>
             <div className="mb-4">
-              <label htmlFor="workspace-name" className="mb-1.5 block text-sm font-medium text-subtle">
+              <label
+                htmlFor="workspace-name"
+                className="mb-1.5 block text-sm font-medium text-subtle"
+              >
                 {translations['CreateWorkspaceModal.nameLabel']}
               </label>
               <input
                 id="workspace-name"
                 type="text"
                 value={name}
-                onChange={(e) => { setName(e.target.value); }}
+                onChange={(e) => {
+                  setName(e.target.value);
+                }}
                 placeholder={translations['CreateWorkspaceModal.namePlaceholder']}
                 required
                 autoFocus
@@ -74,16 +85,32 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
             </div>
 
             {error && (
-              <p className="mb-3 text-sm text-danger">
-                {translations['CreateWorkspaceModal.errorGeneric']}
-              </p>
+              <div className="mb-3 space-y-1">
+                <p className="text-sm text-danger">{errorText}</p>
+                {isBlockedByWorkspaceLimit && error.data?.upgradeUrl && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigate(error.data!.upgradeUrl!);
+                    }}
+                    className="text-sm text-primary underline underline-offset-2"
+                  >
+                    {translations['CreateWorkspaceModal.upgradeWorkspaceLink']}
+                  </button>
+                )}
+              </div>
             )}
 
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" size="md" onClick={handleCancel}>
                 {translations['CreateWorkspaceModal.cancelButton']}
               </Button>
-              <Button type="submit" variant="primary" size="md" disabled={inProgress || !name.trim()}>
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                disabled={inProgress || !name.trim()}
+              >
                 {inProgress
                   ? translations['CreateWorkspaceModal.submitting']
                   : translations['CreateWorkspaceModal.submitButton']}

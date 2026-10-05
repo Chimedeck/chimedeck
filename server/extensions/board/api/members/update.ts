@@ -27,7 +27,7 @@ type BoardMemberUpdateRequest = BoardVisibilityScopedRequest & { currentUser: { 
 export async function handleUpdateBoardMember(
   req: Request,
   boardId: string,
-  userId: string,
+  userId: string
 ): Promise<Response> {
   const scopedReq = req as BoardMemberUpdateRequest;
 
@@ -40,14 +40,14 @@ export async function handleUpdateBoardMember(
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be valid JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.role || !VALID_ROLES.has(body.role as BoardMemberRole)) {
     return Response.json(
       { name: 'invalid-role', data: { message: 'role must be ADMIN or MEMBER' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -58,8 +58,11 @@ export async function handleUpdateBoardMember(
     .first<BoardMemberRow | undefined>();
   if (!existing) {
     return Response.json(
-      { name: 'board-member-not-found', data: { message: 'This user is not a member of the board' } },
-      { status: 404 },
+      {
+        name: 'board-member-not-found',
+        data: { message: 'This user is not a member of the board' },
+      },
+      { status: 404 }
     );
   }
 
@@ -73,8 +76,11 @@ export async function handleUpdateBoardMember(
     const count = Number(adminCount?.count ?? 0);
     if (count <= 1) {
       return Response.json(
-        { name: 'last-board-admin', data: { message: 'Cannot demote the last board admin. Promote another member first.' } },
-        { status: 409 },
+        {
+          name: 'last-board-admin',
+          data: { message: 'Cannot demote the last board admin. Promote another member first.' },
+        },
+        { status: 409 }
       );
     }
   }
@@ -89,10 +95,10 @@ export async function handleUpdateBoardMember(
     .select(
       db.raw('u.id as id'),
       'u.email',
-      db.raw("COALESCE(u.name, u.email) as name"),
+      db.raw('COALESCE(u.name, u.email) as name'),
       'u.nickname',
       'bm.role',
-      'bm.updated_at',
+      'bm.updated_at'
     )
     .first<MemberResponseRow>();
 

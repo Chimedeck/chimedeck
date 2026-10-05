@@ -78,12 +78,10 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
       const activeCardId = openCardIdRef.current;
       const activeCard = openCardDetailRef.current;
       const isTargetingOpenCard = Boolean(
-        targetCardId
-        && (
-          targetCardId === activeCardId
-          || targetCardId === activeCard?.id
-          || targetCardId === activeCard?.short_id
-        ),
+        targetCardId &&
+        (targetCardId === activeCardId ||
+          targetCardId === activeCard?.id ||
+          targetCardId === activeCard?.short_id)
       );
 
       // [why] Board rooms receive comment events for every card in the board.
@@ -107,12 +105,12 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
                 ...boardCard,
                 comment_count: (boardCard.comment_count ?? 0) + 1,
               },
-            }),
+            })
           );
         }
       }
     },
-    [dispatch],
+    [dispatch]
   );
 
   const syncCardMembersFromServer = useCallback(
@@ -137,7 +135,7 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
         })
         .catch(() => {});
     },
-    [dispatch],
+    [dispatch]
   );
 
   const handleEvent = useCallback(
@@ -159,22 +157,38 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
         // ── List events ──────────────────────────────────────────────────
         case 'list_created': {
           const list = (payload as { list: List }).list;
-          dispatch(listSliceActions.remoteCreate(payload as Parameters<typeof listSliceActions.remoteCreate>[0]));
+          dispatch(
+            listSliceActions.remoteCreate(
+              payload as Parameters<typeof listSliceActions.remoteCreate>[0]
+            )
+          );
           dispatch(boardSliceActions.addList({ list }));
           break;
         }
         case 'list_updated': {
           const list = (payload as { list: List }).list;
-          dispatch(listSliceActions.remoteUpdate(payload as Parameters<typeof listSliceActions.remoteUpdate>[0]));
+          dispatch(
+            listSliceActions.remoteUpdate(
+              payload as Parameters<typeof listSliceActions.remoteUpdate>[0]
+            )
+          );
           dispatch(boardSliceActions.updateList({ list }));
           break;
         }
         case 'list_archived':
-          dispatch(listSliceActions.remoteArchive(payload as Parameters<typeof listSliceActions.remoteArchive>[0]));
+          dispatch(
+            listSliceActions.remoteArchive(
+              payload as Parameters<typeof listSliceActions.remoteArchive>[0]
+            )
+          );
           break;
         case 'list_reordered': {
           const p = payload as { boardId: string; lists: List[] };
-          dispatch(listSliceActions.remoteReorder(payload as Parameters<typeof listSliceActions.remoteReorder>[0]));
+          dispatch(
+            listSliceActions.remoteReorder(
+              payload as Parameters<typeof listSliceActions.remoteReorder>[0]
+            )
+          );
           // Derive new order from authoritative positions list
           const newOrder = [...p.lists]
             .sort((a, b) => (a.position < b.position ? -1 : 1))
@@ -187,21 +201,31 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
             listId: string;
             cards: Array<{ id: string; list_id: string; position: string }>;
           };
-          dispatch(boardSliceActions.applySortedListFromServer({ listId: p.listId, cards: p.cards }));
+          dispatch(
+            boardSliceActions.applySortedListFromServer({ listId: p.listId, cards: p.cards })
+          );
           break;
         }
 
         // ── Card events ──────────────────────────────────────────────────
         case 'card_created': {
           const card = (payload as { card: Card }).card;
-          dispatch(cardSliceActions.remoteCreate(payload as Parameters<typeof cardSliceActions.remoteCreate>[0]));
+          dispatch(
+            cardSliceActions.remoteCreate(
+              payload as Parameters<typeof cardSliceActions.remoteCreate>[0]
+            )
+          );
           dispatch(boardSliceActions.addCard({ card }));
           break;
         }
         case 'card_updated':
         case 'card.updated': {
           const card = (payload as { card: Card }).card;
-          dispatch(cardSliceActions.remoteUpdate(payload as Parameters<typeof cardSliceActions.remoteUpdate>[0]));
+          dispatch(
+            cardSliceActions.remoteUpdate(
+              payload as Parameters<typeof cardSliceActions.remoteUpdate>[0]
+            )
+          );
           dispatch(boardSliceActions.updateCard({ card }));
           // Also update the card detail modal if it's open for this card
           dispatch(cardDetailSliceActions.remoteUpdate({ card }));
@@ -250,23 +274,48 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
         // ── Comment reaction events ───────────────────────────────────────
         case 'comment_reaction_added': {
           // [why] Server emits snake_case keys (comment_id, user_id) — destructure accordingly.
-          const { comment_id: commentId, emoji, user_id: userId, actor_name: actorName } =
-            payload as { comment_id: string; emoji: string; user_id: string; actor_name?: string | null };
+          const {
+            comment_id: commentId,
+            emoji,
+            user_id: userId,
+            actor_name: actorName,
+          } = payload as {
+            comment_id: string;
+            emoji: string;
+            user_id: string;
+            actor_name?: string | null;
+          };
           const reactedByMe = userId === currentUserIdRef.current;
-          dispatch(cardDetailSliceActions.addReaction({ commentId, emoji, userId, reactedByMe, actorName: actorName ?? null }));
+          dispatch(
+            cardDetailSliceActions.addReaction({
+              commentId,
+              emoji,
+              userId,
+              reactedByMe,
+              actorName: actorName ?? null,
+            })
+          );
           break;
         }
         case 'comment_reaction_removed': {
-          const { comment_id: commentId, emoji, user_id: userId } =
-            payload as { comment_id: string; emoji: string; user_id: string };
+          const {
+            comment_id: commentId,
+            emoji,
+            user_id: userId,
+          } = payload as { comment_id: string; emoji: string; user_id: string };
           const reactedByMe = userId === currentUserIdRef.current;
-          dispatch(cardDetailSliceActions.removeReaction({ commentId, emoji, userId, reactedByMe }));
+          dispatch(
+            cardDetailSliceActions.removeReaction({ commentId, emoji, userId, reactedByMe })
+          );
           break;
         }
 
         // ── Comment reply events ──────────────────────────────────────────
         case 'comment_reply_added': {
-          const { parent_comment_id, reply } = payload as { parent_comment_id: string; reply: CommentData };
+          const { parent_comment_id, reply } = payload as {
+            parent_comment_id: string;
+            reply: CommentData;
+          };
           // [why] The author path already updates reply_count after POST success.
           // Ignore our own WS echo to avoid counting the same reply twice.
           if (!reply) break;
@@ -283,9 +332,10 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
           dispatch(cardDetailSliceActions.addActivity(activity));
 
           if (
-            (activity.action === 'card_member_assigned' || activity.action === 'card_member_unassigned')
-            && typeof activity.entity_id === 'string'
-            && activity.entity_id.length > 0
+            (activity.action === 'card_member_assigned' ||
+              activity.action === 'card_member_unassigned') &&
+            typeof activity.entity_id === 'string' &&
+            activity.entity_id.length > 0
           ) {
             syncCardMembersFromServer(activity.entity_id);
           }
@@ -316,7 +366,7 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
         dispatch({ type: 'realtime/wsConfirmed', payload: { type, sequence, boardId } });
       }
     },
-    [applyRemoteCommentAdded, dispatch, boardId, syncCardMembersFromServer],
+    [applyRemoteCommentAdded, dispatch, boardId, syncCardMembersFromServer]
   );
 
   return { handleEvent, lastSequence: lastSeqRef.current };

@@ -22,12 +22,7 @@ interface MemberListProps {
   canManageMembers: boolean;
 }
 
-const MemberList = ({
-  workspaceId,
-  members,
-  currentUserId,
-  canManageMembers,
-}: MemberListProps) => {
+const MemberList = ({ workspaceId, members, currentUserId, canManageMembers }: MemberListProps) => {
   const dispatch = useAppDispatch();
   const removeError = useAppSelector(removeErrorSelector);
   const updateRoleError = useAppSelector(updateRoleErrorSelector);
@@ -37,7 +32,7 @@ const MemberList = ({
   const ownerCount = members.filter((m) => m.role === 'OWNER').length;
 
   const handleRoleChange = (userId: string, newRole: Role) => {
-    void dispatch(updateMemberRoleThunk({ workspaceId, userId, role: newRole }));
+    dispatch(updateMemberRoleThunk({ workspaceId, userId, role: newRole }));
   };
 
   const handleRemoveConfirm = (userId: string) => {
@@ -46,13 +41,12 @@ const MemberList = ({
 
   const handleRemove = () => {
     if (confirmRemoveUserId) {
-      void dispatch(removeMemberThunk({ workspaceId, userId: confirmRemoveUserId }));
+      dispatch(removeMemberThunk({ workspaceId, userId: confirmRemoveUserId }));
       setConfirmRemoveUserId(null);
     }
   };
 
-  const isLastOwner = (member: WorkspaceMember) =>
-    member.role === 'OWNER' && ownerCount <= 1;
+  const isLastOwner = (member: WorkspaceMember) => member.role === 'OWNER' && ownerCount <= 1;
 
   const removeErrorMessage = (() => {
     if (!removeError) return null;
@@ -118,16 +112,16 @@ const MemberList = ({
                     <Button
                       variant="link"
                       size="sm"
-                      onClick={() => { handleRemoveConfirm(member.userId); }}
+                      onClick={() => {
+                        handleRemoveConfirm(member.userId);
+                      }}
                       aria-label={`Remove ${member.email}`}
                       className="!text-danger"
                     >
                       Remove
                     </Button>
                   )}
-                  {isLastOwner(member) && (
-                    <span className="text-xs text-muted">Last owner</span>
-                  )}
+                  {isLastOwner(member) && <span className="text-xs text-muted">Last owner</span>}
                 </td>
               )}
             </tr>
@@ -154,15 +148,13 @@ const MemberList = ({
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => { setConfirmRemoveUserId(null); }}
+                onClick={() => {
+                  setConfirmRemoveUserId(null);
+                }}
               >
                 Cancel
               </Button>
-              <Button
-                type="button"
-                variant="danger"
-                onClick={handleRemove}
-              >
+              <Button type="button" variant="danger" onClick={handleRemove}>
                 Remove
               </Button>
             </div>

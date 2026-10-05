@@ -7,14 +7,6 @@ import { issueAccessToken } from '../mods/token/issue';
 import { jwtConfig } from '../common/config/jwt';
 import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 
-type VerifyEmailUserRow = {
-  id: string;
-  email: string;
-  name: string;
-  avatar_url: string | null;
-  verification_token_expires_at: Date | string | null;
-};
-
 export async function handleVerifyEmail(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const token = url.searchParams.get('token');
@@ -22,16 +14,16 @@ export async function handleVerifyEmail(req: Request): Promise<Response> {
   if (!token) {
     return Response.json(
       { error: { code: 'invalid-or-expired-token', message: 'Token is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
-  const user = (await db('users').where({ verification_token: token }).first()) as VerifyEmailUserRow | undefined;
+  const user = await db('users').where({ verification_token: token }).first();
 
   if (!user) {
     return Response.json(
       { error: { code: 'invalid-or-expired-token', message: 'Token is invalid or has expired' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -39,7 +31,7 @@ export async function handleVerifyEmail(req: Request): Promise<Response> {
   if (!user.verification_token_expires_at || new Date(user.verification_token_expires_at) < now) {
     return Response.json(
       { error: { code: 'invalid-or-expired-token', message: 'Token is invalid or has expired' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -66,7 +58,7 @@ export async function handleVerifyEmail(req: Request): Promise<Response> {
   const responseHeaders = new Headers({ 'Content-Type': 'application/json' });
   responseHeaders.append(
     'Set-Cookie',
-    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Max-Age=${String(jwtConfig.refreshTokenTtlDays * 86400)}`,
+    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`
   );
 
   const avatarUrl = buildAvatarProxyUrl({ userId: user.id, avatarUrl: user.avatar_url ?? null });
@@ -78,6 +70,6 @@ export async function handleVerifyEmail(req: Request): Promise<Response> {
         user: { id: user.id, email: user.email, name: user.name, avatarUrl },
       },
     }),
-    { status: 200, headers: responseHeaders },
+    { status: 200, headers: responseHeaders }
   );
 }

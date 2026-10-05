@@ -136,10 +136,14 @@ export function useWebSocket({
         pingPropagationDelay(event);
         onEvent(event);
       },
-      onOpen: () => { void handleOpen(); },
+      onOpen: handleOpen,
       onClose: handleClose,
-      onPollingActive: () => { setPollingActive(true); },
-      onPollingInactive: () => { setPollingActive(false); },
+      onPollingActive: () => {
+        setPollingActive(true);
+      },
+      onPollingInactive: () => {
+        setPollingActive(false);
+      },
     });
 
     socket.connect({ boardId, token });
@@ -149,6 +153,7 @@ export function useWebSocket({
       socket.disconnect({ boardId });
     };
     // We intentionally only reconnect when boardId/token change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boardId, token]);
 
   return { connected: connectionState === 'connected', connectionState, pollingActive };

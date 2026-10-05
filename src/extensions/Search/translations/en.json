@@ -1,6 +1,7 @@
 {
   "search.modal.title": "Search",
   "search.input.placeholder": "Search boards and cards…",
+  "search.input.ariaLabel": "Search",
   "search.results.boards": "Boards",
   "search.results.cards": "Cards",
   "search.results.empty": "No results found",

@@ -37,13 +37,13 @@ export default function WorkspaceListPage() {
   return (
     <div className="min-h-full p-6 md:p-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-base">
-          {translations['WorkspaceListPage.title']}
-        </h1>
+        <h1 className="text-2xl font-bold text-base">{translations['WorkspaceListPage.title']}</h1>
         <Button
           variant="primary"
           size="md"
-          onClick={() => { setShowCreateModal(true); }}
+          onClick={() => {
+            setShowCreateModal(true);
+          }}
         >
           {translations['WorkspaceListPage.newButton']}
         </Button>
@@ -62,7 +62,9 @@ export default function WorkspaceListPage() {
           <Button
             variant="primary"
             size="md"
-            onClick={() => { setShowCreateModal(true); }}
+            onClick={() => {
+              setShowCreateModal(true);
+            }}
           >
             {translations['WorkspaceListPage.emptyAction']}
           </Button>
@@ -72,7 +74,9 @@ export default function WorkspaceListPage() {
           {workspaces.map((ws) => (
             <div
               key={ws.id}
-              onClick={() => { handleOpen(ws.id); }}
+              onClick={() => {
+                handleOpen(ws.id);
+              }}
               className="cursor-pointer rounded-xl border border-border bg-bg-surface p-5 transition-colors hover:border-slate-400 dark:hover:border-slate-600"
             >
               <BuildingOfficeIcon className="mb-3 h-8 w-8 text-subtle" aria-hidden="true" />
@@ -84,7 +88,10 @@ export default function WorkspaceListPage() {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={(e) => { e.stopPropagation(); handleOpen(ws.id); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpen(ws.id);
+                }}
                 className="mt-4"
               >
                 {translations['WorkspaceListPage.openButton']}

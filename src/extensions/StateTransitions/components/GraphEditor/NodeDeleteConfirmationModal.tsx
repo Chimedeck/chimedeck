@@ -27,11 +27,19 @@ const NodeDeleteConfirmationModal = ({
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60">
       <div className="w-full max-w-lg rounded-xl border border-border bg-bg-surface p-6 shadow-xl">
         <div className="mb-4 flex items-start gap-3">
-          <ExclamationTriangleIcon className="mt-0.5 h-6 w-6 shrink-0 text-amber-500" aria-hidden="true" />
+          <ExclamationTriangleIcon
+            className="mt-0.5 h-6 w-6 shrink-0 text-amber-500"
+            aria-hidden="true"
+          />
           <div>
-            <h2 className="text-lg font-semibold text-base">{translations['StateTransitions.deleteColumnModalTitle']}</h2>
+            <h2 className="text-lg font-semibold text-base">
+              {translations['StateTransitions.deleteColumnModalTitle']}
+            </h2>
             <p className="mt-2 text-sm text-base">
-              {translations['StateTransitions.deleteColumnModalBody'].replace('{listTitles}', joinedTitles)}
+              {translations['StateTransitions.deleteColumnModalBody'].replace(
+                '{listTitles}',
+                joinedTitles
+              )}
             </p>
           </div>
         </div>
@@ -55,7 +63,9 @@ const NodeDeleteConfirmationModal = ({
               void onConfirm();
             }}
           >
-            {busy ? translations['StateTransitions.deleting'] : translations['StateTransitions.deleteColumnButton']}
+            {busy
+              ? translations['StateTransitions.deleting']
+              : translations['StateTransitions.deleteColumnButton']}
           </Button>
         </div>
       </div>

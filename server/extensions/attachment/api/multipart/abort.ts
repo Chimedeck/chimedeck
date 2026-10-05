@@ -36,7 +36,7 @@ interface PendingAttachmentRow {
 export async function handleMultipartAbort(
   req: Request,
   cardId: string,
-  uploadId: string,
+  uploadId: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -52,7 +52,7 @@ export async function handleMultipartAbort(
   if (!s3Key) {
     return Response.json(
       { name: 'bad-request', data: { message: 'key query parameter is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -79,8 +79,11 @@ export async function handleMultipartAbort(
     .first();
   if (!attachment) {
     return Response.json(
-      { name: 'attachment-not-found', data: { message: 'No pending attachment matches the provided key' } },
-      { status: 404 },
+      {
+        name: 'attachment-not-found',
+        data: { message: 'No pending attachment matches the provided key' },
+      },
+      { status: 404 }
     );
   }
 
@@ -91,7 +94,7 @@ export async function handleMultipartAbort(
         Bucket: s3Config.bucket,
         Key: s3Key,
         UploadId: uploadId,
-      }),
+      })
     );
   } catch (err: unknown) {
     // Log but proceed — the row must be cleaned up regardless

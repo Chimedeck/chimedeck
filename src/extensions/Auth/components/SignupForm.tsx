@@ -71,7 +71,7 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
     : null;
 
   return (
-    <form onSubmit={(e) => { void handleSubmit(e); }} noValidate aria-label="Sign up form">
+    <form onSubmit={handleSubmit} noValidate aria-label={translations['signupForm.ariaLabel']}>
       <div className="flex flex-col gap-4">
         {/* Name */}
         <div className="flex flex-col gap-1">
@@ -83,9 +83,13 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
             type="text"
             autoComplete="name"
             value={name}
-            onChange={(e) => { setName(e.target.value); }}
-            onBlur={() => { setErrors((prev) => ({ ...prev, name: validateName(name) })); }}
-            placeholder="Jane Smith"
+            onChange={(e) => {
+              setName(e.target.value);
+            }}
+            onBlur={() => {
+              setErrors((prev) => ({ ...prev, name: validateName(name) }));
+            }}
+            placeholder={translations['signupForm.namePlaceholder']}
             className={`w-full bg-bg-overlay border ${errors.name ? 'border-danger' : 'border-border'} text-base placeholder:text-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary`}
           />
           {errors.name && <p className="text-danger text-sm">{errors.name}</p>}
@@ -101,9 +105,13 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
             type="email"
             autoComplete="email"
             value={email}
-            onChange={(e) => { setEmail(e.target.value); }}
-            onBlur={() => { setErrors((prev) => ({ ...prev, email: validateEmail(email) })); }}
-            placeholder="you@example.com"
+            onChange={(e) => {
+              setEmail(e.target.value);
+            }}
+            onBlur={() => {
+              setErrors((prev) => ({ ...prev, email: validateEmail(email) }));
+            }}
+            placeholder={translations['signupForm.emailPlaceholder']}
             className={`w-full bg-bg-overlay border ${errors.email ? 'border-danger' : 'border-border'} text-base placeholder:text-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary`}
           />
           {errors.email && <p className="text-danger text-sm">{errors.email}</p>}
@@ -115,9 +123,13 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
           label={translations.fields.password}
           autoComplete="new-password"
           value={password}
-          onChange={(e) => { setPassword(e.target.value); }}
-          onBlur={() => { setErrors((prev) => ({ ...prev, password: validatePassword(password) })); }}
-          placeholder="Min. 8 characters"
+          onChange={(e) => {
+            setPassword(e.target.value);
+          }}
+          onBlur={() => {
+            setErrors((prev) => ({ ...prev, password: validatePassword(password) }));
+          }}
+          placeholder={translations['signupForm.passwordPlaceholder']}
           error={errors.password}
         />
 
@@ -127,25 +139,25 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
           label={translations.fields.confirmPassword}
           autoComplete="new-password"
           value={confirm}
-          onChange={(e) => { setConfirm(e.target.value); }}
-          onBlur={() => { setErrors((prev) => ({ ...prev, confirm: validateConfirm(confirm, password) })); }}
-          placeholder="Repeat your password"
+          onChange={(e) => {
+            setConfirm(e.target.value);
+          }}
+          onBlur={() => {
+            setErrors((prev) => ({ ...prev, confirm: validateConfirm(confirm, password) }));
+          }}
+          placeholder={translations['signupForm.confirmPasswordPlaceholder']}
           error={errors.confirm}
         />
 
         {/* API error */}
         {mappedApiError && (
-          <p role="alert" className="text-danger text-sm">{mappedApiError}</p>
+          <p role="alert" className="text-danger text-sm">
+            {mappedApiError}
+          </p>
         )}
 
         {/* Submit */}
-        <Button
-          type="submit"
-          variant="primary"
-          size="md"
-          disabled={isLoading}
-          className="w-full"
-        >
+        <Button type="submit" variant="primary" size="md" disabled={isLoading} className="w-full">
           {isLoading ? translations.actions.creatingAccount : translations.actions.createAccount}
         </Button>
       </div>

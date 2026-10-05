@@ -8,17 +8,17 @@ import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/
 import { automationConfig } from '../config';
 import { executeAutomation } from '../engine/executor';
 import { writeRunLog } from '../engine/logger';
-import type { AutomationRow, AutomationActionRow, AutomationEvent, EvaluationContext } from '../common/types';
+import type {
+  AutomationRow,
+  AutomationActionRow,
+  AutomationEvent,
+  EvaluationContext,
+} from '../common/types';
 
 const MAX_CARDS_PER_RUN = 50;
-type BoardRow = { workspace_id: string };
-type MembershipRow = Record<string, unknown>;
 
 /** Resolves targetScope config to a list of cardIds on the board. */
-async function resolveScope(
-  boardId: string,
-  config: Record<string, unknown>,
-): Promise<string[]> {
+async function resolveScope(boardId: string, config: Record<string, unknown>): Promise<string[]> {
   const scope = config.targetScope as string | undefined;
 
   // Base query: cards that belong to active (non-archived) lists on this board.
@@ -37,14 +37,18 @@ async function resolveScope(
     if (Array.isArray(config.labelIds) && (config.labelIds as string[]).length > 0) {
       const labelIds = config.labelIds as string[];
       query = query.whereExists(
-        db('card_labels').whereRaw('card_labels.card_id = cards.id').whereIn('card_labels.label_id', labelIds),
+        db('card_labels')
+          .whereRaw('card_labels.card_id = cards.id')
+          .whereIn('card_labels.label_id', labelIds)
       );
     }
     // Member filter
     if (Array.isArray(config.memberIds) && (config.memberIds as string[]).length > 0) {
       const memberIds = config.memberIds as string[];
       query = query.whereExists(
-        db('card_members').whereRaw('card_members.card_id = cards.id').whereIn('card_members.user_id', memberIds),
+        db('card_members')
+          .whereRaw('card_members.card_id = cards.id')
+          .whereIn('card_members.user_id', memberIds)
       );
     }
   }
@@ -57,7 +61,7 @@ async function resolveScope(
 export async function handleRunBoardButton(
   req: Request,
   boardId: string,
-  automationId: string,
+  automationId: string
 ): Promise<Response> {
   if (!automationConfig.enabled) {
     return Response.json({ error: { name: 'feature-disabled' } }, { status: 404 });
@@ -65,26 +69,30 @@ export async function handleRunBoardButton(
 
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
-  const currentUser = (req as AuthenticatedRequest).currentUser;
-  if (!currentUser) return Response.json({ error: { name: 'unauthorized' } }, { status: 401 });
+  const currentUser = (req as AuthenticatedRequest).currentUser!;
 
   // Verify board exists and caller is a member.
-  const board = (await db('boards').where({ id: boardId }).first()) as BoardRow | undefined;
+  const board = await db('boards').where({ id: boardId }).first();
   if (!board) {
     return Response.json({ error: { name: 'board-not-found' } }, { status: 404 });
   }
 
-  const boardMembership = (await db('memberships')
+  const boardMembership = await db('memberships')
     .where({ user_id: currentUser.id, workspace_id: board.workspace_id })
-    .first()) as MembershipRow | undefined;
+    .first();
   if (!boardMembership) {
     return Response.json({ error: { name: 'not-a-board-member' } }, { status: 403 });
   }
 
   // Load the BOARD_BUTTON automation.
-  const automation = (await db('automations')
-    .where({ id: automationId, board_id: boardId, automation_type: 'BOARD_BUTTON', is_enabled: true })
-    .first()) as (AutomationRow & { config: string | Record<string, unknown> | null }) | undefined;
+  const automation = await db('automations')
+    .where({
+      id: automationId,
+      board_id: boardId,
+      automation_type: 'BOARD_BUTTON',
+      is_enabled: true,
+    })
+    .first<AutomationRow>();
   if (!automation) {
     return Response.json({ error: { name: 'automation-not-found' } }, { status: 404 });
   }
@@ -97,8 +105,8 @@ export async function handleRunBoardButton(
   // Parse scope config from the automation's config column.
   let scopeConfig: Record<string, unknown> = { targetScope: 'board' };
   try {
-    const raw = automation.config;
-    if (raw) scopeConfig = typeof raw === 'string' ? JSON.parse(raw) as Record<string, unknown> : raw;
+    const raw = automation.config as string | Record<string, unknown> | null;
+    if (raw) scopeConfig = typeof raw === 'string' ? JSON.parse(raw) : raw;
   } catch {
     // Fall back to board-wide scope
   }
@@ -142,14 +150,19 @@ export async function handleRunBoardButton(
       evalContext,
       status: result.status,
       errorMessage: result.errorMessage,
-      context: { eventType: 'BOARD_BUTTON', cardId, automationId, triggeredBy: currentUser.id, batchRunLogId },
+      context: {
+        eventType: 'BOARD_BUTTON',
+        cardId,
+        automationId,
+        triggeredBy: currentUser.id,
+        batchRunLogId,
+      },
     }).catch(() => {
       // Logging failures must not surface to the caller.
     });
   }
 
-  const overallStatus =
-    failCount === 0 ? 'SUCCESS' : successCount === 0 ? 'FAILED' : 'PARTIAL';
+  const overallStatus = failCount === 0 ? 'SUCCESS' : successCount === 0 ? 'FAILED' : 'PARTIAL';
 
   return Response.json({
     data: {

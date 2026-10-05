@@ -29,7 +29,8 @@ export const boardMembersApi = createApi({
     baseUrl: '/api/v1',
     // [why] Attach Bearer token from Redux auth state for authenticated requests.
     prepareHeaders(headers, { getState }) {
-      const token = (getState() as { auth: { accessToken: string | null } }).auth?.accessToken ?? null;
+      const token =
+        (getState() as { auth: { accessToken: string | null } }).auth?.accessToken ?? null;
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }

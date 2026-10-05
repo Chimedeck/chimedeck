@@ -18,7 +18,10 @@ const EVENT_LABELS: Record<string, ActivityEventMeta> = {
   'card.member.added': { label: 'added a member', dotColor: 'bg-blue-500' },
   'card.member.removed': { label: 'removed a member', dotColor: 'bg-bg-sunken' },
   'card.due_date.set': { label: 'set this card to be due', dotColor: 'bg-yellow-500' },
-  'card.due_date.changed': { label: 'changed the due date of this card', dotColor: 'bg-yellow-500' },
+  'card.due_date.changed': {
+    label: 'changed the due date of this card',
+    dotColor: 'bg-yellow-500',
+  },
   'card.due_date.cleared': { label: 'cleared the due date', dotColor: 'bg-bg-sunken' },
   'card.description.updated': { label: 'updated the description', dotColor: 'bg-blue-500' },
   'card.money.updated': { label: 'updated the value', dotColor: 'bg-green-500' },
@@ -39,7 +42,7 @@ function formatDueDateLabel(value: unknown): string | null {
 export function getActivityEventMeta(
   eventType: string,
   payload?: Record<string, unknown>,
-  context?: ActivityEventContext,
+  context?: ActivityEventContext
 ): ActivityEventMeta {
   if (eventType === 'comment_reaction_added') {
     const emoji = typeof payload?.emoji === 'string' && payload.emoji ? payload.emoji : 'reaction';
@@ -89,13 +92,18 @@ export function getActivityEventMeta(
   }
 
   if (eventType === 'card.custom_field.updated') {
-    const fieldName = typeof payload?.fieldName === 'string' && payload.fieldName.trim().length > 0
-      ? payload.fieldName
-      : 'a field';
-    const newValueDisplay = typeof payload?.newValueDisplay === 'string' && payload.newValueDisplay.trim().length > 0
-      ? payload.newValueDisplay
-      : 'empty';
-    return { label: `updated ${fieldName} with ${newValueDisplay} on this card`, dotColor: 'bg-indigo-500' };
+    const fieldName =
+      typeof payload?.fieldName === 'string' && payload.fieldName.trim().length > 0
+        ? payload.fieldName
+        : 'a field';
+    const newValueDisplay =
+      typeof payload?.newValueDisplay === 'string' && payload.newValueDisplay.trim().length > 0
+        ? payload.newValueDisplay
+        : 'empty';
+    return {
+      label: `updated ${fieldName} with ${newValueDisplay} on this card`,
+      dotColor: 'bg-indigo-500',
+    };
   }
 
   if (eventType === 'card.due_date.set') {
@@ -109,7 +117,9 @@ export function getActivityEventMeta(
   if (eventType === 'card.due_date.changed') {
     const dueDate = formatDueDateLabel(payload?.dueDate);
     return {
-      label: dueDate ? `changed the due date of this card to ${dueDate}` : 'changed the due date of this card',
+      label: dueDate
+        ? `changed the due date of this card to ${dueDate}`
+        : 'changed the due date of this card',
       dotColor: 'bg-yellow-500',
     };
   }
@@ -121,7 +131,8 @@ export function getActivityEventMeta(
     return { label: `attached ${name} to this card`, dotColor: 'bg-blue-400' };
   }
   if (eventType === 'card_link_attached') {
-    const referencedCardTitle = typeof payload?.referencedCardTitle === 'string' ? payload.referencedCardTitle : '';
+    const referencedCardTitle =
+      typeof payload?.referencedCardTitle === 'string' ? payload.referencedCardTitle : '';
     const name = typeof payload?.name === 'string' ? payload.name : '';
     const linkUrl = typeof payload?.linkUrl === 'string' ? payload.linkUrl : '';
     const linkTarget = referencedCardTitle || name || linkUrl || 'a linked card';
@@ -141,37 +152,47 @@ export function getActivityEventMeta(
   }
 
   if (eventType === 'card_deleted') {
-    const title = typeof payload?.cardTitle === 'string' && payload.cardTitle ? ` "${payload.cardTitle}"` : '';
+    const title =
+      typeof payload?.cardTitle === 'string' && payload.cardTitle ? ` "${payload.cardTitle}"` : '';
     return { label: `deleted card${title}`, dotColor: 'bg-red-500' };
   }
 
   if (eventType === 'checklist_created') {
-    const title = typeof payload?.checklistTitle === 'string' ? payload.checklistTitle : 'a checklist';
+    const title =
+      typeof payload?.checklistTitle === 'string' ? payload.checklistTitle : 'a checklist';
     return { label: `added checklist "${title}"`, dotColor: 'bg-emerald-500' };
   }
 
   if (eventType === 'checklist_deleted') {
-    const title = typeof payload?.checklistTitle === 'string' ? payload.checklistTitle : 'a checklist';
+    const title =
+      typeof payload?.checklistTitle === 'string' ? payload.checklistTitle : 'a checklist';
     return { label: `deleted checklist "${title}"`, dotColor: 'bg-red-500' };
   }
 
   if (eventType === 'checklist_item_checked') {
     const item = typeof payload?.itemTitle === 'string' ? payload.itemTitle : 'an item';
-    const cl = typeof payload?.checklistTitle === 'string' && payload.checklistTitle ? ` in "${payload.checklistTitle}"` : '';
+    const cl =
+      typeof payload?.checklistTitle === 'string' && payload.checklistTitle
+        ? ` in "${payload.checklistTitle}"`
+        : '';
     return { label: `completed "${item}"${cl}`, dotColor: 'bg-emerald-500' };
   }
 
   if (eventType === 'checklist_item_unchecked') {
     const item = typeof payload?.itemTitle === 'string' ? payload.itemTitle : 'an item';
-    const cl = typeof payload?.checklistTitle === 'string' && payload.checklistTitle ? ` in "${payload.checklistTitle}"` : '';
+    const cl =
+      typeof payload?.checklistTitle === 'string' && payload.checklistTitle
+        ? ` in "${payload.checklistTitle}"`
+        : '';
     return { label: `unchecked "${item}"${cl}`, dotColor: 'bg-bg-sunken' };
   }
 
   if (eventType === 'checklist_item_assigned') {
     const item = typeof payload?.itemTitle === 'string' ? payload.itemTitle : 'an item';
-    const assigneeName = typeof payload?.assigneeName === 'string' && payload.assigneeName
-      ? payload.assigneeName
-      : 'a member';
+    const assigneeName =
+      typeof payload?.assigneeName === 'string' && payload.assigneeName
+        ? payload.assigneeName
+        : 'a member';
     return { label: `assigned ${assigneeName} to "${item}"`, dotColor: 'bg-blue-400' };
   }
 
@@ -187,6 +208,119 @@ export function getActivityEventMeta(
       return { label: `cleared due date for "${item}"`, dotColor: 'bg-bg-sunken' };
     }
     return { label: `updated due date for "${item}"`, dotColor: 'bg-yellow-500' };
+  }
+
+  // --- Sprint 176: sprint generation events ---
+
+  if (eventType === 'sprint_generation_started') {
+    return { label: 'started sprint generation', dotColor: 'bg-purple-500' };
+  }
+
+  if (eventType === 'sprint_generation_artifact_created') {
+    const fileCount = typeof payload?.fileCount === 'number' ? payload.fileCount : 0;
+    return {
+      label: fileCount ? `generated ${fileCount} sprint artifact(s)` : 'generated sprint artifacts',
+      dotColor: 'bg-indigo-500',
+    };
+  }
+
+  if (eventType === 'sprint_generation_card_created') {
+    const cardCount = typeof payload?.cardCount === 'number' ? payload.cardCount : 0;
+    return {
+      label: cardCount ? `created ${cardCount} sprint card(s)` : 'created sprint cards in board',
+      dotColor: 'bg-emerald-500',
+    };
+  }
+
+  if (eventType === 'sprint_generation_quota_exceeded') {
+    const hint =
+      typeof payload?.upgradeHint === 'string' && payload.upgradeHint
+        ? ` — ${payload.upgradeHint}`
+        : '';
+    return {
+      label: `sprint generation quota exceeded${hint}`,
+      dotColor: 'bg-amber-500',
+    };
+  }
+
+  if (eventType === 'sprint_generation_completed') {
+    const sprintCount = typeof payload?.sprintCount === 'number' ? payload.sprintCount : null;
+    return {
+      label:
+        sprintCount != null
+          ? `completed sprint generation — ${sprintCount} sprint(s) created`
+          : 'completed sprint generation',
+      dotColor: 'bg-emerald-600',
+    };
+  }
+
+  if (eventType === 'sprint_generation_failed') {
+    const reason =
+      typeof payload?.reason === 'string' && payload.reason ? `: ${payload.reason}` : '';
+    return {
+      label: `sprint generation failed${reason}`,
+      dotColor: 'bg-red-500',
+    };
+  }
+
+  // --- Sprint 176: as-built sync events ---
+
+  if (eventType === 'as_built_sync_started') {
+    return { label: 'started as-built sync', dotColor: 'bg-purple-500' };
+  }
+
+  if (eventType === 'as_built_sync_evidence_collected') {
+    const prCount = typeof payload?.prCount === 'number' ? payload.prCount : 0;
+    const fileCount = typeof payload?.fileCount === 'number' ? payload.fileCount : 0;
+    const parts: string[] = [];
+    if (prCount) parts.push(`${prCount} PR(s)`);
+    if (fileCount) parts.push(`${fileCount} file(s)`);
+    return {
+      label: parts.length
+        ? `collected as-built evidence (${parts.join(', ')})`
+        : 'collected as-built evidence',
+      dotColor: 'bg-blue-400',
+    };
+  }
+
+  if (eventType === 'as_built_sync_docs_updated') {
+    const fileCount = typeof payload?.fileCount === 'number' ? payload.fileCount : 0;
+    return {
+      label: fileCount
+        ? `updated ${fileCount} doc(s) with as-built changes`
+        : 'updated docs with as-built changes',
+      dotColor: 'bg-indigo-500',
+    };
+  }
+
+  if (eventType === 'as_built_sync_committed') {
+    const commitHash =
+      typeof payload?.commitHash === 'string' && payload.commitHash
+        ? ` ${payload.commitHash.slice(0, 7)}`
+        : '';
+    return {
+      label: `committed as-built sync changes${commitHash}`,
+      dotColor: 'bg-emerald-500',
+    };
+  }
+
+  if (eventType === 'as_built_sync_completed') {
+    const fileCount = typeof payload?.fileCount === 'number' ? payload.fileCount : 0;
+    return {
+      label: fileCount
+        ? `completed as-built sync — ${fileCount} file(s) updated`
+        : 'completed as-built sync',
+      dotColor: 'bg-emerald-600',
+    };
+  }
+
+  if (eventType === 'as_built_sync_failed') {
+    const reason =
+      typeof payload?.reason === 'string' && payload.reason ? `: ${payload.reason}` : '';
+    return {
+      label: `as-built sync failed${reason}`,
+      dotColor: 'bg-red-500',
+    };
   }
 
   return EVENT_LABELS[eventType] ?? FALLBACK;

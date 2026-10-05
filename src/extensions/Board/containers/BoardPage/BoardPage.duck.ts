@@ -19,11 +19,6 @@ interface BoardPageState {
   fetchError: SerializedError | null;
 }
 
-type BoardPageResponse = {
-  data: Board;
-  includes: { lists: List[]; cards: unknown[] };
-};
-
 const initialState: BoardPageState = {
   board: null,
   includes: { lists: [], cards: [] },
@@ -36,9 +31,8 @@ const initialState: BoardPageState = {
 export const fetchBoardThunk = createAppAsyncThunk(
   'boardPage/fetch',
   async ({ boardId }: { boardId: string }, { extra }) => {
-    const { api } = extra as { api: { get: <T>(url: string) => Promise<T> } };
-    return (await getBoard({ api, boardId })) as BoardPageResponse;
-  },
+    return getBoard({ api: extra.api, boardId });
+  }
 );
 
 // ---------- Slice ----------
@@ -57,12 +51,12 @@ const boardPageSlice = createSlice({
         fetchBoardThunk.fulfilled,
         (
           state,
-          action: PayloadAction<{ data: Board; includes: { lists: List[]; cards: unknown[] } }>,
+          action: PayloadAction<{ data: Board; includes: { lists: List[]; cards: unknown[] } }>
         ) => {
           state.fetchInProgress = false;
           state.board = action.payload.data;
           state.includes = action.payload.includes;
-        },
+        }
       )
       .addCase(fetchBoardThunk.rejected, (state, action) => {
         state.fetchInProgress = false;
@@ -82,6 +76,6 @@ export const boardSelector = createSelector(selectBoardPage, (s) => s.board);
 export const boardIncludesSelector = createSelector(selectBoardPage, (s) => s.includes);
 export const fetchBoardInProgressSelector = createSelector(
   selectBoardPage,
-  (s) => s.fetchInProgress,
+  (s) => s.fetchInProgress
 );
 export const fetchBoardErrorSelector = createSelector(selectBoardPage, (s) => s.fetchError);

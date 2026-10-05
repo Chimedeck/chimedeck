@@ -6,6 +6,22 @@ export type StateTransitionAction = ActionTypeId;
 export type StateTransitionDirection = 'one_way' | 'two_way';
 export type StateTransitionStyle = 'straight' | 'orthogonal' | 'smooth' | 'curved';
 
+// ── Sprint 172 — Workflow Phase Metadata ──
+
+export type WorkflowPhase =
+  | 'NEW_DRAFT'
+  | 'REFINED_PENDING_REVIEW'
+  | 'SYNC_DOCUMENT'
+  | 'READY_FOR_DEV'
+  | 'GENERATE_SPRINT'
+  | 'UPDATE_AS_BUILT';
+
+export interface PhaseConfig {
+  serviceTierOverride: string | null;
+  autoRun: boolean;
+  requiresHumanApproval: boolean;
+}
+
 export interface StateTransitionWaypoint {
   x: number;
   y: number;
@@ -17,6 +33,8 @@ export interface StateTransitionNode {
   label: string;
   positionX: number;
   positionY: number;
+  workflowPhases?: WorkflowPhase[];
+  phaseConfig?: PhaseConfig;
 }
 
 export interface StateTransitionEdge {
@@ -122,7 +140,8 @@ export const stateTransitionsApi = createApi({
     credentials: 'include',
     // [why] Keep auth behavior consistent with other RTK query slices.
     prepareHeaders(headers, { getState }) {
-      const token = (getState() as { auth: { accessToken: string | null } }).auth.accessToken ?? null;
+      const token =
+        (getState() as { auth: { accessToken: string | null } }).auth.accessToken ?? null;
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }
@@ -141,14 +160,19 @@ export const stateTransitionsApi = createApi({
       transformResponse: (response: StateTransitionRulesResponse) => response.data,
       providesTags: (_result, _error, boardId) => [{ type: 'StateTransitions', id: boardId }],
     }),
-    putStateTransitions: builder.mutation<StateTransitionsResponse['data'], PutStateTransitionsInput>({
+    putStateTransitions: builder.mutation<
+      StateTransitionsResponse['data'],
+      PutStateTransitionsInput
+    >({
       query: ({ boardId, ...payload }) => ({
         url: `/boards/${boardId}/state-transitions`,
         method: 'PUT',
         body: payload,
       }),
       transformResponse: (response: StateTransitionsResponse) => response.data,
-      invalidatesTags: (_result, _error, { boardId }) => [{ type: 'StateTransitions', id: boardId }],
+      invalidatesTags: (_result, _error, { boardId }) => [
+        { type: 'StateTransitions', id: boardId },
+      ],
     }),
     createBoardList: builder.mutation<BoardListResponse['data'], CreateBoardListInput>({
       query: ({ boardId, title, afterId }) => ({
@@ -158,26 +182,24 @@ export const stateTransitionsApi = createApi({
       }),
       transformResponse: (response: BoardListResponse) => response.data,
     }),
-    copyStateTransitions: builder.mutation<CopyStateTransitionsResponse, CopyStateTransitionsInput>({
-      query: ({ boardId, targetBoardId, copyEnabled }) => ({
-        url: `/boards/${boardId}/state-transitions/copy`,
-        method: 'POST',
-        body: { targetBoardId, copyEnabled },
-      }),
-      invalidatesTags: (_result, _error, { boardId, targetBoardId }) => [
-        { type: 'StateTransitions', id: boardId },
-        { type: 'StateTransitions', id: targetBoardId },
-      ],
-    }),
+    copyStateTransitions: builder.mutation<CopyStateTransitionsResponse, CopyStateTransitionsInput>(
+      {
+        query: ({ boardId, targetBoardId, copyEnabled }) => ({
+          url: `/boards/${boardId}/state-transitions/copy`,
+          method: 'POST',
+          body: { targetBoardId, copyEnabled },
+        }),
+        invalidatesTags: (_result, _error, { boardId, targetBoardId }) => [
+          { type: 'StateTransitions', id: boardId },
+          { type: 'StateTransitions', id: targetBoardId },
+        ],
+      }
+    ),
   }),
 });
 
 export function invalidateStateTransitionsBoardCache(dispatch: AppDispatch, boardId: string): void {
-  dispatch(
-    stateTransitionsApi.util.invalidateTags([
-      { type: 'StateTransitions', id: boardId },
-    ]),
-  );
+  dispatch(stateTransitionsApi.util.invalidateTags([{ type: 'StateTransitions', id: boardId }]));
 }
 
 export const {

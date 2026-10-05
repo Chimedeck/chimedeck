@@ -9,26 +9,8 @@ import { validateUrl, UrlValidationError } from '../common/validateUrl';
 
 const MAX_NAME_LENGTH = 120;
 
-type AuthenticatedUserRequest = AuthenticatedRequest & { currentUser: { id: string } };
-
-type HealthCheckRow = {
-  id: string;
-  board_id: string;
-  name: string;
-  url: string;
-  type: string;
-  preset_key: string | null;
-  expected_status: number | null;
-  is_active: boolean;
-  created_at: string | Date;
-};
-
-export async function handleCreateHealthCheck(
-  req: Request,
-  boardId: string,
-): Promise<Response> {
-  const authenticatedRequest = req as AuthenticatedUserRequest;
-  const authError = await authenticate(authenticatedRequest);
+export async function handleCreateHealthCheck(req: Request, boardId: string): Promise<Response> {
+  const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
   const visibilityError = await applyBoardVisibility(req, boardId);
@@ -39,14 +21,14 @@ export async function handleCreateHealthCheck(
     url?: string;
     type?: string;
     presetKey?: string;
-    expectedStatus?: unknown;
+    expectedStatus?: number;
   };
   try {
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
       { name: 'bad-request', data: { message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -54,21 +36,24 @@ export async function handleCreateHealthCheck(
   if (!body.name || typeof body.name !== 'string' || body.name.trim() === '') {
     return Response.json(
       { name: 'bad-request', data: { message: 'name is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (body.name.trim().length > MAX_NAME_LENGTH) {
     return Response.json(
-      { name: 'bad-request', data: { message: `name must not exceed ${String(MAX_NAME_LENGTH)} characters` } },
-      { status: 400 },
+      {
+        name: 'bad-request',
+        data: { message: `name must not exceed ${MAX_NAME_LENGTH} characters` },
+      },
+      { status: 400 }
     );
   }
 
   if (!body.url || typeof body.url !== 'string' || body.url.trim() === '') {
     return Response.json(
       { name: 'bad-request', data: { message: 'url is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -78,10 +63,7 @@ export async function handleCreateHealthCheck(
     parsedUrl = validateUrl(body.url.trim());
   } catch (err) {
     if (err instanceof UrlValidationError) {
-      return Response.json(
-        { name: err.name, data: { message: err.message } },
-        { status: 422 },
-      );
+      return Response.json({ name: err.name, data: { message: err.message } }, { status: 422 });
     }
     throw err;
   }
@@ -91,7 +73,7 @@ export async function handleCreateHealthCheck(
   if (type === 'preset' && !body.presetKey) {
     return Response.json(
       { name: 'bad-request', data: { message: 'presetKey is required when type is preset' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -101,8 +83,11 @@ export async function handleCreateHealthCheck(
     const code = Number(body.expectedStatus);
     if (!Number.isInteger(code) || code < 100 || code > 599) {
       return Response.json(
-        { name: 'bad-request', data: { message: 'expectedStatus must be an integer between 100 and 599' } },
-        { status: 400 },
+        {
+          name: 'bad-request',
+          data: { message: 'expectedStatus must be an integer between 100 and 599' },
+        },
+        { status: 400 }
       );
     }
     expectedStatus = code;
@@ -112,17 +97,20 @@ export async function handleCreateHealthCheck(
   const duplicate = await db('board_health_checks')
     .where({ board_id: boardId })
     .whereRaw('LOWER(url) = LOWER(?)', [parsedUrl.toString()])
-    .first<{ id: string } | undefined>();
+    .first();
 
   if (duplicate) {
     return Response.json(
-      { name: 'health-check-url-already-monitored', data: { message: 'This URL is already being monitored on this board' } },
-      { status: 409 },
+      {
+        name: 'health-check-url-already-monitored',
+        data: { message: 'This URL is already being monitored on this board' },
+      },
+      { status: 409 }
     );
   }
 
   const id = randomUUID();
-  const createdBy = authenticatedRequest.currentUser.id;
+  const createdBy = (req as AuthenticatedRequest).currentUser!.id;
 
   await db('board_health_checks').insert({
     id,
@@ -136,7 +124,7 @@ export async function handleCreateHealthCheck(
     created_by: createdBy,
   });
 
-  const created = await db('board_health_checks').where({ id }).first<HealthCheckRow>();
+  const created = await db('board_health_checks').where({ id }).first();
 
   return Response.json(
     {
@@ -153,6 +141,6 @@ export async function handleCreateHealthCheck(
         latestResult: null,
       },
     },
-    { status: 201 },
+    { status: 201 }
   );
 }

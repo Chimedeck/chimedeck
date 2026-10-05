@@ -13,10 +13,15 @@ class QueryBuilder {
   private orderedBy: string | null = null;
   private orderDirection: 'asc' | 'desc' = 'asc';
 
-  constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
+  constructor(
+    private readonly store: DataStore,
+    private readonly tableName: keyof DataStore
+  ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -39,7 +44,7 @@ class QueryBuilder {
   insert(payload: Row | Row[]): { returning: () => Promise<Row[]> } {
     const rows = Array.isArray(payload) ? payload : [payload];
     const inserted = rows.map((row) => ({ ...row }));
-    for (const row of inserted) (this.store[this.tableName]).push(row);
+    for (const row of inserted) this.store[this.tableName].push(row);
     return {
       returning: async () => inserted.map((row) => ({ ...row })),
     };
@@ -54,14 +59,14 @@ class QueryBuilder {
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     return this.execute().then(onfulfilled, onrejected);
   }
 
   private executeSync(clone = true): Row[] {
     let rows = this.store[this.tableName].filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+      this.filters.every((predicate) => predicate(row))
     );
 
     if (this.orderedBy) {
@@ -76,10 +81,9 @@ class QueryBuilder {
     }
 
     if (this.selectedColumns) {
-      const cols = this.selectedColumns;
       rows = rows.map((row) => {
         const next: Row = {};
-        for (const key of cols) next[key] = row[key];
+        for (const key of this.selectedColumns!) next[key] = row[key];
         return next;
       });
     }
@@ -106,28 +110,29 @@ function resetStore(): DataStore {
   };
 }
 
-await mock.module('../../../config/featureFlags', () => ({
+mock.module('../../../config/featureFlags', () => ({
   featureFlags: {
     STATE_TRANSITIONS_ENABLED: true,
   },
 }));
 
-await mock.module('../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../common/db').db,
+mock.module('../../../common/db', () => ({
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../common/db').db,
 }));
 
-await mock.module('../../auth/middlewares/authentication', () => ({
+mock.module('../../auth/middlewares/authentication', () => ({
   authenticate: async (req: Request & { currentUser?: { id: string; email: string } }) => {
     req.currentUser = { id: 'user-1', email: 'user@example.com' };
     return null;
   },
 }));
 
-await mock.module('../../../middlewares/permissionManager', () => ({
+mock.module('../../../middlewares/permissionManager', () => ({
   requireWorkspaceMembership: async () => null,
 }));
 
-await mock.module('../../../common/uuid', () => ({
+mock.module('../../../common/uuid', () => ({
   generateId: () => 'state-transition-1',
 }));
 
@@ -155,10 +160,10 @@ describe('GET state transition rules', () => {
 
     const res = await handleGetStateTransitionRules(
       new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(200);
-    const body = await res.json() as { data: { rules: unknown[] } };
+    const body = (await res.json()) as { data: { rules: unknown[] } };
     expect(body.data.rules).toEqual([]);
   });
 
@@ -189,10 +194,10 @@ describe('GET state transition rules', () => {
 
     const res = await handleGetStateTransitionRules(
       new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(200);
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: {
         rules: Array<{
           currentStateId: string;

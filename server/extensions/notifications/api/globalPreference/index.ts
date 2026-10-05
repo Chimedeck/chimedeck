@@ -4,7 +4,7 @@ import { handleUpdateGlobalNotificationSetting } from './update';
 
 export async function globalPreferenceRouter(
   req: Request,
-  pathname: string,
+  pathname: string
 ): Promise<Response | null> {
   if (pathname !== '/api/v1/user/notification-settings') return null;
 

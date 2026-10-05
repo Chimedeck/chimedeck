@@ -37,11 +37,19 @@ function toRecord(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-function normalizeDataLabels(data: Record<string, unknown>, fallbackBoardId = ''): Record<string, unknown> {
+function normalizeDataLabels(
+  data: Record<string, unknown>,
+  fallbackBoardId = ''
+): Record<string, unknown> {
   const normalized = { ...data };
 
   const label = normalized['label'];
-  if (label && typeof label === 'object' && !Array.isArray(label) && typeof (label as { id?: unknown }).id === 'string') {
+  if (
+    label &&
+    typeof label === 'object' &&
+    !Array.isArray(label) &&
+    typeof (label as { id?: unknown }).id === 'string'
+  ) {
     const source = label as {
       id: string;
       board_id?: string | null;
@@ -55,19 +63,25 @@ function normalizeDataLabels(data: Record<string, unknown>, fallbackBoardId = ''
   const labels = normalized['labels'];
   if (Array.isArray(labels)) {
     normalized['labels'] = labels
-      .filter((entry): entry is Record<string, unknown> => (
-        !!entry
-        && typeof entry === 'object'
-        && !Array.isArray(entry)
-        && typeof (entry as { id?: unknown }).id === 'string'
-      ))
-      .map((entry) => serializeEmbeddedLabel(entry as {
-        id: string;
-        board_id?: string | null;
-        idBoard?: string | null;
-        name?: string | null;
-        color?: string | null;
-      }, fallbackBoardId));
+      .filter(
+        (entry): entry is Record<string, unknown> =>
+          !!entry &&
+          typeof entry === 'object' &&
+          !Array.isArray(entry) &&
+          typeof (entry as { id?: unknown }).id === 'string'
+      )
+      .map((entry) =>
+        serializeEmbeddedLabel(
+          entry as {
+            id: string;
+            board_id?: string | null;
+            idBoard?: string | null;
+            name?: string | null;
+            color?: string | null;
+          },
+          fallbackBoardId
+        )
+      );
   }
 
   return normalized;

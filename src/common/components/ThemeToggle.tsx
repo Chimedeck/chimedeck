@@ -1,28 +1,60 @@
-import { SunIcon, MoonIcon, SparklesIcon, BookOpenIcon, StarIcon, ArchiveBoxIcon, ChevronDownIcon, ComputerDesktopIcon, CubeTransparentIcon, Square2StackIcon, SwatchIcon, GlobeAltIcon, BoltIcon } from '@heroicons/react/24/outline';
+import {
+  SunIcon,
+  MoonIcon,
+  SparklesIcon,
+  BookOpenIcon,
+  StarIcon,
+  ArchiveBoxIcon,
+  ChevronDownIcon,
+  ComputerDesktopIcon,
+  CubeTransparentIcon,
+  Square2StackIcon,
+  SwatchIcon,
+  GlobeAltIcon,
+  BoltIcon,
+} from '@heroicons/react/24/outline';
 import { useState, useRef, useEffect } from 'react';
 import { useTheme } from '../hooks/useTheme';
 import type { Theme } from '../hooks/useTheme';
 
-const THEME_ORDER: Theme[] = ['light', 'dark', 'elegant', 'elegant-dark', 'paper', 'nordic', 'archive', 'macintosh', 'obsidian', 'next', 'bauhaus', 'moss', 'vapor', 'cyberpunk', 'the-seven', 'hc-light', 'hc-dark'];
+const THEME_ORDER: Theme[] = [
+  'light',
+  'dark',
+  'elegant',
+  'elegant-dark',
+  'paper',
+  'nordic',
+  'archive',
+  'macintosh',
+  'obsidian',
+  'next',
+  'bauhaus',
+  'moss',
+  'vapor',
+  'cyberpunk',
+  'the-seven',
+  'hc-light',
+  'hc-dark',
+];
 
 const THEME_META: Record<Theme, { icon: React.ReactNode; label: string }> = {
-  light:          { icon: <SunIcon className="w-4 h-4" />,                label: 'Light' },
-  dark:           { icon: <MoonIcon className="w-4 h-4" />,               label: 'Dark' },
-  elegant:        { icon: <SparklesIcon className="w-4 h-4" />,           label: 'Elegant' },
-  'elegant-dark': { icon: <MoonIcon className="w-4 h-4" />,               label: 'Elegant Dark' },
-  paper:          { icon: <BookOpenIcon className="w-4 h-4" />,           label: 'Paper' },
-  nordic:         { icon: <StarIcon className="w-4 h-4" />,               label: 'Nordic' },
-  archive:        { icon: <ArchiveBoxIcon className="w-4 h-4" />,         label: 'Archive' },
-  macintosh:      { icon: <ComputerDesktopIcon className="w-4 h-4" />,    label: 'Macintosh' },
-  obsidian:       { icon: <CubeTransparentIcon className="w-4 h-4" />,    label: 'Obsidian' },
-  next:           { icon: <Square2StackIcon className="w-4 h-4" />,       label: 'NeXT' },
-  bauhaus:        { icon: <SwatchIcon className="w-4 h-4" />,             label: 'Bauhaus' },
-  moss:           { icon: <GlobeAltIcon className="w-4 h-4" />,             label: 'Moss' },
-  vapor:          { icon: <BoltIcon className="w-4 h-4" />,               label: 'Vapor' },
-  cyberpunk:      { icon: <BoltIcon className="w-4 h-4" />,               label: 'Night City' },
-  'the-seven':    { icon: <StarIcon className="w-4 h-4" />,               label: 'The Seven' },
-  'hc-light':     { icon: <SunIcon className="w-4 h-4" />,                label: 'HC Light' },
-  'hc-dark':      { icon: <MoonIcon className="w-4 h-4" />,               label: 'HC Dark' },
+  light: { icon: <SunIcon className="w-4 h-4" />, label: 'Light' },
+  dark: { icon: <MoonIcon className="w-4 h-4" />, label: 'Dark' },
+  elegant: { icon: <SparklesIcon className="w-4 h-4" />, label: 'Elegant' },
+  'elegant-dark': { icon: <MoonIcon className="w-4 h-4" />, label: 'Elegant Dark' },
+  paper: { icon: <BookOpenIcon className="w-4 h-4" />, label: 'Paper' },
+  nordic: { icon: <StarIcon className="w-4 h-4" />, label: 'Nordic' },
+  archive: { icon: <ArchiveBoxIcon className="w-4 h-4" />, label: 'Archive' },
+  macintosh: { icon: <ComputerDesktopIcon className="w-4 h-4" />, label: 'Macintosh' },
+  obsidian: { icon: <CubeTransparentIcon className="w-4 h-4" />, label: 'Obsidian' },
+  next: { icon: <Square2StackIcon className="w-4 h-4" />, label: 'NeXT' },
+  bauhaus: { icon: <SwatchIcon className="w-4 h-4" />, label: 'Bauhaus' },
+  moss: { icon: <GlobeAltIcon className="w-4 h-4" />, label: 'Moss' },
+  vapor: { icon: <BoltIcon className="w-4 h-4" />, label: 'Vapor' },
+  cyberpunk: { icon: <BoltIcon className="w-4 h-4" />, label: 'Night City' },
+  'the-seven': { icon: <StarIcon className="w-4 h-4" />, label: 'The Seven' },
+  'hc-light': { icon: <SunIcon className="w-4 h-4" />, label: 'HC Light' },
+  'hc-dark': { icon: <MoonIcon className="w-4 h-4" />, label: 'HC Dark' },
 };
 
 export function ThemeToggle() {
@@ -38,13 +70,17 @@ export function ThemeToggle() {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', handler);
-    return () => { document.removeEventListener('mousedown', handler); };
+    return () => {
+      document.removeEventListener('mousedown', handler);
+    };
   }, [open]);
 
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => { setOpen((v) => !v); }}
+        onClick={() => {
+          setOpen((v) => !v);
+        }}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`Theme: ${current.label}`}
@@ -69,11 +105,15 @@ export function ThemeToggle() {
                 key={t}
                 role="menuitemradio"
                 aria-checked={active}
-                onClick={() => { setTheme(t); setOpen(false); }}
+                onClick={() => {
+                  setTheme(t);
+                  setOpen(false);
+                }}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs transition-colors
-                  ${active
-                    ? 'text-base bg-bg-overlay font-medium'
-                    : 'text-muted hover:text-base hover:bg-bg-overlay'
+                  ${
+                    active
+                      ? 'text-base bg-bg-overlay font-medium'
+                      : 'text-muted hover:text-base hover:bg-bg-overlay'
                   }`}
               >
                 {meta.icon}

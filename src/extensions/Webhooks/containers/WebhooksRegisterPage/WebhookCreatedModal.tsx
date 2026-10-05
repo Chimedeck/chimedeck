@@ -19,7 +19,9 @@ export default function WebhookCreatedModal({ signingSecret, onClose }: Props) {
       await navigator.clipboard.writeText(signingSecret);
       setCopied(true);
       // [why] Reset label after 2s so the user knows the button is ready for another copy.
-      setTimeout(() => { setCopied(false); }, 2000);
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
     } catch {
       // Silently fail — clipboard may be unavailable in some environments
     }
@@ -31,7 +33,9 @@ export default function WebhookCreatedModal({ signingSecret, onClose }: Props) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="webhook-created-title"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="relative w-full max-w-md rounded-lg bg-bg-surface shadow-xl mx-4">
         {/* Header */}
@@ -40,7 +44,7 @@ export default function WebhookCreatedModal({ signingSecret, onClose }: Props) {
             {translations['WebhookCreatedModal.title']}
           </h3>
           <IconButton
-            aria-label="Close modal"
+            aria-label={translations['WebhookCreatedModal.closeAria']}
             icon={<XMarkIcon className="h-4 w-4" />}
             variant="ghost"
             onClick={onClose}
@@ -72,7 +76,7 @@ export default function WebhookCreatedModal({ signingSecret, onClose }: Props) {
                 type="button"
                 variant="secondary"
                 size="sm"
-                onClick={() => { void handleCopy(); }}
+                onClick={handleCopy}
                 data-testid="copy-button"
               >
                 {copied

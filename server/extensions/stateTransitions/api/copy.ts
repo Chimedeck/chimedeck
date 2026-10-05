@@ -35,16 +35,16 @@ function normalizeName(value: string): string {
 }
 
 async function isBoardAdminOrOwner(userId: string, boardId: string): Promise<boolean> {
-  const boardMember = await db('board_members')
+  const boardMember = (await db('board_members')
     .where({ board_id: boardId, user_id: userId })
-    .first() as { role?: string } | undefined;
+    .first()) as { role?: string } | undefined;
   const role = boardMember?.role;
   return role === 'ADMIN' || role === 'OWNER';
 }
 
 function remapGraphByListName(
   sourceGraph: StateTransitionGraph,
-  targetLists: ListRow[],
+  targetLists: ListRow[]
 ): StateTransitionGraph {
   const targetListByName = new Map<string, ListRow>();
   for (const list of targetLists) {
@@ -89,11 +89,16 @@ function remapGraphByListName(
   };
 }
 
-export async function handleCopyStateTransitions(req: Request, sourceBoardId: string): Promise<Response> {
+export async function handleCopyStateTransitions(
+  req: Request,
+  sourceBoardId: string
+): Promise<Response> {
   if (!featureFlags.STATE_TRANSITIONS_ENABLED) {
     return Response.json(
-      stateTransitionError('not-implemented', { message: 'State transitions feature is not enabled' }),
-      { status: 501 },
+      stateTransitionError('not-implemented', {
+        message: 'State transitions feature is not enabled',
+      }),
+      { status: 501 }
     );
   }
 
@@ -104,7 +109,7 @@ export async function handleCopyStateTransitions(req: Request, sourceBoardId: st
   if (!currentUserId) {
     return Response.json(
       stateTransitionError('unauthorized', { message: 'Authentication required' }),
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -113,38 +118,38 @@ export async function handleCopyStateTransitions(req: Request, sourceBoardId: st
     const raw = await req.text();
     body = raw ? (JSON.parse(raw) as CopyBody) : {};
   } catch {
-    return Response.json(
-      stateTransitionError('bad-request', { message: 'Invalid JSON body' }),
-      { status: 400 },
-    );
+    return Response.json(stateTransitionError('bad-request', { message: 'Invalid JSON body' }), {
+      status: 400,
+    });
   }
 
   if (typeof body.targetBoardId !== 'string' || body.targetBoardId.trim() === '') {
     return Response.json(
       stateTransitionError('bad-request', { message: 'targetBoardId is required' }),
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (body.copyEnabled !== undefined && typeof body.copyEnabled !== 'boolean') {
     return Response.json(
-      stateTransitionError('bad-request', { message: 'copyEnabled must be a boolean when provided' }),
-      { status: 400 },
+      stateTransitionError('bad-request', {
+        message: 'copyEnabled must be a boolean when provided',
+      }),
+      { status: 400 }
     );
   }
   const copyEnabled = body.copyEnabled ?? true;
 
-  const sourceBoard = await db('boards')
-    .where({ id: sourceBoardId })
-    .first() as BoardRow | undefined;
-  const targetBoard = await db('boards')
-    .where({ id: body.targetBoardId })
-    .first() as BoardRow | undefined;
+  const sourceBoard = (await db('boards').where({ id: sourceBoardId }).first()) as
+    | BoardRow
+    | undefined;
+  const targetBoard = (await db('boards').where({ id: body.targetBoardId }).first()) as
+    | BoardRow
+    | undefined;
 
   if (!sourceBoard || !targetBoard) {
-    return Response.json(
-      stateTransitionError('state-transition-copy-target-not-found', {}),
-      { status: 422 },
-    );
+    return Response.json(stateTransitionError('state-transition-copy-target-not-found', {}), {
+      status: 422,
+    });
   }
 
   const [isSourceAdmin, isTargetAdmin] = await Promise.all([
@@ -154,68 +159,65 @@ export async function handleCopyStateTransitions(req: Request, sourceBoardId: st
   if (!isSourceAdmin || !isTargetAdmin) {
     return Response.json(
       stateTransitionError('state-transition-copy-insufficient-permission', {}),
-      { status: 422 },
+      { status: 422 }
     );
   }
 
-  const sourceRow = await db('board_state_transitions')
+  const sourceRow = (await db('board_state_transitions')
     .where({ board_id: sourceBoard.id })
-    .first() as TransitionRow | undefined;
+    .first()) as TransitionRow | undefined;
   if (!sourceRow) {
-    return Response.json(
-      stateTransitionError('state-transition-copy-no-source', {}),
-      { status: 422 },
-    );
+    return Response.json(stateTransitionError('state-transition-copy-no-source', {}), {
+      status: 422,
+    });
   }
   const graphValidation = validateGraphShape(sourceRow.graph_data);
   if (!graphValidation.ok) {
     return Response.json(
       stateTransitionError('state-transition-graph-invalid', { message: graphValidation.message }),
-      { status: 422 },
+      { status: 422 }
     );
   }
 
-  const targetLists = await db('lists')
+  const targetLists = (await db('lists')
     .where({ board_id: targetBoard.id, archived: false })
     .orderBy('position', 'asc')
-    .select('id', 'title') as ListRow[];
+    .select('id', 'title')) as ListRow[];
 
   const copiedGraph = remapGraphByListName(graphValidation.graph, targetLists);
   const skippedNodes = Math.max(0, graphValidation.graph.nodes.length - copiedGraph.nodes.length);
-  const existingTargetRow = await db('board_state_transitions')
+  const existingTargetRow = (await db('board_state_transitions')
     .where({ board_id: targetBoard.id })
-    .first() as TransitionRow | undefined;
+    .first()) as TransitionRow | undefined;
   const nextUpdatedAt = new Date().toISOString();
-  const targetEnabled = copyEnabled
-    ? sourceRow.enabled
-    : (existingTargetRow?.enabled ?? false);
+  const targetEnabled = copyEnabled ? sourceRow.enabled : (existingTargetRow?.enabled ?? false);
 
   const savedRows = existingTargetRow
-    ? await db('board_state_transitions')
-      .where({ board_id: targetBoard.id })
-      .update(
+    ? ((await db('board_state_transitions').where({ board_id: targetBoard.id }).update(
         {
           enabled: targetEnabled,
           graph_data: copiedGraph,
           updated_at: nextUpdatedAt,
         },
-        ['*'],
-      ) as TransitionRow[]
-    : await db('board_state_transitions')
-      .insert({
-        id: generateId(),
-        board_id: targetBoard.id,
-        enabled: targetEnabled,
-        graph_data: copiedGraph,
-        updated_at: nextUpdatedAt,
-      })
-      .returning('*') as TransitionRow[];
+        ['*']
+      )) as TransitionRow[])
+    : ((await db('board_state_transitions')
+        .insert({
+          id: generateId(),
+          board_id: targetBoard.id,
+          enabled: targetEnabled,
+          graph_data: copiedGraph,
+          updated_at: nextUpdatedAt,
+        })
+        .returning('*')) as TransitionRow[]);
 
   const saved = savedRows[0];
   if (!saved) {
     return Response.json(
-      stateTransitionError('state-transition-copy-failed', { message: 'State transitions could not be copied' }),
-      { status: 500 },
+      stateTransitionError('state-transition-copy-failed', {
+        message: 'State transitions could not be copied',
+      }),
+      { status: 500 }
     );
   }
 

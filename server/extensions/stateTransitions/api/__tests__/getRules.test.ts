@@ -13,10 +13,15 @@ class QueryBuilder {
   private orderedBy: string | null = null;
   private orderDirection: 'asc' | 'desc' = 'asc';
 
-  constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
+  constructor(
+    private readonly store: DataStore,
+    private readonly tableName: keyof DataStore
+  ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -58,14 +63,14 @@ class QueryBuilder {
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     return this.execute().then(onfulfilled, onrejected);
   }
 
   private executeSync(clone = true): Row[] {
     let rows = this.store[this.tableName].filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+      this.filters.every((predicate) => predicate(row))
     );
 
     if (this.orderedBy) {
@@ -80,10 +85,9 @@ class QueryBuilder {
     }
 
     if (this.selectedColumns) {
-      const cols = this.selectedColumns;
       rows = rows.map((row) => {
         const next: Row = {};
-        for (const key of cols) next[key] = row[key];
+        for (const key of this.selectedColumns!) next[key] = row[key];
         return next;
       });
     }
@@ -113,7 +117,7 @@ function resetStore(): DataStore {
   };
 }
 
-await mock.module('../../../../config/featureFlags', () => ({
+mock.module('../../../../config/featureFlags', () => ({
   featureFlags: {
     get STATE_TRANSITIONS_ENABLED() {
       return stateTransitionsEnabled;
@@ -121,22 +125,23 @@ await mock.module('../../../../config/featureFlags', () => ({
   },
 }));
 
-await mock.module('../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
+mock.module('../../../../common/db', () => ({
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
 }));
 
-await mock.module('../../../auth/middlewares/authentication', () => ({
+mock.module('../../../auth/middlewares/authentication', () => ({
   authenticate: async (req: Request & { currentUser?: { id: string; email: string } }) => {
     req.currentUser = { id: 'user-1', email: 'user@example.com' };
     return null;
   },
 }));
 
-await mock.module('../../../../middlewares/permissionManager', () => ({
+mock.module('../../../../middlewares/permissionManager', () => ({
   requireWorkspaceMembership: async () => workspaceMembershipError,
 }));
 
-await mock.module('../../../../common/uuid', () => ({
+mock.module('../../../../common/uuid', () => ({
   generateId: () => 'state-transition-1',
 }));
 
@@ -153,28 +158,32 @@ describe('GET /api/v1/boards/:boardId/state-transitions/rules', () => {
     stateTransitionsEnabled = false;
 
     const res = await handleGetStateTransitionRules(
-      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', { method: 'GET' }),
-      'board-1',
+      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', {
+        method: 'GET',
+      }),
+      'board-1'
     );
 
     expect(res.status).toBe(501);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('not-implemented');
   });
 
   it('returns workspace membership error when caller is forbidden', async () => {
     workspaceMembershipError = Response.json(
       { name: 'forbidden', data: { message: 'Not a board member' } },
-      { status: 403 },
+      { status: 403 }
     );
 
     const res = await handleGetStateTransitionRules(
-      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', { method: 'GET' }),
-      'board-1',
+      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', {
+        method: 'GET',
+      }),
+      'board-1'
     );
 
     expect(res.status).toBe(403);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('forbidden');
   });
 
@@ -194,12 +203,14 @@ describe('GET /api/v1/boards/:boardId/state-transitions/rules', () => {
     });
 
     const res = await handleGetStateTransitionRules(
-      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', { method: 'GET' }),
-      'board-1',
+      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', {
+        method: 'GET',
+      }),
+      'board-1'
     );
 
     expect(res.status).toBe(200);
-    const body = await res.json() as { data: { rules: unknown[] } };
+    const body = (await res.json()) as { data: { rules: unknown[] } };
     expect(body.data.rules).toEqual([]);
   });
 
@@ -238,12 +249,14 @@ describe('GET /api/v1/boards/:boardId/state-transitions/rules', () => {
     });
 
     const res = await handleGetStateTransitionRules(
-      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', { method: 'GET' }),
-      'board-1',
+      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', {
+        method: 'GET',
+      }),
+      'board-1'
     );
 
     expect(res.status).toBe(200);
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: {
         rules: Array<{
           currentStateId: string;
@@ -291,11 +304,13 @@ describe('GET /api/v1/boards/:boardId/state-transitions/rules', () => {
     });
 
     const res = await handleGetStateTransitionRules(
-      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', { method: 'GET' }),
-      'board-1',
+      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', {
+        method: 'GET',
+      }),
+      'board-1'
     );
     expect(res.status).toBe(200);
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: {
         rules: Array<{ current_state_id: string; allowed_next_state_ids: string[] }>;
       };
@@ -323,7 +338,13 @@ describe('GET /api/v1/boards/:boardId/state-transitions/rules', () => {
         nodes: [
           { id: 'list-1', listId: 'list-1', label: 'Todo old', positionX: 10, positionY: 20 },
           { id: 'list-2', listId: 'list-2', label: 'Doing', positionX: 20, positionY: 20 },
-          { id: 'list-deleted', listId: 'list-deleted', label: 'Deleted', positionX: 30, positionY: 20 },
+          {
+            id: 'list-deleted',
+            listId: 'list-deleted',
+            label: 'Deleted',
+            positionX: 30,
+            positionY: 20,
+          },
         ],
         edges: [
           {
@@ -348,12 +369,14 @@ describe('GET /api/v1/boards/:boardId/state-transitions/rules', () => {
     });
 
     const res = await handleGetStateTransitionRules(
-      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', { method: 'GET' }),
-      'board-1',
+      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', {
+        method: 'GET',
+      }),
+      'board-1'
     );
 
     expect(res.status).toBe(200);
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: {
         rules: Array<{
           current_state: string;
@@ -389,11 +412,13 @@ describe('GET /api/v1/boards/:boardId/state-transitions/rules', () => {
     });
 
     const res = await handleGetStateTransitionRules(
-      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', { method: 'GET' }),
-      'board-1',
+      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', {
+        method: 'GET',
+      }),
+      'board-1'
     );
     expect(res.status).toBe(422);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('state-transition-graph-invalid');
   });
 });

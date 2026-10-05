@@ -32,7 +32,7 @@ const BoardCommentsPanel = ({ boardId, onCardClick }: Props) => {
         setLoading(false);
       }
     },
-    [boardId],
+    [boardId]
   );
 
   useEffect(() => {
@@ -45,17 +45,16 @@ const BoardCommentsPanel = ({ boardId, onCardClick }: Props) => {
 
   return (
     <div className="p-4 space-y-3">
-      <h3 className="text-xs font-semibold uppercase text-muted">{translations['BoardViews.commentsHeading']}</h3>
+      <h3 className="text-xs font-semibold uppercase text-muted">
+        {translations['BoardViews.commentsHeading']}
+      </h3>
 
       {comments.length === 0 && !loading && (
         <p className="text-sm italic text-subtle">{translations['BoardViews.noComments']}</p>
       )}
 
       {comments.map((comment) => (
-        <div
-          key={comment.id}
-          className="rounded border border-border bg-bg-surface p-3 text-sm"
-        >
+        <div key={comment.id} className="rounded border border-border bg-bg-surface p-3 text-sm">
           <div className="mb-1 flex items-center justify-between text-xs text-subtle">
             <span className="font-medium text-subtle">
               {comment.author_name ?? comment.author_email ?? 'Unknown'}
@@ -84,7 +83,9 @@ const BoardCommentsPanel = ({ boardId, onCardClick }: Props) => {
         </div>
       ))}
 
-      {loading && <p className="text-xs text-subtle">{translations['BoardViews.loadingComments']}</p>}
+      {loading && (
+        <p className="text-xs text-subtle">{translations['BoardViews.loadingComments']}</p>
+      )}
 
       {hasMore && !loading && (
         <Button variant="link" size="sm" onClick={() => { void loadPage(cursor); }}>

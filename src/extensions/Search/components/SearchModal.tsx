@@ -6,6 +6,7 @@ import { useSearch } from '../hooks/useSearch';
 import SearchInput from './SearchInput';
 import SearchResultItem from './SearchResultItem';
 import type { SearchResult } from '../api';
+import translations from '../translations/en.json';
 
 interface SearchModalProps {
   workspaceId: string;
@@ -30,14 +31,16 @@ const SearchModal: React.FC<SearchModalProps> = ({
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     },
-    [onClose],
+    [onClose]
   );
 
   useEffect(() => {
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
     }
-    return () => { document.removeEventListener('keydown', handleKeyDown); };
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isOpen, handleKeyDown]);
 
   if (!isOpen) return null;
@@ -59,12 +62,14 @@ const SearchModal: React.FC<SearchModalProps> = ({
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Search"
+      aria-label={translations['search.input.ariaLabel']}
     >
       {/* Panel — stop click from bubbling to backdrop */}
       <div
         className="w-full max-w-xl rounded-xl bg-bg-base shadow-2xl"
-        onClick={(e) => { e.stopPropagation(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
       >
         <div className="border-b border-border p-4">
           <SearchInput value={query} onChange={setQuery} autoFocus />
@@ -72,9 +77,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
 
         <div className="max-h-96 overflow-y-auto p-2">
           {tooShort && (
-            <p className="px-3 py-2 text-sm text-muted">
-              Type at least 2 characters to search.
-            </p>
+            <p className="px-3 py-2 text-sm text-muted">Type at least 2 characters to search.</p>
           )}
 
           {!tooShort && query.length >= 2 && loading && (

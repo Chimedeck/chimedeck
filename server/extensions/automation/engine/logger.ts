@@ -52,7 +52,7 @@ export async function writeRunLog(input: WriteRunLogInput): Promise<void> {
              ORDER BY ran_at DESC
              LIMIT ?
            )`,
-        [automation.id, automation.id, automationConfig.runLogCap],
+        [automation.id, automation.id, automationConfig.runLogCap]
       );
 
       // Keep run_count and last_run_at current.

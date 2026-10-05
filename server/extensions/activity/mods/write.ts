@@ -29,19 +29,21 @@ export interface WrittenActivity {
 
 export async function writeActivity(input: WriteActivityInput): Promise<WrittenActivity> {
   const id = randomUUID();
-  const activities = await db('activities').insert({
-    id,
-    entity_type: input.entityType,
-    entity_id: input.entityId,
-    board_id: input.boardId ?? null,
-    action: input.action,
-    actor_id: input.actorId,
-    payload: JSON.stringify(input.payload),
-    ip_address: input.ipAddress ?? null,
-    user_agent: input.userAgent ?? null,
-    created_at: new Date().toISOString(),
-  }, ['*']) as WrittenActivity[];
-  const activity = activities[0];
+  const [activity] = await db('activities').insert(
+    {
+      id,
+      entity_type: input.entityType,
+      entity_id: input.entityId,
+      board_id: input.boardId ?? null,
+      action: input.action,
+      actor_id: input.actorId,
+      payload: JSON.stringify(input.payload),
+      ip_address: input.ipAddress ?? null,
+      user_agent: input.userAgent ?? null,
+      created_at: new Date().toISOString(),
+    },
+    ['*']
+  );
 
   return activity as WrittenActivity;
 }

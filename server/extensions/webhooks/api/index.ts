@@ -11,10 +11,16 @@ export async function webhooksRouter(req: Request, pathname: string): Promise<Re
   // [why] feature flag gates all webhook routes — off by default in local dev
   if (!env.WEBHOOKS_ENABLED) {
     if (!pathname.startsWith('/api/v1/webhooks')) return null;
-    return new Response(JSON.stringify({ name: 'not-implemented', data: { message: 'Webhooks feature is not enabled' } }), {
-      status: 501,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({
+        name: 'not-implemented',
+        data: { message: 'Webhooks feature is not enabled' },
+      }),
+      {
+        status: 501,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
 
   // GET /api/v1/webhooks/event-types — must match before the /:id pattern

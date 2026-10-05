@@ -11,7 +11,13 @@ interface Props {
   disabled?: boolean;
 }
 
-export const LabelsSection = ({ allLabels, assignedLabels, onAttach, onDetach, disabled }: Props) => (
+export const LabelsSection = ({
+  allLabels,
+  assignedLabels,
+  onAttach,
+  onDetach,
+  disabled,
+}: Props) => (
   <section aria-label="Labels">
     <h3 className="mb-1 text-sm font-semibold text-base">Labels</h3>
     <div className="flex flex-wrap items-center gap-1">

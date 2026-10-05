@@ -16,8 +16,8 @@ import CommentReactions from './CommentReactions';
 import CommentReplyThread from './CommentReplyThread';
 import { ImageLightbox } from '~/extensions/Attachments/components/AttachmentThumbnail';
 import translations from '../translations/en.json';
-import apiClient from '~/common/api/client';
 import { normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
+import { sanitizeUserGeneratedHtml } from '~/common/utils/sanitizeUserGeneratedHtml';
 
 const LINK_CLASS_BUTTON = 'cd-link-button';
 const LINK_CLASS_CARD = 'cd-link-card';
@@ -26,6 +26,7 @@ const LINK_MODE_TITLE_PREFIX = 'cd-mode:';
 const LINK_MODE_META_URL = 'cd-link-mode-url';
 const LINK_MODE_META_BUTTON = 'cd-link-mode-button';
 const LINK_MODE_META_CARD = 'cd-link-mode-card';
+const COMMENT_ATTACHMENT_SOURCE_ATTR = 'data-comment-attachment-src';
 
 type LinkDisplayMode = 'url' | 'button' | 'card';
 
@@ -54,7 +55,7 @@ function getModeFromTitle(value: string | null | undefined): LinkDisplayMode | n
 function addLinkTargetBlank(html: string): string {
   return html.replace(
     /<a(?=[^>]*\bhref="(?!#))(?![^>]*\btarget=)/gi,
-    '<a target="_blank" rel="noopener noreferrer"',
+    '<a target="_blank" rel="noopener noreferrer"'
   );
 }
 
@@ -72,7 +73,9 @@ function normalizePreviewLinkHref(rawHref: string): string {
   const hrefCandidate = (markdownHrefMatch?.[1] ?? decoded).trim();
   const unwrapped = hrefCandidate.replace(/^<([^>]+)>$/, '$1').trim();
 
-  const embeddedUrls = Array.from(unwrapped.matchAll(/https?:\/\/[^\s<>)\]]+/gi)).map((match) => match[0]);
+  const embeddedUrls = Array.from(unwrapped.matchAll(/https?:\/\/[^\s<>)\]]+/gi)).map(
+    (match) => match[0]
+  );
   const bestEmbeddedUrl = (() => {
     if (embeddedUrls.length === 0) return null;
 
@@ -107,6 +110,15 @@ function normalizeComparableUrl(value: string): string {
   }
 }
 
+function isNonPersistableUrl(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  return (
+    normalized.startsWith('blob:') ||
+    normalized.startsWith('data:') ||
+    normalized.startsWith('file:')
+  );
+}
+
 function classifyPreviewLinkMode(anchor: HTMLAnchorElement): LinkDisplayMode {
   const modeFromClass = getModeFromClassName(anchor.getAttribute('class'));
   if (modeFromClass) return modeFromClass;
@@ -128,7 +140,7 @@ function classifyPreviewLinkMode(anchor: HTMLAnchorElement): LinkDisplayMode {
 }
 
 function hydratePreviewLinkModes(root: HTMLElement): void {
-  const anchors = Array.from(root.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+  const anchors = Array.from(root.querySelectorAll('a[href]'));
   anchors.forEach((anchor) => {
     anchor.classList.remove('meta-link-chip', LINK_CLASS_URL, LINK_CLASS_BUTTON, LINK_CLASS_CARD);
 
@@ -296,15 +308,20 @@ interface Props {
 function getInitials(name: string | null | undefined, email: string | null | undefined): string {
   const source = name || email || '?';
   const parts = source.split(/[\s@.]/).filter(Boolean);
-  if (parts.length >= 2) return `${parts[0]?.[0] ?? ''}${parts[1]?.[0] ?? ''}`.toUpperCase();
+  if (parts.length >= 2) return `${parts[0]![0]}${parts[1]![0]}`.toUpperCase();
   return source.slice(0, 2).toUpperCase();
 }
 
 /** Consistent avatar colour based on user id. */
 // Darker shades guarantee sufficient contrast against text-inverse (white in light mode)
 const AVATAR_COLORS = [
-  'bg-blue-600', 'bg-green-700', 'bg-purple-600',
-  'bg-pink-600', 'bg-amber-700', 'bg-orange-700', 'bg-teal-700',
+  'bg-blue-600',
+  'bg-green-700',
+  'bg-purple-600',
+  'bg-pink-600',
+  'bg-amber-700',
+  'bg-orange-700',
+  'bg-teal-700',
 ];
 function avatarColor(userId: string) {
   let hash = 0;
@@ -324,17 +341,20 @@ function relativeTime(iso: string): string {
   const diff = (Date.now() - date.getTime()) / 1000;
   const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   if (diff < 60) return translations['comment.relativeTime.justNow'];
-  if (diff < 3600) return `${String(Math.floor(diff / 60))} ${translations['comment.relativeTime.minAgo']} · ${time}`;
-  if (diff < 86400) return `${String(Math.floor(diff / 3600))} ${translations['comment.relativeTime.hrAgo']} · ${time}`;
+  if (diff < 3600)
+    return `${Math.floor(diff / 60)} ${translations['comment.relativeTime.minAgo']} · ${time}`;
+  if (diff < 86400)
+    return `${Math.floor(diff / 3600)} ${translations['comment.relativeTime.hrAgo']} · ${time}`;
   const day = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   return `${day}, ${time}`;
 }
 
 /** Parse markdown and highlight @mention chips inside comment text. Returns safe HTML string. */
 function renderContent(text: string, attachments: Attachment[]): string {
-  const hydrated = attachments.length > 0
-    ? hydrateCommentAttachmentMarkdown(text, attachments)
-    : stripCommentAttachmentPlaceholders(text);
+  const hydrated =
+    attachments.length > 0
+      ? hydrateCommentAttachmentMarkdown(text, attachments)
+      : stripCommentAttachmentPlaceholders(text);
   const withNativeEmoji = replaceEmojiShortcodes(hydrated);
   // [why] Legacy/server-sanitized comments may store blockquote markers as
   // "&gt;". Convert marker positions back to markdown so rendering matches editor.
@@ -350,14 +370,31 @@ function renderContent(text: string, attachments: Attachment[]): string {
   // Wrap @mentions in a styled chip
   const withMentions = html.replaceAll(
     /(@\w[\w.+-]*)/g,
-    '<span class="rounded bg-blue-100 px-1 py-0.5 text-xs font-medium text-blue-700">$1</span>',
+    '<span class="rounded bg-blue-100 px-1 py-0.5 text-xs font-medium text-blue-700">$1</span>'
   );
   // [why] Ensure all links open in a new tab so the user is never navigated away
   // from the board view.
-  return addLinkTargetBlank(normalizeRenderedLinkHtml(withMentions));
+  return sanitizeUserGeneratedHtml(addLinkTargetBlank(normalizeRenderedLinkHtml(withMentions)));
 }
 
-const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmin = false, isNotificationTarget = false, autoExpandReplies = false, onEdit, onDelete, onAddReaction, onRemoveReaction, onAddReply, onEditReply, onDeleteReply, cardId }: Props) => {
+const CommentItem = ({
+  comment,
+  boardId,
+  attachments = [],
+  currentUserId,
+  isAdmin = false,
+  isNotificationTarget = false,
+  autoExpandReplies = false,
+  onEdit,
+  onDelete,
+  onAddReaction,
+  onRemoveReaction,
+  onReply,
+  onAddReply,
+  onEditReply,
+  onDeleteReply,
+  cardId,
+}: Props) => {
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [replyExpanded, setReplyExpanded] = useState(autoExpandReplies);
@@ -382,23 +419,26 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
     rootRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }, [isNotificationTarget, autoExpandReplies]);
 
-  const handleAddReply = useCallback(async (parentId: string, content: string) => {
-    if (!onAddReply) return;
-    await onAddReply(parentId, content);
-    setHasLocalReplies(true);
-    setReplyExpanded(true);
-  }, [onAddReply]);
+  const handleAddReply = useCallback(
+    async (parentId: string, content: string) => {
+      if (!onAddReply) return;
+      await onAddReply(parentId, content);
+      setHasLocalReplies(true);
+      setReplyExpanded(true);
+    },
+    [onAddReply]
+  );
 
   useEffect(() => {
     if (editing) return;
     const root = commentMarkdownRef.current;
     if (!root) return;
 
-    let cancelled = false;
-    const objectUrls: string[] = [];
-
-    const hydrateImage = async (img: HTMLImageElement): Promise<void> => {
-      const rawSrc = img.getAttribute('src');
+    const hydrateImage = (img: HTMLImageElement): void => {
+      const currentSrc = img.getAttribute('src')?.trim() ?? '';
+      const persistedSrc = img.getAttribute(COMMENT_ATTACHMENT_SOURCE_ATTR)?.trim() ?? '';
+      const rawSrc =
+        currentSrc && isNonPersistableUrl(currentSrc) && persistedSrc ? persistedSrc : currentSrc;
       if (!rawSrc) return;
 
       const placeholderName = readAttachmentPlaceholderName(rawSrc);
@@ -409,41 +449,20 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
         ? resolveAttachmentMarkdownUrl(mappedAttachment, false)
         : null;
       const effectiveSrc = mappedSrc ?? rawSrc;
-      if (effectiveSrc !== rawSrc) {
+      img.setAttribute(COMMENT_ATTACHMENT_SOURCE_ATTR, effectiveSrc);
+      if (effectiveSrc !== currentSrc) {
         img.src = effectiveSrc;
-      }
-
-      let url: URL;
-      try {
-        url = new URL(effectiveSrc, globalThis.location.origin);
-      } catch {
-        return;
-      }
-
-      if (!/^\/api\/v1\/attachments\/[^/]+\/(?:view|thumbnail)$/.test(url.pathname)) return;
-
-      try {
-        const blob = await apiClient.get<Blob>(`${url.pathname}${url.search}`, { responseType: 'blob' });
-        if (cancelled) return;
-        const objectUrl = URL.createObjectURL(blob);
-        objectUrls.push(objectUrl);
-        img.src = objectUrl;
-      } catch {
-        // Keep original src so browser fallback/error UI remains visible.
       }
     };
 
     const images = Array.from(root.querySelectorAll('img'));
     images.forEach((img) => {
-      void hydrateImage(img);
+      hydrateImage(img);
     });
 
     hydratePreviewLinkModes(root);
 
-    return () => {
-      cancelled = true;
-      objectUrls.forEach((value) => { URL.revokeObjectURL(value); });
-    };
+    return undefined;
   }, [comment.content, attachments, editing]);
 
   if (comment.deleted) {
@@ -454,7 +473,8 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
   const canEdit = isOwner;
   const canDelete = isOwner || isAdmin;
 
-  const displayName = comment.author_name || comment.author_email || translations['comment.author.unknown'];
+  const displayName =
+    comment.author_name || comment.author_email || translations['comment.author.unknown'];
   const initials = getInitials(comment.author_name, comment.author_email);
   const color = avatarColor(comment.user_id);
   const avatarUrl = comment.author_avatar_url ?? null;
@@ -478,13 +498,18 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
     <div ref={rootRef} className="flex gap-3">
       {/* Avatar */}
       <div
-        className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${avatarUrl ? '' : (color ?? '')} overflow-hidden`} // [theme-exception] text-white on colored avatar
+        className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${avatarUrl ? '' : color} overflow-hidden`} // [theme-exception] text-white on colored avatar
         title={displayName}
       >
-        {avatarUrl
-          ? <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover rounded-full" />
-          : initials
-        }
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={displayName}
+            className="h-full w-full object-cover rounded-full"
+          />
+        ) : (
+          initials
+        )}
       </div>
 
       {/* Body */}
@@ -506,7 +531,9 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
             availableAttachments={attachments}
             initialValue={comment.content}
             onSubmit={handleEdit}
-            onCancel={() => { setEditing(false); }}
+            onCancel={() => {
+              setEditing(false);
+            }}
             submitLabel={translations['comment.editor.update']}
           />
         ) : (
@@ -546,8 +573,8 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
                 event.stopPropagation();
                 setPreviewImage({ src, alt: image.getAttribute('alt') ?? 'Comment image' });
               }}
-              // [why] dangerouslySetInnerHTML — content is user-authored markdown parsed by marked.
-              // Input is from authenticated users only (internal tool), so XSS risk is accepted.
+              // [why] Rendered markdown is sanitized first to strip scripts, event
+              // handlers, and unsafe URLs before injecting into the DOM.
               dangerouslySetInnerHTML={{ __html: renderContent(comment.content, attachments) }}
             />
           </div>
@@ -565,13 +592,16 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
               />
             )}
 
-            {(onAddReaction || onRemoveReaction) && (canEdit || canDelete || (onAddReply && !comment.parent_id)) && <span>·</span>}
+            {(onAddReaction || onRemoveReaction) &&
+              (canEdit || canDelete || (onAddReply && !comment.parent_id)) && <span>·</span>}
 
             {canEdit && (
               <Button
                 variant="link"
                 className="p-0 text-xs text-muted hover:text-subtle"
-                onClick={() => { setEditing(true); }}
+                onClick={() => {
+                  setEditing(true);
+                }}
               >
                 {translations['comment.action.edit']}
               </Button>
@@ -581,10 +611,12 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
               <Button
                 variant="link"
                 className="p-0 text-xs text-muted hover:text-danger"
-                onClick={() => { void handleDelete(); }}
+                onClick={handleDelete}
                 disabled={deleting}
               >
-                {deleting ? translations['comment.action.deleting'] : translations['comment.action.delete']}
+                {deleting
+                  ? translations['comment.action.deleting']
+                  : translations['comment.action.delete']}
               </Button>
             )}
             {/* Reply button — only on top-level comments (no parent_id) */}
@@ -594,7 +626,9 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
                 <Button
                   variant="link"
                   className="p-0 text-xs text-muted hover:text-subtle"
-                  onClick={() => { setShowReplyEditor((prev) => !prev); }}
+                  onClick={() => {
+                    setShowReplyEditor((prev) => !prev);
+                  }}
                 >
                   {translations['comment.action.reply']}
                 </Button>
@@ -604,30 +638,37 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
         )}
 
         {/* Reply thread — only on top-level comments */}
-        {!comment.parent_id && ((comment.reply_count ?? 0) > 0 || hasLocalReplies || showReplyEditor) && onAddReply && cardId && (
-          <CommentReplyThread
-            parentComment={comment}
-            cardId={cardId}
-            {...(boardId !== undefined ? { boardId } : {})}
-            currentUserId={currentUserId}
-            isAdmin={isAdmin}
-            expanded={replyExpanded}
-            showReplyEditor={showReplyEditor}
-            onExpandToggle={setReplyExpanded}
-            onHideReplyEditor={() => { setShowReplyEditor(false); }}
-            onAddReply={handleAddReply}
-            onEditReply={onEditReply ?? (() => Promise.resolve())}
-            onDeleteReply={onDeleteReply ?? (() => Promise.resolve())}
-            {...(onAddReaction ? { onAddReaction } : {})}
-            {...(onRemoveReaction ? { onRemoveReaction } : {})}
-          />
-        )}
+        {!comment.parent_id &&
+          ((comment.reply_count ?? 0) > 0 || hasLocalReplies || showReplyEditor) &&
+          onAddReply &&
+          cardId && (
+            <CommentReplyThread
+              parentComment={comment}
+              cardId={cardId}
+              {...(boardId !== undefined ? { boardId } : {})}
+              currentUserId={currentUserId}
+              isAdmin={isAdmin}
+              expanded={replyExpanded}
+              showReplyEditor={showReplyEditor}
+              onExpandToggle={setReplyExpanded}
+              onHideReplyEditor={() => {
+                setShowReplyEditor(false);
+              }}
+              onAddReply={handleAddReply}
+              onEditReply={onEditReply ?? (() => Promise.resolve())}
+              onDeleteReply={onDeleteReply ?? (() => Promise.resolve())}
+              {...(onAddReaction ? { onAddReaction } : {})}
+              {...(onRemoveReaction ? { onRemoveReaction } : {})}
+            />
+          )}
       </div>
       {previewImage && (
         <ImageLightbox
           src={previewImage.src}
           name={previewImage.alt}
-          onClose={() => { setPreviewImage(null); }}
+          onClose={() => {
+            setPreviewImage(null);
+          }}
         />
       )}
     </div>
@@ -635,4 +676,3 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
 };
 
 export default CommentItem;
-

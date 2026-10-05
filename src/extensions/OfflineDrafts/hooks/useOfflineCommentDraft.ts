@@ -89,7 +89,7 @@ export function useOfflineCommentDraft({
       });
       setDraftStatus('saved_local');
     },
-    [cardId, userId, workspaceId],
+    [cardId, userId, workspaceId]
   );
 
   // ---------- Restore draft on card open ----------
@@ -141,9 +141,8 @@ export function useOfflineCommentDraft({
       localSaveTimer.current = setTimeout(() => {
         void saveLocal(latestContentRef.current);
       }, LOCAL_SAVE_DEBOUNCE_MS);
-
     },
-    [isReady, saveLocal],
+    [isReady, saveLocal]
   );
 
   // ---------- Offline submit intent ----------
@@ -188,7 +187,7 @@ export function useOfflineCommentDraft({
       setDraftStatus('will_sync_when_online');
       return true; // caller must NOT call onSubmit — replay will handle it
     },
-    [cardId, userId, workspaceId, boardId],
+    [cardId, userId, workspaceId, boardId]
   );
 
   // ---------- Clear draft (after successful online submit) ----------
@@ -235,7 +234,7 @@ export function useOfflineCommentDraft({
       });
       setDraftStatus('will_sync_when_online');
     },
-    [cardId, isSubmitPending, userId, workspaceId, boardId],
+    [cardId, isSubmitPending, userId, workspaceId, boardId]
   );
 
   // ---------- Discard draft ----------

@@ -17,7 +17,7 @@ const TOKEN_TTL_SECONDS = 60 * 60;
 export async function handleGetPluginToken(
   req: Request,
   boardId: string,
-  pluginId: string,
+  pluginId: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -28,14 +28,14 @@ export async function handleGetPluginToken(
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   // Verify the requesting user is a member of the board's workspace.
   const membershipError = await requireWorkspaceMembership(
     req as WorkspaceScopedRequest,
-    board.workspace_id,
+    board.workspace_id
   );
   if (membershipError) return membershipError;
 
@@ -51,38 +51,41 @@ export async function handleGetPluginToken(
 
   if (!boardPlugin) {
     return Response.json(
-      { error: { code: 'plugin-not-active-on-board', message: 'Plugin is not active on this board' } },
-      { status: 404 },
+      {
+        error: {
+          code: 'plugin-not-active-on-board',
+          message: 'Plugin is not active on this board',
+        },
+      },
+      { status: 404 }
     );
   }
 
   if (!boardPlugin.api_key) {
     return Response.json(
       { error: { code: 'plugin-misconfigured', message: 'Plugin has no API key configured' } },
-      { status: 500 },
+      { status: 500 }
     );
   }
 
   // Sign a short-lived token. The HMAC secret is the plugin's api_key — server-side only.
   // Claims: pluginId + boardId scope it to exactly one plugin on one board.
   // userId allows private-visibility data isolation per user.
-  const userId = authedReq.currentUser?.id;
-  if (!userId) {
-    return Response.json(
-      { error: { code: 'unauthorized', message: 'Unauthorized' } },
-      { status: 401 },
-    );
-  }
-
+  //
+  // boardId is the short_id when available (matching client URL params) so plugin iframes
+  // that receive the board short_id from the URL can pass it through without a mismatch.
+  // boardCanonicalId is always the long UUID — used for DB queries server-side.
+  const boardShortId = board.short_id as string | null | undefined;
   const secret = new TextEncoder().encode(boardPlugin.api_key as string);
   const token = await new SignJWT({
     pluginId: boardPlugin.id,
-    boardId,
+    boardId: boardShortId ?? boardId,
+    boardCanonicalId: boardId,
   })
     .setProtectedHeader({ alg: 'HS256' })
-    .setSubject(userId)
+    .setSubject(authedReq.currentUser!.id)
     .setIssuedAt()
-    .setExpirationTime(`${String(TOKEN_TTL_SECONDS)}s`)
+    .setExpirationTime(`${TOKEN_TTL_SECONDS}s`)
     .sign(secret);
 
   return Response.json({

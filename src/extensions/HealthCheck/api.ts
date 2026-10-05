@@ -142,9 +142,7 @@ export async function probeHealthCheck({
   boardId: string;
   healthCheckId: string;
 }): Promise<{ data: ProbeResult }> {
-  return api.post<{ data: ProbeResult }>(
-    `/boards/${boardId}/health-checks/${healthCheckId}/probe`,
-  );
+  return api.post<{ data: ProbeResult }>(`/boards/${boardId}/health-checks/${healthCheckId}/probe`);
 }
 
 /**

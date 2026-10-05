@@ -41,37 +41,32 @@ function initials(displayName: string): string {
     .toUpperCase();
 }
 
-const PresenceAvatars: React.FC<PresenceAvatarsProps> = ({
-  boardId,
-  lastEvent,
-  fetchPresence,
-}) => {
+const PresenceAvatars: React.FC<PresenceAvatarsProps> = ({ boardId, lastEvent, fetchPresence }) => {
   const [users, setUsers] = useState<PresenceUser[]>([]);
 
   // Initial presence fetch
   useEffect(() => {
-    fetchPresence(boardId).then(setUsers).catch(() => {
-      // Non-critical — silently ignore
-    });
+    fetchPresence(boardId)
+      .then(setUsers)
+      .catch(() => {
+        // Non-critical — silently ignore
+      });
   }, [boardId, fetchPresence]);
 
-  const applyPresenceEvent = useCallback(
-    (event: RealtimeEvent) => {
-      if (event.type !== 'presence_update') return;
-      const p = event.payload as { user: PresenceUser; action: 'join' | 'leave' } | undefined;
-      if (!p) return;
+  const applyPresenceEvent = useCallback((event: RealtimeEvent) => {
+    if (event.type !== 'presence_update') return;
+    const p = event.payload as { user: PresenceUser; action: 'join' | 'leave' } | undefined;
+    if (!p) return;
 
-      if (p.action === 'join') {
-        setUsers((prev) => {
-          if (prev.some((u) => u.userId === p.user.userId)) return prev;
-          return [...prev, { ...p.user, color: colorFor(p.user.userId) }];
-        });
-      } else {
-        setUsers((prev) => prev.filter((u) => u.userId !== p.user.userId));
-      }
-    },
-    [],
-  );
+    if (p.action === 'join') {
+      setUsers((prev) => {
+        if (prev.some((u) => u.userId === p.user.userId)) return prev;
+        return [...prev, { ...p.user, color: colorFor(p.user.userId) }];
+      });
+    } else {
+      setUsers((prev) => prev.filter((u) => u.userId !== p.user.userId));
+    }
+  }, []);
 
   // Apply WS events when they arrive
   useEffect(() => {
@@ -85,7 +80,10 @@ const PresenceAvatars: React.FC<PresenceAvatarsProps> = ({
   const overflow = users.length - MAX_VISIBLE;
 
   return (
-    <div className="flex items-center gap-1" aria-label={translations['Realtime.ariaActiveBoardMembers']}>
+    <div
+      className="flex items-center gap-1"
+      aria-label={translations['Realtime.ariaActiveBoardMembers']}
+    >
       {visible.map((user) => (
         <div
           key={user.userId}

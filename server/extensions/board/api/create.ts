@@ -11,6 +11,8 @@ import { dispatchEvent } from '../../../mods/events/dispatch';
 import type { BoardVisibility } from '../types';
 import { sanitizeText, sanitizeRichText } from '../../../common/sanitize';
 import { generateUniqueShortId } from '../../../common/ids/shortId';
+import { applyLimitGuard } from '../../../middlewares/limitGuard';
+import { getBoardCountPerWorkspace } from '../../subscription/common/usage';
 
 const VALID_VISIBILITY: BoardVisibility[] = ['PUBLIC', 'PRIVATE', 'WORKSPACE'];
 
@@ -31,33 +33,60 @@ export async function handleCreateBoard(req: Request, workspaceId: string): Prom
   const roleError = requireRole(scopedReq, 'MEMBER');
   if (roleError) return roleError;
 
-  let body: { title?: string; visibility?: BoardVisibility; description?: string; background?: string };
+  let body: {
+    title?: string;
+    visibility?: BoardVisibility;
+    description?: string;
+    background?: string;
+  };
   try {
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
     return Response.json(
       { error: { code: 'bad-request', message: 'title is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (body.visibility !== undefined && !VALID_VISIBILITY.includes(body.visibility)) {
     return Response.json(
-      { error: { code: 'bad-request', message: "visibility must be 'PUBLIC', 'PRIVATE', or 'WORKSPACE'" } },
-      { status: 400 },
+      {
+        error: {
+          code: 'bad-request',
+          message: "visibility must be 'PUBLIC', 'PRIVATE', or 'WORKSPACE'",
+        },
+      },
+      { status: 400 }
     );
   }
 
   const creatorId = (req as AuthenticatedRequest & { currentUser: { id: string } }).currentUser.id;
   const title = body.title;
   const id = randomUUID();
+
+  // Enforce board-per-workspace and total-board caps before persisting.
+  const boardCount = await getBoardCountPerWorkspace(workspaceId);
+  const perWorkspaceLimitError = await applyLimitGuard({
+    workspaceId,
+    limitKey: 'maxBoardsPerWorkspace',
+    currentUsage: boardCount,
+  });
+  if (perWorkspaceLimitError) return perWorkspaceLimitError;
+
+  const totalLimitError = await applyLimitGuard({
+    workspaceId,
+    limitKey: 'maxBoardsTotal',
+    currentUsage: boardCount,
+  });
+  if (totalLimitError) return totalLimitError;
+
   const shortId = await generateUniqueShortId('boards');
 
   // Wrap board creation + initial member insert in a transaction so no partial state is persisted.
@@ -85,7 +114,13 @@ export async function handleCreateBoard(req: Request, workspaceId: string): Prom
   const board = await db<BoardRow>('boards').where({ id }).first();
 
   // Stub event emission — replaced by activity log in sprint 10.
-  await dispatchEvent({ type: 'board_created', boardId: id, entityId: id, actorId: creatorId, payload: { workspaceId } });
+  await dispatchEvent({
+    type: 'board_created',
+    boardId: id,
+    entityId: id,
+    actorId: creatorId,
+    payload: { workspaceId },
+  });
 
   return Response.json({ data: board }, { status: 201 });
 }

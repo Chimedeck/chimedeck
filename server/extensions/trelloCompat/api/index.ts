@@ -14,7 +14,10 @@ import { membersRouter } from './members';
 import { organizationsRouter } from './organizations';
 import { searchRouter } from './search';
 
-const DISABLED_RESPONSE = trelloError('Trello compatibility layer is not enabled on this server.', 501);
+const DISABLED_RESPONSE = trelloError(
+  'Trello compatibility layer is not enabled on this server.',
+  501
+);
 
 export async function trelloCompatRouter(req: Request, pathname: string): Promise<Response | null> {
   return withTrelloErrorHandler(async () => {

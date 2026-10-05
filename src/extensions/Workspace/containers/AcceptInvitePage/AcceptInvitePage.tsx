@@ -9,6 +9,7 @@ import LayoutSingleColumn from '~/layout/LayoutSingleColumn';
 import { inspectInvite, acceptInvite, type Invite } from '../../api';
 import RoleBadge from '../../components/RoleBadge';
 import Button from '~/common/components/Button';
+import translations from '../../translations/en.json';
 
 // TODO: replace with real api instance from context/store extras once wired in.
 declare const api: Parameters<typeof inspectInvite>[0]['api'];
@@ -30,10 +31,11 @@ const AcceptInvitePage = () => {
       return;
     }
     inspectInvite({ api, token })
-      .then((res) => { setState({ status: 'ready', invite: res.data }); })
+      .then((res) => {
+        setState({ status: 'ready', invite: res.data });
+      })
       .catch((err) => {
-        const errorName =
-          err?.response?.data?.error?.code ?? 'unknown-error';
+        const errorName = err?.response?.data?.error?.code ?? 'unknown-error';
         setState({ status: 'error', errorName });
       });
   }, [token]);
@@ -46,8 +48,7 @@ const AcceptInvitePage = () => {
       setState({ status: 'success' });
     } catch (err: unknown) {
       const e = err as { response?: { data?: { error?: { code?: string } } } };
-      const errorName =
-        e?.response?.data?.error?.code ?? 'unknown-error';
+      const errorName = e?.response?.data?.error?.code ?? 'unknown-error';
       setState({ status: 'error', errorName });
     }
   };
@@ -62,18 +63,13 @@ const AcceptInvitePage = () => {
         return (
           <div className="space-y-4">
             <p className="text-base">
-              You have been invited to join{' '}
-              <strong>{invite.workspaceName}</strong> as{' '}
+              You have been invited to join <strong>{invite.workspaceName}</strong> as{' '}
               <RoleBadge role={invite.role} />.
             </p>
             <p className="text-sm text-muted">
               Invite expires: {new Date(invite.expiresAt).toLocaleString()}
             </p>
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => { void handleAccept(); }}
-            >
+            <Button variant="primary" size="md" onClick={handleAccept}>
               Accept Invitation
             </Button>
           </div>
@@ -84,11 +80,7 @@ const AcceptInvitePage = () => {
         return <p className="text-muted">Accepting invite…</p>;
 
       case 'success':
-        return (
-          <p className="font-medium text-success">
-            You have joined the workspace.
-          </p>
-        );
+        return <p className="font-medium text-success">You have joined the workspace.</p>;
 
       case 'error': {
         const message = (() => {
@@ -111,14 +103,14 @@ const AcceptInvitePage = () => {
   })();
 
   return (
-    <Page title="Accept Invite">
+    <Page title={translations['AcceptInvitePage.title']}>
       <LayoutSingleColumn
         topbar={<TopbarContainer />}
         footer={<FooterContainer />}
         contentClassName="p-6"
       >
         <div className="mx-auto max-w-md space-y-4">
-          <h1 className="text-2xl font-bold">Accept Invite</h1>
+          <h1 className="text-2xl font-bold">{translations['AcceptInvitePage.title']}</h1>
           {bodyContent}
         </div>
       </LayoutSingleColumn>

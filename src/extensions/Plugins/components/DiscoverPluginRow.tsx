@@ -69,7 +69,9 @@ const DiscoverPluginRow = ({ plugin, onEnable, loading = false }: Props) => {
         <Button
           variant="primary"
           size="sm"
-          onClick={() => { onEnable(plugin); }}
+          onClick={() => {
+            onEnable(plugin);
+          }}
           disabled={loading}
         >
           {loading ? translations['plugins.card.enabling'] : translations['plugins.card.enable']}
