@@ -45,7 +45,8 @@ export async function handleListAttachments(req: Request, cardId: string): Promi
 
   const attachments = await db('attachments')
     .where({ card_id: resolvedCardId })
-    .orderBy('created_at', 'desc');
+    .orderBy('position', 'asc')
+    .orderBy('created_at', 'asc');
 
   // Resolve referenced card data for internal card-link attachments.
   const referencedCardIds = attachments

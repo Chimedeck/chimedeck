@@ -2,7 +2,7 @@ export type AttachmentRow = {
   id: string; card_id: string; name: string; alias: string | null; type: 'FILE' | 'URL';
   url: string | null; external_url: string | null; mime_type: string | null; size_bytes: number | null;
   status: string; thumbnail_key: string | null; width: number | null; height: number | null;
-  created_at: string; updated_at: string; referenced_card_id: string | null;
+  created_at: string; updated_at: string; referenced_card_id: string | null; position: string | null;
 };
 
 export type ReferencedCard = {
@@ -29,5 +29,6 @@ export function serializeAttachment(
     width: attachment.width ?? null, height: attachment.height ?? null, created_at: attachment.created_at,
     updated_at: attachment.updated_at, referenced_card_id: attachment.referenced_card_id ?? null,
     referenced_card: attachment.referenced_card_id ? (refCardMap[attachment.referenced_card_id] ?? null) : null,
+    position: attachment.position ?? null,
   };
 }

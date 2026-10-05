@@ -157,3 +157,15 @@ export async function patchAttachment({
 }: { attachmentId: string } & PatchAttachmentRequest): Promise<{ data: Attachment }> {
   return apiClient.patch(`/attachments/${attachmentId}`, { alias, url });
 }
+
+// ---------- Reorder ----------
+
+export async function reorderAttachments({
+  cardId,
+  order,
+}: {
+  cardId: string;
+  order: string[];
+}): Promise<{ data: Attachment[] }> {
+  return apiClient.post(`/cards/${cardId}/attachments/reorder`, { order });
+}

@@ -49,6 +49,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     cover_attachment_id?: string | null;
     cover_color?: string | null;
     cover_size?: 'SMALL' | 'FULL';
+    is_template?: boolean;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -226,6 +227,16 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     updates.cover_size = body.cover_size;
   }
 
+  if (body.is_template !== undefined) {
+    if (typeof body.is_template !== 'boolean') {
+      return Response.json(
+        { error: { code: 'bad-request', message: 'is_template must be a boolean' } },
+        { status: 400 }
+      );
+    }
+    updates.is_template = body.is_template;
+  }
+
   // Default currency to USD when amount is set but no currency provided or stored
   if (updates.amount != null && updates.currency === undefined) {
     if (!existingCard?.currency) {
@@ -348,6 +359,29 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
       },
     });
     publishCardActivityEvent({ activity, boardId: board.id }).catch(() => {});
+  }
+
+  // Emit activity event when template flag changes
+  if (body.is_template !== undefined) {
+    const previousIsTemplate = (existingCard?.is_template ?? false) as boolean;
+    if (previousIsTemplate !== body.is_template) {
+      const templateAction = body.is_template
+        ? 'card.template.enabled'
+        : 'card.template.disabled';
+
+      const activity = await writeActivity({
+        entityType: 'card',
+        entityId: cardId,
+        boardId: board.id,
+        action: templateAction,
+        actorId,
+        payload: {
+          cardId,
+          cardTitle: (cardRow.title as string) ?? '',
+        },
+      });
+      publishCardActivityEvent({ activity, boardId: board.id }).catch(() => {});
+    }
   }
 
   return Response.json({ data: cardWithCover });

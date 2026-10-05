@@ -5,6 +5,23 @@
 // External links are shown in a separate "Links" section.
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { PaperClipIcon, LinkIcon } from '@heroicons/react/24/outline';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import Button from '../../../common/components/Button';
 import ToastRegion from '../../../common/components/ToastRegion';
 import type { ToastItem } from '../../../common/components/ToastRegion';
@@ -15,6 +32,7 @@ import {
   createUrlAttachment,
   patchAttachment,
   fetchCardPreview,
+  reorderAttachments,
 } from '../api';
 import { AttachmentDropZone } from './AttachmentDropZone';
 import { AttachmentItem } from './AttachmentItem';
@@ -41,6 +59,66 @@ interface Props {
   onAttachmentsChange?: (attachments: Attachment[]) => void;
   /** External signal to force a refresh (e.g. uploads initiated outside this panel). */
   refreshSignal?: number;
+}
+
+// SortableAttachmentItem — wraps AttachmentItem with @dnd-kit/sortable drag-and-drop.
+interface SortableAttachmentItemProps {
+  readonly attachment: Attachment;
+  readonly uploadProgress?: number | null | undefined;
+  readonly onDelete: (id: string) => void;
+  readonly onRename?: (id: string, alias: string) => void;
+  readonly onInsertComment?: (markdown: string) => void;
+  readonly disabled?: boolean;
+}
+
+function SortableAttachmentItem({
+  attachment,
+  uploadProgress,
+  onDelete,
+  onRename,
+  onInsertComment,
+  disabled = false,
+}: Readonly<SortableAttachmentItemProps>): React.ReactElement {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: attachment.id,
+    data: { type: 'attachment', attachmentId: attachment.id },
+    disabled,
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+  };
+
+  // [why] setActivatorNodeRef and listeners need to be passed to the drag handle
+  // button inside AttachmentItem. We spread them as a combined object and the
+  // AttachmentItem applies them to the Bars3Icon button.
+  const dragHandleProps = {
+    ref: setActivatorNodeRef as React.Ref<HTMLButtonElement>,
+    ...listeners,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <AttachmentItem
+        attachment={attachment}
+        uploadProgress={uploadProgress ?? null}
+        onDelete={onDelete}
+        {...(onRename ? { onRename } : {})}
+        {...(onInsertComment ? { onInsertComment } : {})}
+        dragHandleProps={dragHandleProps}
+      />
+    </div>
+  );
 }
 
 export function AttachmentPanel({
@@ -85,21 +163,38 @@ export function AttachmentPanel({
   }, []);
 
   // Load attachments from the server
-  const loadAttachments = useCallback(async () => {
-    try {
-      const res = await listAttachments({ cardId });
-      // Sort newest-first
-      const sorted = [...res.data].sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      setAttachments(sorted);
-      const fileCount = sorted.filter((a) => a.referenced_card_id == null).length;
-      const linkedCardCount = sorted.filter((a) => a.referenced_card_id != null).length;
-      onCountChange?.({ fileCount, linkedCardCount });
-    } catch {
-      setLoadError('Failed to load attachments');
-    }
-  }, [cardId, onCountChange]);
+  const loadAttachments = useCallback(
+    async (newAttachmentId?: string) => {
+      try {
+        const res = await listAttachments({ cardId });
+        // [why] Server returns attachments ordered by position ASC — no client-side
+        // sort needed. When a new attachment is added, we reorder it to the top.
+        let sorted = res.data;
+        if (newAttachmentId) {
+          const newIdx = sorted.findIndex((a) => a.id === newAttachmentId);
+          if (newIdx > 0) {
+            // Move the new attachment to the front
+            const newItem = sorted[newIdx];
+            if (newItem) {
+              sorted = [newItem, ...sorted.filter((_, i) => i !== newIdx)];
+            }
+            // Persist the new order to the server (fire-and-forget)
+            void reorderAttachments({
+              cardId,
+              order: sorted.map((a) => a.id),
+            });
+          }
+        }
+        setAttachments(sorted);
+        const fileCount = sorted.filter((a) => a.referenced_card_id == null).length;
+        const linkedCardCount = sorted.filter((a) => a.referenced_card_id != null).length;
+        onCountChange?.({ fileCount, linkedCardCount });
+      } catch {
+        setLoadError('Failed to load attachments');
+      }
+    },
+    [cardId, onCountChange]
+  );
 
   useEffect(() => {
     void loadAttachments();
@@ -119,8 +214,8 @@ export function AttachmentPanel({
   // Upload hook — refreshes the server list when a new upload completes
   const { uploads, upload, removeEntry } = useAttachmentUpload({
     cardId,
-    onSuccess: () => {
-      void loadAttachments();
+    onSuccess: (attachment) => {
+      void loadAttachments(attachment.id);
     },
     onError: (_clientId, message) => {
       pushErrorToast(message);
@@ -164,8 +259,8 @@ export function AttachmentPanel({
         }
       }
       try {
-        await createUrlAttachment({ cardId, url, name });
-        void loadAttachments();
+        const created = await createUrlAttachment({ cardId, url, name });
+        void loadAttachments(created.data.id);
       } catch {
         // silently ignore — user can still use the manual link form
       }
@@ -319,12 +414,12 @@ export function AttachmentPanel({
       // [why] For internal card links the name is auto-filled from the card title;
       // fall back to the URL string only for external links with no display name.
       const nameToSend = linkName.trim() || detectedCard?.title || linkUrl.trim();
-      await createUrlAttachment({
+      const created = await createUrlAttachment({
         cardId,
         url: linkUrl.trim(),
         name: nameToSend,
       });
-      void loadAttachments();
+      void loadAttachments(created.data.id);
       setLinkUrl('');
       setLinkName('');
       setDetectedCard(null);
@@ -353,6 +448,38 @@ export function AttachmentPanel({
     const entry = uploads.find((u) => u.attachmentId === id && u.phase === 'uploading');
     return entry ? entry.progress : null;
   };
+
+  // DnD sensors for attachment reorder
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  // Handle drag-end: reorder attachments optimistically, then persist
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      setAttachments((prev) => {
+        const oldIndex = prev.findIndex((a) => a.id === active.id);
+        const newIndex = prev.findIndex((a) => a.id === over.id);
+        if (oldIndex === -1 || newIndex === -1) return prev;
+
+        const reordered = arrayMove(prev, oldIndex, newIndex);
+        // Persist the new order to the server (fire-and-forget)
+        void reorderAttachments({
+          cardId,
+          order: reordered.map((a) => a.id),
+        }).catch(() => {
+          // Roll back on failure
+          void loadAttachments();
+        });
+        return reordered;
+      });
+    },
+    [cardId, loadAttachments]
+  );
 
   return (
     <>
@@ -423,6 +550,7 @@ export function AttachmentPanel({
               external_url: null,
               referenced_card_id: null,
               referenced_card: null,
+              position: null,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             };
@@ -447,19 +575,31 @@ export function AttachmentPanel({
           </p>
         )}
 
-        {/* FILE attachments */}
-        <div className="space-y-0" data-testid="attachment-list">
-          {fileAttachments.map((attachment) => (
-            <AttachmentItem
-              key={attachment.id}
-              attachment={attachment}
-              uploadProgress={progressForAttachment(attachment.id)}
-              onDelete={handleDelete}
-              onRename={handleRename}
-              {...(insertMarkdownRef ? { onInsertComment: handleInsertComment } : {})}
-            />
-          ))}
-        </div>
+        {/* FILE attachments — sortable via drag-and-drop */}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext
+            items={fileAttachments.map((a) => a.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div
+              className="space-y-0"
+              data-testid="attachment-list"
+              data-upload-drop-exclude="true"
+            >
+              {fileAttachments.map((attachment) => (
+                <SortableAttachmentItem
+                  key={attachment.id}
+                  attachment={attachment}
+                  uploadProgress={progressForAttachment(attachment.id)}
+                  onDelete={handleDelete}
+                  onRename={handleRename}
+                  {...(insertMarkdownRef ? { onInsertComment: handleInsertComment } : {})}
+                  disabled={!canWrite}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
 
         {/* Cards section — internal card-link attachments */}
         {cardLinkAttachments.length > 0 && (

@@ -9,6 +9,7 @@ import {
   PencilIcon,
   ChatBubbleLeftIcon,
   EyeIcon,
+  Bars3Icon,
 } from '@heroicons/react/24/outline';
 import Button from '../../../common/components/Button';
 import IconButton from '../../../common/components/IconButton';
@@ -31,6 +32,12 @@ interface Props {
    * the Comment button. Omit to hide the button (e.g. temp upload rows or viewer guests).
    */
   onInsertComment?: (markdown: string) => void;
+  /**
+   * Props for the drag handle — passed from a @dnd-kit/sortable wrapper.
+   * When provided, a grip icon is rendered at the start of the row.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  dragHandleProps?: Record<string, any>;
 }
 
 // [theme-exception] Status badge colours intentionally use semantic status colours (green/yellow/red).
@@ -282,6 +289,7 @@ export function AttachmentItem({
   onDelete,
   onRename,
   onInsertComment,
+  dragHandleProps,
 }: Readonly<Props>): React.ReactElement {
   const [confirming, setConfirming] = useState(false);
   const [imageOpen, setImageOpen] = useState(false);
@@ -419,6 +427,18 @@ export function AttachmentItem({
   return (
     <div className="flex flex-col gap-1 py-2 border-b border-border last:border-0">
       <div className="flex items-center gap-2">
+        {/* Drag handle — only rendered when dragHandleProps is provided (sortable mode) */}
+        {dragHandleProps && (
+          <button
+            type="button"
+            className="flex-shrink-0 cursor-grab text-muted hover:text-subtle active:cursor-grabbing focus:outline-none"
+            {...dragHandleProps}
+            aria-label="Drag to reorder attachment"
+          >
+            <Bars3Icon className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
+
         {/* Icon + name — linkable for ready non-video attachments */}
         {attachmentIdentity}
 
