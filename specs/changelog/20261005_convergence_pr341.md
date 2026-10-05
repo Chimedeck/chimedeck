@@ -3,11 +3,12 @@
 ## What
 - Convergence branch `converge/main-into-stable` (PR #341, base `stable`): main's history merged so
   the repo moves to a single line of development before the dev/test/prod pipeline goes live on M21.
-- Landed: seeds storage-flag honour, card-description fix, sanitize-html bump, 57 repaired test files,
+- Landed: complete FLAG_USE_LOCAL_STORAGE (seed + runtime), card-description fix, sanitize-html bump, 57 repaired test files,
   MCP test exclusion, adopt-test repairs.
-- Correction (post-review 5409952383): the RUNTIME storage-flag + S3 split did NOT land — env.ts/s3.ts
-  are byte-identical to stable. Follow-up PR needed before M21 flag-dependent work. My earlier message
-  overstated this; the reviewer caught it.
+- Correction history: initial summary overstated the re-landed scope (review 5409952383 caught it);
+  then commit 593e54d9 LANDED the runtime half for real — env.ts resolveS3Env() + s3.ts WHEN_REQUIRED
+  checksums + localstack 3.8.1 pin, seed↔runtime consistent. Still deferred: s3ServerClient direct-op
+  split (main 398f10ef, 14 consumers).
 - Migration ledger untouched by design (prod knex_migrations rows must keep matching filenames).
 
 ## Verification on head 90d97e47
