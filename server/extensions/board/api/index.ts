@@ -20,6 +20,7 @@ import { handleGetBoardActivity } from './activity';
 import { handleGetBoardComments } from './comments';
 import { handleGetBoardActivities } from './boardActivities';
 import { handleGetArchivedCards } from './archived-cards';
+import { handleGetArchivedLists } from './archived-lists';
 import { handleInviteGuest, handleRevokeGuest, handleListGuests, handleUpdateGuestType } from './guests/index';
 import { handleGetWorkspaceBoards } from './workspaceBoards';
 import { handleUploadBackground } from './uploadBackground';
@@ -131,6 +132,9 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
 
     // GET /api/v1/boards/:id/archived-cards — all archived cards in the board
     if (sub === '/archived-cards' && req.method === 'GET') return handleGetArchivedCards(req, boardId);
+
+    // GET /api/v1/boards/:id/archived-lists — all archived lists in the board
+    if (sub === '/archived-lists' && req.method === 'GET') return handleGetArchivedLists(req, boardId);
 
     // POST /api/v1/boards/:id/guests — invite a user as a guest (ADMIN+ only)
     if (sub === '/guests' && req.method === 'POST') return handleInviteGuest(req, boardId);
