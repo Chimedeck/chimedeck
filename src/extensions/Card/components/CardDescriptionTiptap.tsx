@@ -734,7 +734,6 @@ function buildPreviewMarkdown(markdown: string, attachments: Attachment[]): stri
 
 const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled }: Props) => {
   const [editing, setEditing] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState(description);
   const [editMode, setEditMode] = useState<'rich' | 'markdown'>('rich');
   const [overflowOpen, setOverflowOpen] = useState(false);
@@ -1350,7 +1349,6 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
 
   const hydratedPreviewMarkdown = buildPreviewMarkdown(draft || '', cardAttachments);
   const isEmpty = !draft.trim();
-  const isLong = draft.length > 400;
   const previewHtml = addLinkTargetBlank(normalizeRenderedLinkHtml(marked.parse(hydratedPreviewMarkdown) as string));
   const attachProps = cardId ? { onAttach: handleAttach } : undefined;
 
@@ -1902,23 +1900,12 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                 : 'cursor-text hover:bg-bg-overlay',
               isEmpty
                 ? 'text-muted text-sm italic bg-bg-overlay'
-                : 'prose dark:prose-invert prose-sm max-w-none text-base',
-              isLong && !expanded ? 'overflow-hidden' : '',
+                : 'prose dark:prose-invert prose-sm max-w-none text-base break-words [&_a]:break-all',
             ].join(' ')}
-            style={isLong && !expanded ? { maxHeight: '12rem' } : undefined}
             {...(!isEmpty && { dangerouslySetInnerHTML: { __html: previewHtml } })}
           >
             {isEmpty ? 'Add a more detailed description…' : undefined}
           </button>
-          {isLong && (
-            <button
-              type="button"
-              className="mt-2 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-              onClick={() => { setExpanded((e) => !e); }}
-            >
-              {expanded ? 'Show less ↑' : 'Show more ↓'}
-            </button>
-          )}
         </div>
       )}
       {previewImage && (
