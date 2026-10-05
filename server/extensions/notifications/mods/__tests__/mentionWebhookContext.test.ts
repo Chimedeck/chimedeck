@@ -89,6 +89,8 @@ describe('buildMentionWebhookPayload — stable enriched contract', () => {
         boardName: 'Phoenix Ops',
         sourceText: '<p>Please review\nthis before Friday.</p>',
         actor: { nickname: 'maria', name: 'Maria Silva' },
+        // [why] durable producer event identity (ADR chimedeck-whatsapp-dedupe-contract)
+        eventId: 'mention-event-1',
       })
     ).toEqual({
       boardId: 'board-1',
@@ -101,6 +103,7 @@ describe('buildMentionWebhookPayload — stable enriched contract', () => {
       boardTitle: 'Phoenix Ops',
       sourcePreview: 'Please review this before Friday.',
       actorName: 'maria',
+      eventId: 'mention-event-1',
     });
   });
 });
