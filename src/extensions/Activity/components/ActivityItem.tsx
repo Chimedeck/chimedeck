@@ -74,6 +74,8 @@ function describeAction(
   const linkUrl = textValue(payload.linkUrl);
   const linkTarget = referencedCardTitle || name || linkUrl || 'a link';
   const { dueDate, dueTime } = formatDueDateParts(payload.dueDate);
+  const next = textValue(payload.next);
+  const previous = textValue(payload.previous);
 
   const key = `activity.action.${action}` as keyof typeof translations;
   const template = translations[key] ?? translations['activity.action.unknown'];
@@ -98,6 +100,8 @@ function describeAction(
     emoji,
     dueDate,
     dueTime,
+    next,
+    previous,
   });
 }
 

@@ -25,6 +25,11 @@ const EVENT_LABELS: Record<string, ActivityEventMeta> = {
   'card.due_date.cleared': { label: 'cleared the due date', dotColor: 'bg-bg-sunken' },
   'card.description.updated': { label: 'updated the description', dotColor: 'bg-blue-500' },
   'card.money.updated': { label: 'updated the value', dotColor: 'bg-green-500' },
+  // Port-back bundle C — github branch scope + card templates
+  'card.template.enabled': { label: 'turned this card into a template', dotColor: 'bg-indigo-500' },
+  'card.template.disabled': { label: 'converted this template back to a card', dotColor: 'bg-indigo-500' },
+  'board_github_branch_updated': { label: 'updated the GitHub branch scope', dotColor: 'bg-purple-500' },
+  'board_github_project_url_updated': { label: 'updated the GitHub project URL', dotColor: 'bg-purple-500' },
 };
 
 const FALLBACK: ActivityEventMeta = { label: 'Activity', dotColor: 'bg-bg-sunken' };
