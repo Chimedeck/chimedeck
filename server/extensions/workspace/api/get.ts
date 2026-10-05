@@ -10,7 +10,7 @@ import {
 type AuthenticatedUserRequest = AuthenticatedRequest & {
   currentUser: NonNullable<AuthenticatedRequest['currentUser']>;
 };
-type WorkspaceRow = { id: string; name: string; owner_id: string; created_at: string };
+type WorkspaceRow = { id: string; name: string; owner_id: string; created_at: string; plugin_domains?: string | null };
 
 export async function handleListWorkspaces(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
