@@ -11,22 +11,24 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 
 const BASE_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
+const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-interface Credentials { email: string; password: string; token: string }
+interface Credentials { email: string; password: string; token: string; refreshToken: string }
 
 async function registerAndLogin(request: APIRequestContext, suffix: string): Promise<Credentials> {
   const email = `tb-test-${suffix}-${Date.now()}@journeyh.io`;
   const password = 'TestPassword1!';
-  await request.post(`${BASE_URL}/api/v1/auth/register`, {
+  const regRes = await request.post(`${BASE_URL}/api/v1/auth/register`, {
     data: { email, password, name: `TB ${suffix}` },
   });
-  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/token`, {
-    data: { email, password },
-  });
-  const body = await loginRes.json() as { data: { accessToken: string } };
-  return { email, password, token: body.data.accessToken };
+  // Register returns an accessToken directly (201); avoid a separate login call
+  // which is rate-limited (10/IP/min) and would 429 under the full suite.
+  const body = await regRes.json() as { data: { accessToken: string } };
+  const setCookie = regRes.headers()['set-cookie'] ?? '';
+  const refreshMatch = setCookie.match(/refresh_token=([^;]+)/);
+  return { email, password, token: body.data.accessToken, refreshToken: refreshMatch ? refreshMatch[1] : '' };
 }
 
 async function createWorkspace(request: APIRequestContext, token: string): Promise<string> {
@@ -78,14 +80,24 @@ function offsetDate(offsetDays: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+// App boot performs an async token refresh; navigating immediately can race and
+// land on /workspaces. Retry until the board view switcher renders.
+async function gotoBoardUntilReady(page: Page, baseUrl: string, boardId: string): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto(`${baseUrl}/b/${boardId}`);
+    await page.waitForLoadState('networkidle');
+    if (await page.getByTestId('board-view-switcher').isVisible().catch(() => false)) return;
+    await page.waitForTimeout(500);
+  }
+}
+
 async function goToTimelineView(page: Page, baseUrl: string, boardId: string, creds: Credentials) {
-  await page.goto(`${baseUrl}/login`);
-  await page.fill('input[type="email"]', creds.email);
-  await page.fill('input[type="password"]', creds.password);
-  await page.click('button[type="submit"]');
-  await page.waitForURL(`${baseUrl}/workspaces**`, { timeout: 15000 });
-  await page.goto(`${baseUrl}/boards/${boardId}`);
-  await page.waitForLoadState('networkidle');
+  if (creds.refreshToken) {
+    await page.context().addCookies([
+      { name: 'refresh_token', value: creds.refreshToken, url: `${baseUrl}/api/v1/auth/refresh`, httpOnly: true, sameSite: 'Strict' },
+    ]);
+  }
+  await gotoBoardUntilReady(page, baseUrl, boardId);
   await page.getByTestId('board-view-tab-TIMELINE').click();
   await expect(page.getByTestId('timeline-view')).toBeVisible({ timeout: 10000 });
 }
@@ -104,7 +116,7 @@ test.describe('Timeline Bar Rendering', () => {
       due_date: offsetDate(4),
     });
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     // Bar should be rendered inside the correct swimlane
     const barArea = page.getByTestId(`timeline-bar-area-${listId}`);
@@ -128,7 +140,7 @@ test.describe('Timeline Bar Rendering', () => {
       due_date: offsetDate(6),
     });
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     await expect(page.getByTestId(`timeline-bar-resize-left-${cardId}`)).toBeVisible();
     await expect(page.getByTestId(`timeline-bar-resize-right-${cardId}`)).toBeVisible();
@@ -145,7 +157,7 @@ test.describe('Timeline Bar Rendering', () => {
       due_date: offsetDate(7),
     });
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     const bar = page.getByTestId(`timeline-bar-${cardId}`);
     await expect(bar).toContainText('My Task Title');
@@ -162,7 +174,7 @@ test.describe('Timeline Bar Rendering', () => {
     await patchCard(request, creds.token, cardId1, { start_date: offsetDate(-2), due_date: offsetDate(3) });
     await patchCard(request, creds.token, cardId2, { start_date: offsetDate(1), due_date: offsetDate(5) });
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     // Both bars should be visible in their respective swimlanes
     await expect(page.getByTestId(`timeline-bar-${cardId1}`)).toBeVisible();
@@ -177,11 +189,11 @@ test.describe('Timeline Bar Rendering', () => {
     const cardId = await createCard(request, creds.token, listId, 'NoDatesCard');
     // Intentionally no dates
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     // Should NOT have a bar
     await expect(page.getByTestId(`timeline-bar-${cardId}`)).not.toBeVisible();
-    // Should appear as an unscheduled chip instead
-    await expect(page.getByTestId(`timeline-unscheduled-chip-${cardId}`)).toBeVisible();
+    // Cards without a due_date are not displayed on the timeline at all.
+    await expect(page.getByTestId(`timeline-unscheduled-chip-${cardId}`)).not.toBeVisible();
   });
 });

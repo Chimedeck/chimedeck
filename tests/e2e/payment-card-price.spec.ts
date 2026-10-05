@@ -5,11 +5,12 @@
 // Based on: specs/tests/payment-card-price.md
 
 import { test, expect } from '@playwright/test';
-import { BASE_URL, registerAndLogin, createWorkspace, createBoard, createList, createCard } from './_helpers';
+import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, createCard, loginViaCookie, type Credentials } from './_helpers';
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
 test.describe('Payment — Card Price', () => {
+  let creds: Credentials;
   let token: string;
   let boardId: string;
   let cardId: string;
@@ -21,7 +22,8 @@ test.describe('Payment — Card Price', () => {
       return;
     }
 
-    token = await registerAndLogin(request, 'cardprice');
+    creds = await registerAndGetCredentials(request, 'cardprice');
+    token = creds.token;
     const workspaceId = await createWorkspace(request, token);
     boardId = await createBoard(request, token, workspaceId);
     const listId = await createList(request, token, boardId);
@@ -251,9 +253,8 @@ test.describe('Payment — Card Price', () => {
       return;
     }
 
-    await page.goto(UI_URL);
-    await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
+    await loginViaCookie(page, UI_URL, creds);
+    await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
     // A price badge or money indicator should be visible on the card
@@ -271,9 +272,20 @@ test.describe('Payment — Card Price', () => {
   test('Test 12 — UI hides price badge when monetisation is disabled on board', async ({ request, page }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
-    // Set a price then disable monetisation
-    const setRes = await request.patch(`${BASE_URL}/api/v1/cards/${cardId}/money`, {
-      headers: { Authorization: `Bearer ${token}` },
+    // Independent session + board: earlier UI tests boot the app, which rotates
+    // (and revokes) the suite-level refresh token, so `creds` can no longer
+    // authenticate this fresh browser context — injecting it would strand
+    // Test 12 on /login and the badge-absence check would pass vacuously.
+    const uiCreds = await registerAndGetCredentials(request, 'cardprice-ui12');
+    const uiToken = uiCreds.token;
+    const uiWorkspaceId = await createWorkspace(request, uiToken);
+    const uiBoardId = await createBoard(request, uiToken, uiWorkspaceId);
+    const listId = await createList(request, uiToken, uiBoardId);
+    const uiCardId = await createCard(request, uiToken, listId, 'Hidden Price Card');
+
+    // Set a price then disable monetisation on THIS user's board
+    const setRes = await request.patch(`${BASE_URL}/api/v1/cards/${uiCardId}/money`, {
+      headers: { Authorization: `Bearer ${uiToken}` },
       data: { amount: 20, currency: 'USD', label: 'Price' },
     });
     if (setRes.status() === 404 || setRes.status() === 501) {
@@ -281,8 +293,8 @@ test.describe('Payment — Card Price', () => {
       return;
     }
 
-    const disableRes = await request.patch(`${BASE_URL}/api/v1/boards/${boardId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+    const disableRes = await request.patch(`${BASE_URL}/api/v1/boards/${uiBoardId}`, {
+      headers: { Authorization: `Bearer ${uiToken}` },
       data: { monetisation: false },
     });
     if (disableRes.status() === 400 || disableRes.status() === 404) {
@@ -290,10 +302,14 @@ test.describe('Payment — Card Price', () => {
       return;
     }
 
-    await page.goto(UI_URL);
-    await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
+    await loginViaCookie(page, UI_URL, uiCreds);
+    await page.goto(`${UI_URL}/b/${uiBoardId}`);
     await page.waitForLoadState('networkidle');
+
+    // Guard against the vacuous pass: the owner's card must actually render
+    // before we accept the badge being absent.
+    const cardEl = page.locator(`[role="button"][aria-label="Card: Hidden Price Card"]`);
+    await expect(cardEl.first()).toBeVisible({ timeout: 10000 });
 
     // Price badge should not be visible when monetisation is off
     const priceBadge = page.locator(

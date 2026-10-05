@@ -11,22 +11,24 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 
 const BASE_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
+const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-interface Credentials { email: string; password: string; token: string }
+interface Credentials { email: string; password: string; token: string; refreshToken: string }
 
 async function registerAndLogin(request: APIRequestContext, suffix: string): Promise<Credentials> {
   const email = `cv-test-${suffix}-${Date.now()}@journeyh.io`;
   const password = 'TestPassword1!';
-  await request.post(`${BASE_URL}/api/v1/auth/register`, {
+  const regRes = await request.post(`${BASE_URL}/api/v1/auth/register`, {
     data: { email, password, name: `CV ${suffix}` },
   });
-  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/token`, {
-    data: { email, password },
-  });
-  const body = await loginRes.json() as { data: { accessToken: string } };
-  return { email, password, token: body.data.accessToken };
+  // Register returns an accessToken directly (201); avoid a separate login call
+  // which is rate-limited (10/IP/min) and would 429 under the full suite.
+  const body = await regRes.json() as { data: { accessToken: string } };
+  const setCookie = regRes.headers()['set-cookie'] ?? '';
+  const refreshMatch = setCookie.match(/refresh_token=([^;]+)/);
+  return { email, password, token: body.data.accessToken, refreshToken: refreshMatch ? refreshMatch[1] : '' };
 }
 
 async function createWorkspace(request: APIRequestContext, token: string): Promise<string> {
@@ -100,14 +102,23 @@ function isoDate(year: number, month: number, day: number): string {
 
 /** Log in via the browser UI and navigate to a board. */
 async function goToBoard(page: Page, baseUrl: string, boardId: string, creds: Credentials) {
-  await page.goto(`${baseUrl}/login`);
-  await page.fill('input[type="email"]', creds.email);
-  await page.fill('input[type="password"]', creds.password);
-  await page.click('button[type="submit"]');
-  // After login the app redirects to /workspaces — wait for that before navigating to the board
-  await page.waitForURL(`${baseUrl}/workspaces**`, { timeout: 15000 });
-  await page.goto(`${baseUrl}/boards/${boardId}`);
-  await page.waitForLoadState('networkidle');
+  if (creds.refreshToken) {
+    await page.context().addCookies([
+      { name: 'refresh_token', value: creds.refreshToken, url: `${baseUrl}/api/v1/auth/refresh`, httpOnly: true, sameSite: 'Strict' },
+    ]);
+  }
+  await gotoBoardUntilReady(page, baseUrl, boardId);
+}
+
+// App boot performs an async token refresh; navigating immediately can race and
+// land on /workspaces. Retry until the board view switcher renders.
+async function gotoBoardUntilReady(page: Page, baseUrl: string, boardId: string): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto(`${baseUrl}/b/${boardId}`);
+    await page.waitForLoadState('networkidle');
+    if (await page.getByTestId('board-view-switcher').isVisible().catch(() => false)) return;
+    await page.waitForTimeout(500);
+  }
 }
 
 test.describe('Calendar View', () => {
@@ -116,7 +127,7 @@ test.describe('Calendar View', () => {
     const wsId = await createWorkspace(request, creds.token);
     const board = await createBoard(request, creds.token, wsId);
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await expect(page.getByTestId('board-view-switcher')).toBeVisible({ timeout: 15000 });
 
     await page.getByTestId('board-view-tab-CALENDAR').click();
@@ -145,7 +156,7 @@ test.describe('Calendar View', () => {
     // Create a card without due_date (should not appear)
     await createCard(request, creds.token, listId, 'NoDueCard');
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await expect(page.getByTestId('calendar-month-grid')).toBeVisible();
 
@@ -159,7 +170,7 @@ test.describe('Calendar View', () => {
     const wsId = await createWorkspace(request, creds.token);
     const board = await createBoard(request, creds.token, wsId);
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await expect(page.getByTestId('calendar-no-due-date-note')).toBeVisible();
     await expect(page.getByTestId('calendar-no-due-date-note')).toContainText(
@@ -172,7 +183,7 @@ test.describe('Calendar View', () => {
     const wsId = await createWorkspace(request, creds.token);
     const board = await createBoard(request, creds.token, wsId);
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await expect(page.getByTestId('calendar-month-grid')).toBeVisible();
 
@@ -213,7 +224,7 @@ test.describe('Calendar View', () => {
       await patchCard(request, creds.token, cardId, { due_date: due });
     }
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await expect(page.getByTestId('calendar-month-grid')).toBeVisible();
 
@@ -233,7 +244,7 @@ test.describe('Calendar View', () => {
     const wsId = await createWorkspace(request, creds.token);
     const board = await createBoard(request, creds.token, wsId);
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await expect(page.getByTestId('calendar-month-grid')).toBeVisible();
 
@@ -251,7 +262,7 @@ test.describe('Calendar View', () => {
     const wsId = await createWorkspace(request, creds.token);
     const board = await createBoard(request, creds.token, wsId);
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await page.getByTestId('calendar-mode-week').click();
     await expect(page.getByTestId('calendar-week-grid')).toBeVisible();
@@ -282,7 +293,7 @@ test.describe('Calendar View', () => {
     const cardId = await createCard(request, creds.token, listId, 'WeekCard');
     await patchCard(request, creds.token, cardId, { due_date: due });
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await page.getByTestId('calendar-mode-week').click();
     await expect(page.getByTestId('calendar-week-grid')).toBeVisible();
@@ -307,7 +318,7 @@ test.describe('Calendar View', () => {
     const cardId = await createCard(request, creds.token, listId, 'DragCard');
     await patchCard(request, creds.token, cardId, { due_date: sourceDue });
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await expect(page.getByTestId('calendar-month-grid')).toBeVisible();
 
@@ -345,7 +356,7 @@ test.describe('Calendar View', () => {
     const cardId = await createCard(request, creds.token, listId, 'RevertCard');
     await patchCard(request, creds.token, cardId, { due_date: sourceDue });
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await expect(page.getByTestId('calendar-month-grid')).toBeVisible();
 

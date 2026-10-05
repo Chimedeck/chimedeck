@@ -4,7 +4,7 @@
 // Strategy: unit-level tests that exercise handleBoardActivityNotification.
 // DB and publishToUser are mocked so no real postgres or WS connections are needed.
 // Preference guard behaviour is verified via a mock db that returns specific rows.
-import { describe, it, expect, mock, beforeEach } from 'bun:test';
+import { describe, it, expect } from 'bun:test';
 import { handleBoardActivityNotification } from '../../../server/extensions/notifications/mods/boardActivityDispatch';
 
 // ---------------------------------------------------------------------------

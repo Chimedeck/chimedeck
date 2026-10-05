@@ -157,6 +157,11 @@ test.describe('Card Description — full-content visibility in view mode', () =>
     const container = descSection.locator('button').first();
     await expect(container).toBeVisible();
 
+    // Guard against a vacuous pass: the seeded token tail must actually be
+    // rendered before we measure overflow on an empty preview.
+    const tokenTail = container.getByText('/end', { exact: false });
+    await expect(tokenTail).toBeAttached();
+
     // The preview must not paint outside the modal: its scrollWidth must stay
     // within its own client box (wrapping instead of horizontal overflow).
     const m = await container.evaluate((el) => ({

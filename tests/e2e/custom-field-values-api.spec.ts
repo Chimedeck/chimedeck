@@ -115,7 +115,9 @@ test.describe('Custom Field Values API', () => {
     const res = await upsertValue(request, token, cardId, numFieldId, 42);
     expect(res.status()).toBe(201);
     const body = await res.json();
-    expect(body.data.value_number).toBe(42);
+    // The NUMERIC column serialises as a decimal string (e.g. "42.0000"); the
+    // API type is `string | number | null` and the client coerces with Number().
+    expect(Number(body.data.value_number)).toBe(42);
   });
 
   test('PUT — NUMBER value wrong type returns 400', async ({ request }) => {

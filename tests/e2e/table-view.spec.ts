@@ -6,106 +6,53 @@
 // - Clicking a column header sorts the table.
 // - Clicking a card title opens the card detail modal.
 
-import { test, expect, type APIRequestContext } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import {
+  BASE_URL,
+  registerAndGetCredentials,
+  createWorkspace,
+  createBoard,
+  createList,
+  createCard,
+  loginViaCookie,
+  type Credentials,
+} from './_helpers';
 
-const BASE_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
+const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-async function registerAndLogin(request: APIRequestContext, suffix: string): Promise<string> {
-  const email = `tv-test-${suffix}-${Date.now()}@example.com`;
-  const password = 'TestPassword1!';
-  await request.post(`${BASE_URL}/api/v1/auth/register`, {
-    data: { email, password, name: `TV ${suffix}` },
-  });
-  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/login`, {
-    data: { email, password },
-  });
-  const body = await loginRes.json() as { data: { access_token: string } };
-  return body.data.access_token;
-}
-
-async function createWorkspace(request: APIRequestContext, token: string): Promise<string> {
-  const res = await request.post(`${BASE_URL}/api/v1/workspaces`, {
-    headers: { Authorization: `Bearer ${token}` },
-    data: { name: `WS-TV-${Date.now()}` },
-  });
-  const body = await res.json() as { data: { id: string } };
-  return body.data.id;
-}
-
-async function createBoard(
-  request: APIRequestContext,
-  token: string,
-  workspaceId: string,
-): Promise<{ id: string }> {
-  const res = await request.post(`${BASE_URL}/api/v1/workspaces/${workspaceId}/boards`, {
-    headers: { Authorization: `Bearer ${token}` },
-    data: { name: `Board-TV-${Date.now()}` },
-  });
-  const body = await res.json() as { data: { id: string } };
-  return body.data;
-}
-
-async function createList(
-  request: APIRequestContext,
-  token: string,
+// App boot performs an async token refresh; navigating immediately can race and
+// land on /workspaces. Retry until the board view switcher renders.
+async function gotoBoardUntilReady(
+  page: import('@playwright/test').Page,
   boardId: string,
-  title: string,
-): Promise<string> {
-  const res = await request.post(`${BASE_URL}/api/v1/boards/${boardId}/lists`, {
-    headers: { Authorization: `Bearer ${token}` },
-    data: { title },
-  });
-  const body = await res.json() as { data: { id: string } };
-  return body.data.id;
-}
-
-async function createCard(
-  request: APIRequestContext,
-  token: string,
-  listId: string,
-  title: string,
-): Promise<string> {
-  const res = await request.post(`${BASE_URL}/api/v1/lists/${listId}/cards`, {
-    headers: { Authorization: `Bearer ${token}` },
-    data: { title },
-  });
-  const body = await res.json() as { data: { id: string } };
-  return body.data.id;
+): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto(`${UI_URL}/b/${boardId}`);
+    await page.waitForLoadState('networkidle');
+    if (await page.getByTestId('board-view-switcher').isVisible().catch(() => false)) return;
+    await page.waitForTimeout(500);
+  }
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────────
 
 test.describe('Table View', () => {
   test('Table view renders column headers after switching to TABLE', async ({ page, request }) => {
-    const token = await registerAndLogin(request, 'headers');
-    const wsId = await createWorkspace(request, token);
-    const board = await createBoard(request, token, wsId);
-    const listId = await createList(request, token, board.id, 'To Do');
-    await createCard(request, token, listId, 'Alpha card');
+    const creds: Credentials = await registerAndGetCredentials(request, 'headers');
+    const wsId = await createWorkspace(request, creds.token);
+    const boardId = await createBoard(request, creds.token, wsId);
+    const listId = await createList(request, creds.token, boardId, 'To Do');
+    await createCard(request, creds.token, listId, 'Alpha card');
 
     // Set TABLE view preference so the board loads in TABLE mode
-    await request.put(`${BASE_URL}/api/v1/boards/${board.id}/view-preference`, {
-      headers: { Authorization: `Bearer ${token}` },
+    await request.put(`${BASE_URL}/api/v1/boards/${boardId}/view-preference`, {
+      headers: { Authorization: `Bearer ${creds.token}` },
       data: { viewType: 'TABLE' },
     });
 
-    // Log in via the UI
-    await page.goto(`${BASE_URL}/login`);
-    await page.fill('input[type="email"]', `tv-test-headers-${Date.now() - 100}@example.com`);
-
-    // Re-login properly using API token in localStorage
-    await page.evaluate(
-      ([url, tok]) => {
-        localStorage.setItem('access_token', tok as string);
-        window.location.href = `${url}/boards/${(tok as string).slice(-8)}`;
-      },
-      [BASE_URL, token],
-    );
-
-    await page.goto(`${BASE_URL}/boards/${board.id}`);
-    await page.waitForLoadState('networkidle');
+    // The app authenticates via HttpOnly cookies, so log in through the UI form.
+    await loginViaCookie(page, UI_URL, creds);
+    await gotoBoardUntilReady(page, boardId);
 
     // BoardViewSwitcher should be visible
     await expect(page.getByTestId('board-view-switcher')).toBeVisible();
@@ -124,14 +71,14 @@ test.describe('Table View', () => {
   });
 
   test('Table view renders card rows', async ({ page, request }) => {
-    const token = await registerAndLogin(request, 'rows');
-    const wsId = await createWorkspace(request, token);
-    const board = await createBoard(request, token, wsId);
-    const listId = await createList(request, token, board.id, 'Backlog');
-    const cardId = await createCard(request, token, listId, 'My test card');
+    const creds: Credentials = await registerAndGetCredentials(request, 'rows');
+    const wsId = await createWorkspace(request, creds.token);
+    const boardId = await createBoard(request, creds.token, wsId);
+    const listId = await createList(request, creds.token, boardId, 'Backlog');
+    const cardId = await createCard(request, creds.token, listId, 'My test card');
 
-    await page.goto(`${BASE_URL}/boards/${board.id}`);
-    await page.waitForLoadState('networkidle');
+    await loginViaCookie(page, UI_URL, creds);
+    await gotoBoardUntilReady(page, boardId);
 
     // Switch to TABLE view via the switcher
     await page.getByTestId('board-view-tab-TABLE').click();
@@ -144,15 +91,15 @@ test.describe('Table View', () => {
   });
 
   test('Clicking a column header changes sort order', async ({ page, request }) => {
-    const token = await registerAndLogin(request, 'sort');
-    const wsId = await createWorkspace(request, token);
-    const board = await createBoard(request, token, wsId);
-    const listId = await createList(request, token, board.id, 'Work');
-    await createCard(request, token, listId, 'Zebra card');
-    await createCard(request, token, listId, 'Alpha card');
+    const creds: Credentials = await registerAndGetCredentials(request, 'sort');
+    const wsId = await createWorkspace(request, creds.token);
+    const boardId = await createBoard(request, creds.token, wsId);
+    const listId = await createList(request, creds.token, boardId, 'Work');
+    await createCard(request, creds.token, listId, 'Zebra card');
+    await createCard(request, creds.token, listId, 'Alpha card');
 
-    await page.goto(`${BASE_URL}/boards/${board.id}`);
-    await page.waitForLoadState('networkidle');
+    await loginViaCookie(page, UI_URL, creds);
+    await gotoBoardUntilReady(page, boardId);
     await page.getByTestId('board-view-tab-TABLE').click();
     await expect(page.getByTestId('table-view')).toBeVisible();
 
@@ -172,22 +119,23 @@ test.describe('Table View', () => {
   });
 
   test('Clicking card title opens card detail modal', async ({ page, request }) => {
-    const token = await registerAndLogin(request, 'modal');
-    const wsId = await createWorkspace(request, token);
-    const board = await createBoard(request, token, wsId);
-    const listId = await createList(request, token, board.id, 'Sprint');
-    const cardId = await createCard(request, token, listId, 'Open me please');
+    const creds: Credentials = await registerAndGetCredentials(request, 'modal');
+    const wsId = await createWorkspace(request, creds.token);
+    const boardId = await createBoard(request, creds.token, wsId);
+    const listId = await createList(request, creds.token, boardId, 'Sprint');
+    const cardId = await createCard(request, creds.token, listId, 'Open me please');
 
-    await page.goto(`${BASE_URL}/boards/${board.id}`);
-    await page.waitForLoadState('networkidle');
+    await loginViaCookie(page, UI_URL, creds);
+    await gotoBoardUntilReady(page, boardId);
     await page.getByTestId('board-view-tab-TABLE').click();
     await expect(page.getByTestId('table-view')).toBeVisible();
 
     // Click the card title button
     await page.getByTestId(`table-card-title-${cardId}`).click();
 
-    // URL should now contain ?card=<cardId>
-    await expect(page).toHaveURL(new RegExp(`card=${cardId}`));
+    // The card modal opens via the card's short link, so assert ?card= presence
+    // rather than the UUID.
+    await expect(page).toHaveURL(/[?&]card=/);
 
     // Card modal should be visible (CardModal renders an accessible dialog or section)
     // The modal contains the card title text

@@ -120,7 +120,7 @@ test.describe('CSRF Origin Header Guard', () => {
       data: { email, password, name: 'CSRF Cookie User' },
     });
 
-    const loginRes = await request.post(`${BASE_URL}/api/v1/auth/login`, {
+    const loginRes = await request.post(`${BASE_URL}/api/v1/auth/token`, {
       data: { email, password },
     });
 

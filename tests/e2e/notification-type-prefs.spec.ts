@@ -3,19 +3,20 @@ import { test, expect, type APIRequestContext, type Page } from '@playwright/tes
 const API_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
-interface Credentials { email: string; password: string; token: string }
+interface Credentials { email: string; password: string; token: string; refreshToken: string }
 
 async function registerAndLogin(request: APIRequestContext, suffix: string): Promise<Credentials> {
   const email = `ntp-test-${suffix}-${Date.now()}@journeyh.io`;
   const password = 'TestPassword1!';
-  await request.post(`${API_URL}/api/v1/auth/register`, {
+  const regRes = await request.post(`${API_URL}/api/v1/auth/register`, {
     data: { email, password, name: `NTP ${suffix}` },
   });
-  const loginRes = await request.post(`${API_URL}/api/v1/auth/token`, {
-    data: { email, password },
-  });
-  const body = await loginRes.json() as { data: { accessToken: string } };
-  return { email, password, token: body.data.accessToken };
+  // Register returns an accessToken directly (201); avoid a separate login call
+  // which is rate-limited (10/IP/min) and would 429 under the full suite.
+  const body = await regRes.json() as { data: { accessToken: string } };
+  const setCookie = regRes.headers()['set-cookie'] ?? '';
+  const refreshMatch = setCookie.match(/refresh_token=([^;]+)/);
+  return { email, password, token: body.data.accessToken, refreshToken: refreshMatch ? refreshMatch[1] : '' };
 }
 
 async function createWorkspace(request: APIRequestContext, token: string): Promise<string> {
@@ -37,12 +38,12 @@ async function createBoard(request: APIRequestContext, token: string, wsId: stri
 }
 
 async function goToBoard(page: Page, boardId: string, creds: Credentials) {
-  await page.goto(`${UI_URL}/login`);
-  await page.fill('input[type="email"]', creds.email);
-  await page.fill('input[type="password"]', creds.password);
-  await page.click('button[type="submit"]');
-  await page.waitForURL(`${UI_URL}/workspaces**`, { timeout: 15000 });
-  await page.goto(`${UI_URL}/boards/${boardId}`);
+  if (creds.refreshToken) {
+    await page.context().addCookies([
+      { name: 'refresh_token', value: creds.refreshToken, url: `${UI_URL}/api/v1/auth/refresh`, httpOnly: true, sameSite: 'Strict' },
+    ]);
+  }
+  await page.goto(`${UI_URL}/b/${boardId}`);
   await page.waitForLoadState('networkidle');
 }
 
@@ -86,8 +87,10 @@ test.describe('BoardNotificationTypePreferences', () => {
     const prefHeading = panel.locator('span:has-text("Board notification preferences")');
     await expect(prefHeading).toBeVisible();
 
-    // 3b. Toggle switches (button[role="switch"])
-    const switches = panel.locator('button[role="switch"]');
+    // 3b. Toggle switches. Scope to the per-type matrix so we do not pick up the
+    // master "Toggle notifications for this board" switch, which disables the
+    // whole section (and the Reset button) when turned off.
+    const switches = panel.locator('table button[role="switch"]');
     const switchCount = await switches.count();
     console.log(`Found ${switchCount} toggle switches`);
     expect(switchCount).toBeGreaterThan(0);
@@ -123,7 +126,7 @@ test.describe('BoardNotificationTypePreferences', () => {
     await openBoardSettings(page);
     await page.screenshot({ path: 'test-screenshots-tmp/step-5-settings-reopened.png' });
 
-    const switchesAfterReopen = page.locator('[role="dialog"][aria-label="Board Settings"] button[role="switch"]');
+    const switchesAfterReopen = page.locator('[role="dialog"][aria-label="Board Settings"] table button[role="switch"]');
     const firstSwitchAfterReopen = switchesAfterReopen.first();
     // Wait for the preferences to load
     await page.waitForTimeout(500);
@@ -136,7 +139,7 @@ test.describe('BoardNotificationTypePreferences', () => {
     // ── Step 6: Check indigo ring on board-override switch ────────────────
     const switchClass = await firstSwitchAfterReopen.getAttribute('class');
     console.log(`Switch class: ${switchClass}`);
-    const hasIndigoRing = switchClass?.includes('ring-indigo') ?? false;
+    const hasIndigoRing = switchClass?.includes('ring-indigo-400') ?? false;
     console.log(`Has indigo ring (board override indicator): ${hasIndigoRing}`);
     expect(hasIndigoRing).toBe(true);
 
@@ -155,11 +158,11 @@ test.describe('BoardNotificationTypePreferences', () => {
     await page.waitForTimeout(1000); // wait for reset API call
 
     // After reset, indigo ring should be gone (no board override)
-    const switchesAfterReset = page.locator('[role="dialog"][aria-label="Board Settings"] button[role="switch"]');
+    const switchesAfterReset = page.locator('[role="dialog"][aria-label="Board Settings"] table button[role="switch"]');
     const firstSwitchAfterReset = switchesAfterReset.first();
     const classAfterReset = await firstSwitchAfterReset.getAttribute('class');
     console.log(`Switch class after reset: ${classAfterReset}`);
-    const hasIndigoRingAfterReset = classAfterReset?.includes('ring-indigo') ?? false;
+    const hasIndigoRingAfterReset = classAfterReset?.includes('ring-indigo-400') ?? false;
     console.log(`Has indigo ring after reset: ${hasIndigoRingAfterReset}`);
     expect(hasIndigoRingAfterReset).toBe(false);
 

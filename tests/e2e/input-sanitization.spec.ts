@@ -103,23 +103,22 @@ test.describe('Input Sanitization — XSS Prevention', () => {
   test('Test 7 — XSS payload in list name is stripped', async ({ request }) => {
     const res = await request.post(`${BASE_URL}/api/v1/boards/${boardId}/lists`, {
       headers: { Authorization: `Bearer ${token}` },
-      data: { name: '<script>xss()</script>Backlog', position: 99 },
+      data: { title: '<script>xss()</script>Backlog' },
     });
     expect(res.status()).toBe(201);
     const body = await res.json();
-    expect(body.data.name ?? body.data.title).toBe('Backlog');
-    expect((body.data.name ?? body.data.title) as string).not.toContain('<script>');
+    expect(body.data.title).toBe('Backlog');
+    expect(body.data.title as string).not.toContain('<script>');
   });
 
   test('Test 8 — XSS payload in list name update is stripped', async ({ request }) => {
     const res = await request.patch(`${BASE_URL}/api/v1/lists/${listId}`, {
       headers: { Authorization: `Bearer ${token}` },
-      data: { name: '<img src=x onerror=alert(1)>Sprint 1' },
+      data: { title: '<img src=x onerror=alert(1)>Sprint 1' },
     });
     expect(res.status()).toBe(200);
     const body = await res.json();
-    const name = body.data.name ?? body.data.title;
-    expect(name).toBe('Sprint 1');
+    expect(body.data.title).toBe('Sprint 1');
   });
 
   test('Test 9 — XSS in comment content stripped; safe Markdown preserved', async ({ request }) => {
