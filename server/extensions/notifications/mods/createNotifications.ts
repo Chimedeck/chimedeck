@@ -14,6 +14,7 @@ import { dispatchNotificationEmail } from './emailDispatch';
 import { env } from '../../../config/env';
 import { getActiveWebhooksForEvent } from '../../webhooks/mods/registry';
 import { dispatchWebhook } from '../../webhooks/mods/dispatch';
+import { randomUUID } from 'node:crypto';
 import { buildMentionWebhookPayload, type MentionWebhookPayload } from './mentionWebhookContext';
 import type { Knex } from 'knex';
 
@@ -228,6 +229,11 @@ export async function createNotificationsForMentions({
       boardName,
       sourceText,
       actor: actorPayload as Record<string, unknown>,
+      // [why] Mint ONE durable id per logical mention emission — NOT per
+      // recipient, and deliberately NOT sourceId (card-description mentions are
+      // 1:N across edits and would false-collapse legitimate repeat mentions
+      // at the receiver's semantic dedupe).
+      eventId: randomUUID(),
     });
     fireMentionWebhooks({
       payload,
