@@ -86,6 +86,8 @@ export interface MentionWebhookPayload extends Record<string, unknown> {
   boardTitle: string;
   sourcePreview: string;
   actorName: string | null;
+  /** Durable producer event identity for receiver-side semantic dedupe (ADR). */
+  eventId: string;
 }
 
 export function buildMentionWebhookPayload({
@@ -99,6 +101,7 @@ export function buildMentionWebhookPayload({
   boardName,
   sourceText,
   actor,
+  eventId,
 }: {
   boardId: string;
   cardId: string | null;
@@ -110,6 +113,7 @@ export function buildMentionWebhookPayload({
   boardName?: string | undefined;
   sourceText?: string | undefined;
   actor: Record<string, unknown>;
+  eventId: string;
 }): MentionWebhookPayload {
   const actorNickname = typeof actor['nickname'] === 'string' ? actor['nickname'] : null;
   const actorName = typeof actor['name'] === 'string' ? actor['name'] : null;
@@ -124,5 +128,6 @@ export function buildMentionWebhookPayload({
     boardTitle: boardName ?? '',
     sourcePreview: buildSourcePreview({ sourceText }),
     actorName: buildActorDisplayName({ nickname: actorNickname, name: actorName }),
+    eventId,
   };
 }
