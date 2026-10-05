@@ -1,0 +1,33 @@
+name: stable source guard
+
+# Enforces the Branch Model (see CONTRIBUTING.md): the deploy branch `stable`
+# may only receive PRs from `main` or a `release/*` branch cut from `main`.
+# Feature branches must never target `stable` directly.
+
+on:
+  pull_request:
+    branches:
+      - stable
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: stable-source-guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify PR source branch
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          echo "PR head branch: $HEAD_REF"
+          case "$HEAD_REF" in
+            main|release/*)
+              echo "OK: '$HEAD_REF' is an allowed source for stable."
+              ;;
+            *)
+              echo "::error::PRs into 'stable' must come from 'main' or 'release/*', not '$HEAD_REF'. See CONTRIBUTING.md > Branch Model."
+              exit 1
+              ;;
+          esac
