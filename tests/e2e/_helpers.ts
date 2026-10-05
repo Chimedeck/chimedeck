@@ -40,10 +40,11 @@ export async function createBoard(
   request: APIRequestContext,
   token: string,
   workspaceId: string,
+  title?: string,
 ): Promise<string> {
   const res = await request.post(`${BASE_URL}/api/v1/workspaces/${workspaceId}/boards`, {
     headers: { Authorization: `Bearer ${token}` },
-    data: { title: `Board-${Date.now()}` },
+    data: { title: title ?? `Board-${Date.now()}` },
   });
   const body = await res.json() as { data: { id: string } };
   return body.data.id;
