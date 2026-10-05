@@ -8,6 +8,12 @@ export async function up(knex: Knex): Promise<void> {
     table.string('position').nullable();
   });
 
+  // Fractional position strings must sort bytewise (COLLATE "C") like every other
+  // fractional column (see 0102_position_collate_c.ts). Without this, locale-aware
+  // collations (e.g. en_US.UTF-8) place '_' before '@' and invert generatePositions()
+  // ordering, so the endpoint's position ASC would NOT reproduce the intended order.
+  await knex.raw('ALTER TABLE attachments ALTER COLUMN position TYPE text COLLATE "C"');
+
   // Populate existing rows with positions that REPRODUCE the current UI order.
   // [why not created_at asc] The attachment list endpoint (both before and after this
   // migration) orders by created_at DESC (newest first). Assigning positions in
