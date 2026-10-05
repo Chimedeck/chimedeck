@@ -13,25 +13,25 @@ export type StateTransitionErrorName =
   | 'state-transition-rules-invalid';
 
 export type StateTransitionErrorResponse = {
-  name: string;
+  name: StateTransitionErrorName | string;
   data?: Record<string, unknown>;
 };
 
 export function stateTransitionError(
-  name: string,
-  data?: Record<string, unknown>,
+  name: StateTransitionErrorName | string,
+  data?: Record<string, unknown>
 ): StateTransitionErrorResponse {
   return data ? { name, data } : { name };
 }
 
 export function stateTransitionSyncError(
-  data?: Record<string, unknown>,
+  data?: Record<string, unknown>
 ): StateTransitionErrorResponse {
   return stateTransitionError('state-transition-sync-failed', data);
 }
 
 export function stateTransitionRulesError(
-  data?: Record<string, unknown>,
+  data?: Record<string, unknown>
 ): StateTransitionErrorResponse {
   return stateTransitionError('state-transition-rules-invalid', data);
 }

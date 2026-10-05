@@ -25,16 +25,27 @@ const LogPanel: FC<Props> = ({ boardId, automations = [], onOpenCard }) => {
   // Real-time rows prepended when automation_ran fires while this tab is open.
   const [prependedRuns, setPrependedRuns] = useState<AutomationRunLog[]>([]);
 
-  const fetchRuns = useCallback((targetPage: number) => {
-    let cancelled = false;
-    setRunsLoading(true);
-    setRunsError(null);
-    getBoardRuns({ boardId, params: { page: targetPage, perPage: 50 } })
-      .then((res) => { if (!cancelled) setRunsResult(res); })
-      .catch(() => { if (!cancelled) setRunsError(translations['automation.runsPanel.error.loadFailed']); })
-      .finally(() => { if (!cancelled) setRunsLoading(false); });
-    return () => { cancelled = true; };
-  }, [boardId]);
+  const fetchRuns = useCallback(
+    (targetPage: number) => {
+      let cancelled = false;
+      setRunsLoading(true);
+      setRunsError(null);
+      getBoardRuns({ boardId, params: { page: targetPage, perPage: 50 } })
+        .then((res) => {
+          if (!cancelled) setRunsResult(res);
+        })
+        .catch(() => {
+          if (!cancelled) setRunsError(translations['automation.runsPanel.error.loadFailed']);
+        })
+        .finally(() => {
+          if (!cancelled) setRunsLoading(false);
+        });
+      return () => {
+        cancelled = true;
+      };
+    },
+    [boardId]
+  );
 
   // Fetch board-wide runs on mount and on page change
   useEffect(() => {
@@ -49,12 +60,14 @@ const LogPanel: FC<Props> = ({ boardId, automations = [], onOpenCard }) => {
     const unsubscribe = socket.subscribe({
       onEvent(event) {
         if (event.type !== 'automation_ran') return;
-        const p = event.payload as {
-          automationId: string;
-          runLogId: string;
-          status: 'SUCCESS' | 'PARTIAL' | 'FAILED';
-          ranAt: string;
-        } | undefined;
+        const p = event.payload as
+          | {
+              automationId: string;
+              runLogId: string;
+              status: 'SUCCESS' | 'PARTIAL' | 'FAILED';
+              ranAt: string;
+            }
+          | undefined;
         if (!p) return;
 
         // Resolve automation name from the prop list if available.
@@ -65,7 +78,9 @@ const LogPanel: FC<Props> = ({ boardId, automations = [], onOpenCard }) => {
           automationId: p.automationId,
           automationName: matched?.name ?? p.automationId,
           // Only set automationType when defined — exactOptionalPropertyTypes forbids assigning undefined.
-          ...(matched?.automationType !== undefined ? { automationType: matched.automationType } : {}),
+          ...(matched?.automationType !== undefined
+            ? { automationType: matched.automationType }
+            : {}),
           status: p.status,
           ranAt: p.ranAt,
           context: {},
@@ -89,7 +104,10 @@ const LogPanel: FC<Props> = ({ boardId, automations = [], onOpenCard }) => {
         loading={runsLoading}
         error={runsError}
         page={page}
-        onPageChange={(p) => { setPage(p); setPrependedRuns([]); }}
+        onPageChange={(p) => {
+          setPage(p);
+          setPrependedRuns([]);
+        }}
         prependedRuns={page === 1 ? prependedRuns : []}
         {...(onOpenCard ? { onOpenCard } : {})}
       />

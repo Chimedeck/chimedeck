@@ -7,6 +7,8 @@ import type { ConnectionState } from '~/common/components/ConnectionBadge';
 import PollingIndicator from '~/extensions/Realtime/PollingIndicator';
 import AutomationHeaderButton from '~/extensions/Automation/components/AutomationHeaderButton';
 import BoardButtonsBar from '~/extensions/Automation/components/BoardButtons/BoardButtonsBar';
+import BoardChatButton from '~/extensions/BoardChat/components/BoardChatButton';
+import translations from '../translations/en.json';
 
 interface Member {
   id: string;
@@ -41,6 +43,8 @@ interface Props {
   onStar?: () => void;
   /** Called when user unstars the board */
   onUnstar?: () => void;
+  /** Called when user opens the board chat drawer */
+  onOpenBoardChat?: () => void;
 }
 
 const BoardHeader = ({
@@ -61,6 +65,7 @@ const BoardHeader = ({
   isGuest = false,
   onStar,
   onUnstar,
+  onOpenBoardChat,
 }: Props) => {
   // Resolve connection state: prefer explicit connectionState, fall back to legacy connected bool
   const resolvedState: ConnectionState =
@@ -80,7 +85,9 @@ const BoardHeader = ({
       }
     };
     document.addEventListener('mousedown', handleMouseDown);
-    return () => { document.removeEventListener('mousedown', handleMouseDown); };
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+    };
   }, [menuOpen]);
 
   const handleTitleClick = () => {
@@ -112,7 +119,8 @@ const BoardHeader = ({
     }
   };
 
-  let headerBgClass: string;  if (useParentGlass) {
+  let headerBgClass: string;
+  if (useParentGlass) {
     // Parent owns the surface — header is fully transparent, no border
     headerBgClass = '';
   } else if (hasBackground) {
@@ -139,8 +147,10 @@ const BoardHeader = ({
           type="text"
           value={title}
           autoFocus
-          onChange={(e) => { setTitle(e.target.value); }}
-          onBlur={() => { void handleTitleSave(); }}
+          onChange={(e) => {
+            setTitle(e.target.value);
+          }}
+          onBlur={handleTitleSave}
           onKeyDown={handleKeyDown}
           className={`bg-bg-overlay font-semibold text-lg rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-primary min-w-0 max-w-xs${hasBackground ? ' text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]' : ' text-base'}`}
           aria-label="Edit board title"
@@ -159,7 +169,9 @@ const BoardHeader = ({
       {(onStar != null || onUnstar != null) && (
         <button
           type="button"
-          onClick={() => { board.isStarred ? onUnstar?.() : onStar?.(); }}
+          onClick={() => {
+            board.isStarred ? onUnstar?.() : onStar?.();
+          }}
           aria-label={board.isStarred ? 'Remove from favourites' : 'Add to favourites'}
           className={starBtnClass}
         >
@@ -189,17 +201,20 @@ const BoardHeader = ({
         {/* Member avatar stack + Share button — hidden for workspace GUESTs */}
         {!isGuest && (
           <>
-            <MemberAvatarStack
-              members={members}
-              onOpenMembers={onOpenMembers ?? (() => {})}
-            />
+            <MemberAvatarStack members={members} onOpenMembers={onOpenMembers ?? (() => {})} />
             <button
               type="button"
               onClick={onOpenMembers}
               className="flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium bg-blue-600 hover:bg-blue-500 text-inverse transition-colors"
-              aria-label="Share board — invite members"
+              aria-label={translations['BoardHeader.shareAriaLabel']}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="h-3.5 w-3.5"
+                aria-hidden="true"
+              >
                 <path d="M13 4.5a2.5 2.5 0 1 1 .702 1.737L6.97 9.604a2.518 2.518 0 0 1 0 .793l6.733 3.367a2.5 2.5 0 1 1-.671 1.341l-6.733-3.367a2.5 2.5 0 1 1 0-3.475l6.733-3.367A2.52 2.52 0 0 1 13 4.5z" />
               </svg>
               Share
@@ -209,14 +224,17 @@ const BoardHeader = ({
 
         {/* Action buttons — frosted glass pill when a background image is present so
             icons don't blend into the background noise (glassmorphism). */}
-        <div className={hasBackground
-          ? 'flex items-center gap-0.5 rounded-lg px-1.5 py-1 bg-white/15 backdrop-blur-md border border-white/20 shadow-sm'
-          : 'flex items-center gap-0.5'
-        }>
+        <div
+          className={
+            hasBackground
+              ? 'flex items-center gap-0.5 rounded-lg px-1.5 py-1 bg-white/15 backdrop-blur-md border border-white/20 shadow-sm'
+              : 'flex items-center gap-0.5'
+          }
+        >
           {/* Board buttons bar — left of automation header button */}
           {onOpenAutomation && <BoardButtonsBar boardId={board.id} hasBackground={hasBackground} />}
 
-          {/* Automation button — left of the ··· settings menu */}
+          {/* Automation button — left of the board chat button */}
           {onOpenAutomation && (
             <AutomationHeaderButton
               activeCount={activeAutomationCount}
@@ -225,12 +243,19 @@ const BoardHeader = ({
             />
           )}
 
+          {/* Board chat button — hidden for guests */}
+          {!isGuest && onOpenBoardChat && (
+            <BoardChatButton onClick={onOpenBoardChat} hasBackground={hasBackground} />
+          )}
+
           {/* Settings menu — visible for all users; destructive actions gated below */}
           <div className="relative" ref={menuContainerRef}>
             <button
               className={`rounded p-1.5 transition-colors${hasBackground ? ' text-white/90 hover:bg-white/20 hover:text-white' : ' text-muted hover:bg-bg-surface hover:text-subtle'}`}
-              onClick={() => { setMenuOpen((v) => !v); }}
-              aria-label="Board settings"
+              onClick={() => {
+                setMenuOpen((v) => !v);
+              }}
+              aria-label={translations['BoardHeader.settingsAriaLabel']}
               aria-haspopup="true"
               aria-expanded={menuOpen}
             >
@@ -241,7 +266,10 @@ const BoardHeader = ({
                 {onOpenSettings && (
                   <button
                     className="block w-full px-4 py-2 text-left text-sm text-subtle hover:bg-bg-overlay"
-                    onClick={() => { setMenuOpen(false); onOpenSettings(); }}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onOpenSettings();
+                    }}
                   >
                     Board settings
                   </button>
@@ -249,7 +277,10 @@ const BoardHeader = ({
                 {onArchive && (
                   <button
                     className="block w-full px-4 py-2 text-left text-sm text-subtle hover:bg-bg-overlay"
-                    onClick={() => { setMenuOpen(false); onArchive(); }}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onArchive();
+                    }}
                   >
                     {board.state === 'ARCHIVED' ? 'Unarchive' : 'Archive'}
                   </button>
@@ -257,7 +288,10 @@ const BoardHeader = ({
                 {onDelete && (
                   <button
                     className="block w-full px-4 py-2 text-left text-sm text-danger hover:bg-bg-overlay"
-                    onClick={() => { setMenuOpen(false); onDelete(); }}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onDelete();
+                    }}
                   >
                     Delete board
                   </button>

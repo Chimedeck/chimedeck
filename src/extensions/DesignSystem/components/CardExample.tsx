@@ -19,7 +19,14 @@ const COLORS_MAP: Record<string, string> = {
   purple: 'bg-purple-500',
 };
 
-function StubCard({ title, labels, dueDate, commentCount, attachmentCount, assignees = [] }: Readonly<CardItemProps>) {
+function StubCard({
+  title,
+  labels,
+  dueDate,
+  commentCount,
+  attachmentCount,
+  assignees = [],
+}: Readonly<CardItemProps>) {
   return (
     <article
       className="bg-bg-surface rounded-lg border border-border p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
@@ -48,13 +55,19 @@ function StubCard({ title, labels, dueDate, commentCount, attachmentCount, assig
             </span>
           )}
           {(commentCount ?? 0) > 0 && (
-            <span className="flex items-center gap-0.5" aria-label={`${String(commentCount ?? 0)} comments`}>
+            <span
+              className="flex items-center gap-0.5"
+              aria-label={`${String(commentCount ?? 0)} comments`}
+            >
               <ChatBubbleLeftIcon className="h-3.5 w-3.5" />
               {commentCount}
             </span>
           )}
           {(attachmentCount ?? 0) > 0 && (
-            <span className="flex items-center gap-0.5" aria-label={`${String(attachmentCount ?? 0)} attachments`}>
+            <span
+              className="flex items-center gap-0.5"
+              aria-label={`${String(attachmentCount ?? 0)} attachments`}
+            >
               <PaperClipIcon className="h-3.5 w-3.5" />
               {attachmentCount}
             </span>
@@ -84,7 +97,10 @@ export default function CardExample() {
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg">
       <StubCard
         title="Design new onboarding flow"
-        labels={[{ color: 'blue', name: 'Design' }, { color: 'green', name: 'In Progress' }]}
+        labels={[
+          { color: 'blue', name: 'Design' },
+          { color: 'green', name: 'In Progress' },
+        ]}
         dueDate="Apr 20"
         commentCount={3}
         assignees={['AB', 'CJ']}
@@ -104,7 +120,10 @@ export default function CardExample() {
       />
       <StubCard
         title="Migrate CI to GitHub Actions"
-        labels={[{ color: 'purple', name: 'DevOps' }, { color: 'blue', name: 'Infra' }]}
+        labels={[
+          { color: 'purple', name: 'DevOps' },
+          { color: 'blue', name: 'Infra' },
+        ]}
         commentCount={5}
         attachmentCount={1}
         assignees={['EF', 'FG', 'AB']}

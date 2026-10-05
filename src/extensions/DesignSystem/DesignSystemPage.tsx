@@ -58,7 +58,9 @@ export default function DesignSystemPage() {
 
         {/* Mobile section jumper — visible only on < lg */}
         <div className="lg:hidden mb-8">
-          <label htmlFor="ds-mobile-nav" className="sr-only">Jump to section</label>
+          <label htmlFor="ds-mobile-nav" className="sr-only">
+            Jump to section
+          </label>
           <select
             id="ds-mobile-nav"
             className="w-full rounded-md border border-border-subtle bg-bg-surface text-sm
@@ -69,9 +71,13 @@ export default function DesignSystemPage() {
               if (el) el.scrollIntoView({ behavior: 'smooth' });
             }}
           >
-            <option value="" disabled>Jump to section…</option>
+            <option value="" disabled>
+              Jump to section…
+            </option>
             {NAV_ITEMS.map(({ id, label }) => (
-              <option key={id} value={id}>{label}</option>
+              <option key={id} value={id}>
+                {label}
+              </option>
             ))}
           </select>
         </div>
@@ -84,7 +90,9 @@ export default function DesignSystemPage() {
         >
           <div className="space-y-6">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">Brand</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">
+                Brand
+              </p>
               <div className="flex flex-wrap gap-6">
                 <ColorSwatch variable="--color-primary" label="primary" />
                 <ColorSwatch variable="--color-primary-hover" label="primary-hover" />
@@ -93,7 +101,9 @@ export default function DesignSystemPage() {
               </div>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">Status</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">
+                Status
+              </p>
               <div className="flex flex-wrap gap-6">
                 <ColorSwatch variable="--color-danger" label="danger" />
                 <ColorSwatch variable="--color-success" label="success" />
@@ -102,7 +112,9 @@ export default function DesignSystemPage() {
               </div>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">Backgrounds</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">
+                Backgrounds
+              </p>
               <div className="flex flex-wrap gap-6">
                 <ColorSwatch variable="--bg-base" label="bg-base" />
                 <ColorSwatch variable="--bg-surface" label="bg-surface" />
@@ -111,7 +123,9 @@ export default function DesignSystemPage() {
               </div>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">Text</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">
+                Text
+              </p>
               <div className="flex flex-wrap gap-6">
                 <ColorSwatch variable="--text-base" label="text-base" />
                 <ColorSwatch variable="--text-muted" label="text-muted" />
@@ -120,7 +134,9 @@ export default function DesignSystemPage() {
               </div>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">Borders</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">
+                Borders
+              </p>
               <div className="flex flex-wrap gap-6">
                 <ColorSwatch variable="--border" label="border" />
                 <ColorSwatch variable="--border-strong" label="border-strong" />
@@ -172,9 +188,15 @@ export default function DesignSystemPage() {
               Sizes
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              <Button variant="primary" size="lg">Large</Button>
-              <Button variant="primary" size="md">Medium</Button>
-              <Button variant="primary" size="sm">Small</Button>
+              <Button variant="primary" size="lg">
+                Large
+              </Button>
+              <Button variant="primary" size="md">
+                Medium
+              </Button>
+              <Button variant="primary" size="sm">
+                Small
+              </Button>
             </div>
           </div>
 
@@ -184,10 +206,18 @@ export default function DesignSystemPage() {
               Disabled state
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button variant="primary" disabled>Primary</Button>
-              <Button variant="secondary" disabled>Secondary</Button>
-              <Button variant="ghost" disabled>Ghost</Button>
-              <Button variant="danger" disabled>Danger</Button>
+              <Button variant="primary" disabled>
+                Primary
+              </Button>
+              <Button variant="secondary" disabled>
+                Secondary
+              </Button>
+              <Button variant="ghost" disabled>
+                Ghost
+              </Button>
+              <Button variant="danger" disabled>
+                Danger
+              </Button>
             </div>
           </div>
 

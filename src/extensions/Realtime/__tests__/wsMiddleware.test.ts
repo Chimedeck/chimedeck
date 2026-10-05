@@ -8,7 +8,10 @@ import { socket } from '../client/socket';
 
 function makeNext() {
   const calls: unknown[] = [];
-  const fn = (a: unknown) => { calls.push(a); return a; };
+  const fn = (a: unknown) => {
+    calls.push(a);
+    return a;
+  };
   return { fn, calls };
 }
 
@@ -20,7 +23,9 @@ function invoke(action: unknown) {
     dispatch: (a: unknown) => dispatched.push(a),
   };
   const next = makeNext();
-  const chain = wsMiddleware(storeAPI as Parameters<typeof wsMiddleware>[0])(next.fn as Parameters<ReturnType<typeof wsMiddleware>>[0]);
+  const chain = wsMiddleware(storeAPI as Parameters<typeof wsMiddleware>[0])(
+    next.fn as Parameters<ReturnType<typeof wsMiddleware>>[0]
+  );
   return { result: chain(action), next, dispatched };
 }
 
@@ -36,7 +41,9 @@ function simulateDisconnected() {
 
 describe('wsMiddleware', () => {
   beforeEach(() => {
-    globalThis.fetch = mock(async () => new Response('{}', { status: 200 })) as unknown as typeof fetch;
+    globalThis.fetch = mock(
+      async () => new Response('{}', { status: 200 })
+    ) as unknown as typeof fetch;
     simulateConnected();
   });
 
@@ -65,7 +72,9 @@ describe('wsMiddleware', () => {
       },
     };
 
-    globalThis.fetch = mock(async () => new Response(JSON.stringify({ data: { id: 'c1' } }), { status: 200 })) as unknown as typeof fetch;
+    globalThis.fetch = mock(
+      async () => new Response(JSON.stringify({ data: { id: 'c1' } }), { status: 200 })
+    ) as unknown as typeof fetch;
 
     const { next } = invoke(action);
     // Must reach next() synchronously (before HTTP resolves)
@@ -74,8 +83,12 @@ describe('wsMiddleware', () => {
 
   it('dispatches CONFIRM on 2xx response', async () => {
     const serverData = { data: { id: 'c1', list_id: 'l2' } };
-    globalThis.fetch = mock(async () =>
-      new Response(JSON.stringify(serverData), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+    globalThis.fetch = mock(
+      async () =>
+        new Response(JSON.stringify(serverData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
     ) as unknown as typeof fetch;
 
     const action = {
@@ -95,12 +108,16 @@ describe('wsMiddleware', () => {
     const { dispatched } = invoke(action);
     // Wait for async HTTP
     await new Promise((r) => setTimeout(r, 50));
-    const confirmAction = (dispatched as { type: string }[]).find((a) => a.type === `cards/move${CONFIRM_SUFFIX}`);
+    const confirmAction = (dispatched as { type: string }[]).find(
+      (a) => a.type === `cards/move${CONFIRM_SUFFIX}`
+    );
     expect(confirmAction).toBeTruthy();
   });
 
   it('dispatches ROLLBACK on 4xx response', async () => {
-    globalThis.fetch = mock(async () => new Response('Forbidden', { status: 403 })) as unknown as typeof fetch;
+    globalThis.fetch = mock(
+      async () => new Response('Forbidden', { status: 403 })
+    ) as unknown as typeof fetch;
 
     const snapshot = { c1: { id: 'c1', list_id: 'l1' } };
     const action = {
@@ -120,14 +137,16 @@ describe('wsMiddleware', () => {
     const { dispatched } = invoke(action);
     await new Promise((r) => setTimeout(r, 50));
     const rollbackAction = (dispatched as { type: string; payload: { snapshot: unknown } }[]).find(
-      (a) => a.type === `cards/move${ROLLBACK_SUFFIX}`,
+      (a) => a.type === `cards/move${ROLLBACK_SUFFIX}`
     );
     expect(rollbackAction).toBeTruthy();
     expect(rollbackAction?.payload.snapshot).toEqual(snapshot);
   });
 
   it('dispatches ROLLBACK on network error', async () => {
-    globalThis.fetch = mock(async () => { throw new Error('Network error'); }) as unknown as typeof fetch;
+    globalThis.fetch = mock(async () => {
+      throw new Error('Network error');
+    }) as unknown as typeof fetch;
 
     const snapshot = { c1: { id: 'c1', list_id: 'l1' } };
     const action = {
@@ -146,7 +165,7 @@ describe('wsMiddleware', () => {
     const { dispatched } = invoke(action);
     await new Promise((r) => setTimeout(r, 50));
     const rollbackAction = (dispatched as { type: string }[]).find(
-      (a) => a.type === `cards/move${ROLLBACK_SUFFIX}`,
+      (a) => a.type === `cards/move${ROLLBACK_SUFFIX}`
     );
     expect(rollbackAction).toBeTruthy();
   });

@@ -89,6 +89,14 @@ resource "aws_lb_target_group" "this" {
   vpc_id      = var.vpc_id
   target_type = "ip"
 
+  # [why] MCP HTTP sessions are kept in instance memory. lb_cookie stickiness
+  # keeps follow-up requests on the same target so mcp-session-id resolves.
+  stickiness {
+    enabled         = true
+    type            = "lb_cookie"
+    cookie_duration = 3600
+  }
+
   health_check {
     path                = "/health"
     healthy_threshold   = 2

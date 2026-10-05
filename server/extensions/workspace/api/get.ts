@@ -10,7 +10,7 @@ import {
 type AuthenticatedUserRequest = AuthenticatedRequest & {
   currentUser: NonNullable<AuthenticatedRequest['currentUser']>;
 };
-type WorkspaceRow = { id: string; name: string; owner_id: string; created_at: string };
+type WorkspaceRow = { id: string; name: string; owner_id: string; created_at: string; plugin_domains?: string | null };
 
 export async function handleListWorkspaces(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -30,6 +30,7 @@ export async function handleListWorkspaces(req: Request): Promise<Response> {
     ownerId: r.owner_id,
     callerRole: r.caller_role,
     createdAt: r.created_at,
+    pluginDomains: r.plugin_domains,
   }));
 
   return Response.json({ data });
@@ -51,7 +52,7 @@ export async function handleGetWorkspace(req: Request, workspaceId: string): Pro
   if (!workspace) {
     return Response.json(
       { error: { code: 'workspace-not-found', message: 'Workspace not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -61,6 +62,7 @@ export async function handleGetWorkspace(req: Request, workspaceId: string): Pro
       name: workspace.name,
       ownerId: workspace.owner_id,
       createdAt: workspace.created_at,
+      pluginDomains: workspace.plugin_domains,
     },
   });
 }

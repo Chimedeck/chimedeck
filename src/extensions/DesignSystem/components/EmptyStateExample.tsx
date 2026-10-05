@@ -30,7 +30,11 @@ export default function EmptyStateExample() {
         icon={<FolderOpenIcon className="h-6 w-6" aria-hidden="true" />}
         title="No cards yet"
         description="Add your first card to get started with this list."
-        action={<Button variant="primary" size="sm">Add card</Button>}
+        action={
+          <Button variant="primary" size="sm">
+            Add card
+          </Button>
+        }
       />
       <EmptyState
         icon={<MagnifyingGlassIcon className="h-6 w-6" aria-hidden="true" />}

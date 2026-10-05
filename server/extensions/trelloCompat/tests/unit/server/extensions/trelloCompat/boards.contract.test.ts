@@ -39,9 +39,15 @@ describe('trelloCompat boards adapter contract', () => {
   });
 
   it('maps board visibility to Trello permissionLevel', () => {
-    expect(serializeBoard(createBoardFixture({ visibility: 'PUBLIC' })).prefs.permissionLevel).toBe('public');
-    expect(serializeBoard(createBoardFixture({ visibility: 'WORKSPACE' })).prefs.permissionLevel).toBe('org');
-    expect(serializeBoard(createBoardFixture({ visibility: 'PRIVATE' })).prefs.permissionLevel).toBe('private');
+    expect(serializeBoard(createBoardFixture({ visibility: 'PUBLIC' })).prefs.permissionLevel).toBe(
+      'public'
+    );
+    expect(
+      serializeBoard(createBoardFixture({ visibility: 'WORKSPACE' })).prefs.permissionLevel
+    ).toBe('org');
+    expect(
+      serializeBoard(createBoardFixture({ visibility: 'PRIVATE' })).prefs.permissionLevel
+    ).toBe('private');
   });
 
   it('uses Trello-compatible defaults for optional fields', () => {
@@ -74,7 +80,7 @@ describe('trelloCompat boards adapter contract', () => {
         { id: 'label-1' },
         { id: 'label-2', board_id: 'board-override', name: 'Urgent', color: 'red' },
       ],
-      'board-1',
+      'board-1'
     );
 
     expect(labels).toEqual([

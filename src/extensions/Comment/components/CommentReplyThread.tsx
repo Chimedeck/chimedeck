@@ -68,7 +68,10 @@ const CommentReplyThread = ({
     hasFetchedRef.current = true;
     setLoading(true);
     try {
-      const data = await getReplies({ api: apiClient as Parameters<typeof getReplies>[0]['api'], commentId: parentComment.id });
+      const data = await getReplies({
+        api: apiClient as Parameters<typeof getReplies>[0]['api'],
+        commentId: parentComment.id,
+      });
       setReplies(data as Comment[]);
     } catch {
       // Allow retry on explicit user action (e.g. expand toggle) by resetting the guard
@@ -83,6 +86,7 @@ const CommentReplyThread = ({
     if (expanded && !hasFetchedRef.current) {
       void loadReplies();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expanded, loadReplies]);
 
   // Also fetch when the reply editor is shown and there are existing replies to display
@@ -90,6 +94,7 @@ const CommentReplyThread = ({
     if (showReplyEditor && localReplyCount > 0 && !hasFetchedRef.current) {
       void loadReplies();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showReplyEditor, localReplyCount, loadReplies]);
 
   const handleSubmitReply = async (content: string) => {
@@ -105,11 +110,18 @@ const CommentReplyThread = ({
   const handleEditReply = async (commentId: string, content: string) => {
     await onEditReply(commentId, content);
     // [why] Replies are locally cached in this component, so mirror edits immediately.
-    setReplies((prev) => prev.map((reply) => (
-      reply.id === commentId
-        ? { ...reply, content, version: (reply.version ?? 1) + 1, updated_at: new Date().toISOString() }
-        : reply
-    )));
+    setReplies((prev) =>
+      prev.map((reply) =>
+        reply.id === commentId
+          ? {
+              ...reply,
+              content,
+              version: (reply.version ?? 1) + 1,
+              updated_at: new Date().toISOString(),
+            }
+          : reply
+      )
+    );
   };
 
   const replyCount = localReplyCount;
@@ -122,7 +134,9 @@ const CommentReplyThread = ({
         <Button
           variant="link"
           size="sm"
-          onClick={() => { onExpandToggle(!expanded); }}
+          onClick={() => {
+            onExpandToggle(!expanded);
+          }}
           className="mt-1"
         >
           {expanded
@@ -138,21 +152,22 @@ const CommentReplyThread = ({
         <div className="border-l-2 border-border ml-9 pl-3 mt-2 flex min-w-0 flex-col gap-3">
           {loading && <p className="text-xs text-muted animate-pulse">Loading replies…</p>}
 
-          {!loading && replies.map((reply) => (
-            <CommentItem
-              key={reply.id}
-              comment={reply}
-              {...(boardId !== undefined ? { boardId } : {})}
-              cardId={cardId}
-              currentUserId={currentUserId}
-              isAdmin={isAdmin}
-              onEdit={handleEditReply}
-              onDelete={onDeleteReply}
-              // [why] No onAddReply passed — prevents infinite nesting (max depth = 1)
-              {...(onAddReaction ? { onAddReaction } : {})}
-              {...(onRemoveReaction ? { onRemoveReaction } : {})}
-            />
-          ))}
+          {!loading &&
+            replies.map((reply) => (
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                {...(boardId !== undefined ? { boardId } : {})}
+                cardId={cardId}
+                currentUserId={currentUserId}
+                isAdmin={isAdmin}
+                onEdit={handleEditReply}
+                onDelete={onDeleteReply}
+                // [why] No onAddReply passed — prevents infinite nesting (max depth = 1)
+                {...(onAddReaction ? { onAddReaction } : {})}
+                {...(onRemoveReaction ? { onRemoveReaction } : {})}
+              />
+            ))}
 
           {/* Inline reply composer */}
           {showReplyEditor && (
@@ -174,4 +189,3 @@ const CommentReplyThread = ({
 };
 
 export default CommentReplyThread;
-

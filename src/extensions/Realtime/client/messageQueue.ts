@@ -7,7 +7,10 @@
 //
 // IndexedDB persistence is handled via src/mods/offlineQueue.ts so that
 // pending mutations survive a full page reload.
-import { enqueueMutation as persistMutation, acknowledgeMutation } from '../../../mods/offlineQueue';
+import {
+  enqueueMutation as persistMutation,
+  acknowledgeMutation,
+} from '../../../mods/offlineQueue';
 
 export const MAX_QUEUE_SIZE = 100;
 

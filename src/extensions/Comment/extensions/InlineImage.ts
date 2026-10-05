@@ -104,9 +104,7 @@ export const InlineImage = Node.create<InlineImageOptions>({
     const title = getNestedStringProperty(node, 'attrs', 'title') ?? '';
     if (!src) return '';
     // Keep title optional to match standard markdown image syntax.
-    return title
-      ? `![${alt}](${src} "${title}")`
-      : `![${alt}](${src})`;
+    return title ? `![${alt}](${src} "${title}")` : `![${alt}](${src})`;
   },
 });
 

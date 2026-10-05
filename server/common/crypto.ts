@@ -11,7 +11,7 @@ import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 
 const ALGORITHM = 'aes-256-gcm';
 const KEY_BYTE_LEN = 32;
-const IV_BYTE_LEN = 12;  // 96-bit IV is the GCM recommendation
+const IV_BYTE_LEN = 12; // 96-bit IV is the GCM recommendation
 const TAG_BYTE_LEN = 16;
 
 function keyFromHex(hexKey: string): Buffer {
@@ -19,7 +19,7 @@ function keyFromHex(hexKey: string): Buffer {
   if (key.length !== KEY_BYTE_LEN) {
     throw new Error(
       'Encryption key must be exactly 64 hex characters (32 bytes). ' +
-      'Generate one with: openssl rand -hex 32',
+        'Generate one with: openssl rand -hex 32'
     );
   }
   return key;
@@ -29,7 +29,13 @@ function keyFromHex(hexKey: string): Buffer {
  * Encrypts a plaintext string.
  * Returns a single base64 string: base64(iv + ciphertext + authTag).
  */
-export function encryptSecret({ plaintext, hexKey }: { plaintext: string; hexKey: string }): string {
+export function encryptSecret({
+  plaintext,
+  hexKey,
+}: {
+  plaintext: string;
+  hexKey: string;
+}): string {
   const key = keyFromHex(hexKey);
   const iv = randomBytes(IV_BYTE_LEN);
   const cipher = createCipheriv(ALGORITHM, key, iv);
@@ -43,7 +49,13 @@ export function encryptSecret({ plaintext, hexKey }: { plaintext: string; hexKey
  * Decrypts a ciphertext produced by encryptSecret.
  * Throws if the auth tag does not match (tampered or wrong key).
  */
-export function decryptSecret({ ciphertext, hexKey }: { ciphertext: string; hexKey: string }): string {
+export function decryptSecret({
+  ciphertext,
+  hexKey,
+}: {
+  ciphertext: string;
+  hexKey: string;
+}): string {
   const key = keyFromHex(hexKey);
   const buf = Buffer.from(ciphertext, 'base64');
   const iv = buf.subarray(0, IV_BYTE_LEN);

@@ -15,12 +15,7 @@ const PollingIndicator = ({ active }: Props) => {
       title={translations['Realtime.statusPollingTitle']}
     >
       {/* Refresh / sync icon */}
-      <svg
-        className="h-3 w-3 animate-spin"
-        fill="none"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
+      <svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
         <path
           stroke="currentColor"
           strokeLinecap="round"

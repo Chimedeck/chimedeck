@@ -59,7 +59,7 @@ describe('stateTransitionsRouter', () => {
   it('returns null for unrelated paths', async () => {
     const res = await stateTransitionsRouter(
       new Request('http://localhost/api/v1/workspaces/ws-1', { method: 'GET' }),
-      '/api/v1/workspaces/ws-1',
+      '/api/v1/workspaces/ws-1'
     );
     expect(res).toBeNull();
   });
@@ -68,11 +68,11 @@ describe('stateTransitionsRouter', () => {
     stateTransitionsEnabled = false;
     const res = await stateTransitionsRouter(
       new Request('http://localhost/api/v1/boards/board-1/state-transitions', { method: 'GET' }),
-      '/api/v1/boards/board-1/state-transitions',
+      '/api/v1/boards/board-1/state-transitions'
     );
 
     expect(res?.status).toBe(501);
-    const body = await res?.json() as { name: string };
+    const body = (await res?.json()) as { name: string };
     expect(body.name).toBe('not-implemented');
   });
 
@@ -80,22 +80,22 @@ describe('stateTransitionsRouter', () => {
     resolvedBoardId = null;
     const res = await stateTransitionsRouter(
       new Request('http://localhost/api/v1/boards/not-found/state-transitions', { method: 'GET' }),
-      '/api/v1/boards/not-found/state-transitions',
+      '/api/v1/boards/not-found/state-transitions'
     );
 
     expect(res?.status).toBe(404);
-    const body = await res?.json() as { name: string };
+    const body = (await res?.json()) as { name: string };
     expect(body.name).toBe('board-not-found');
   });
 
   it('returns board visibility error when access is denied', async () => {
     visibilityError = Response.json(
       { name: 'forbidden', data: { message: 'no board access' } },
-      { status: 403 },
+      { status: 403 }
     );
     const res = await stateTransitionsRouter(
       new Request('http://localhost/api/v1/boards/board-1/state-transitions', { method: 'GET' }),
-      '/api/v1/boards/board-1/state-transitions',
+      '/api/v1/boards/board-1/state-transitions'
     );
 
     expect(res?.status).toBe(403);
@@ -104,7 +104,7 @@ describe('stateTransitionsRouter', () => {
   it('routes GET base endpoint', async () => {
     const res = await stateTransitionsRouter(
       new Request('http://localhost/api/v1/boards/board-1/state-transitions', { method: 'GET' }),
-      '/api/v1/boards/board-1/state-transitions',
+      '/api/v1/boards/board-1/state-transitions'
     );
 
     expect(res?.status).toBe(200);
@@ -116,7 +116,7 @@ describe('stateTransitionsRouter', () => {
   it('routes PUT base endpoint', async () => {
     const res = await stateTransitionsRouter(
       new Request('http://localhost/api/v1/boards/board-1/state-transitions', { method: 'PUT' }),
-      '/api/v1/boards/board-1/state-transitions',
+      '/api/v1/boards/board-1/state-transitions'
     );
 
     expect(res?.status).toBe(200);
@@ -127,8 +127,10 @@ describe('stateTransitionsRouter', () => {
 
   it('routes GET rules endpoint', async () => {
     const res = await stateTransitionsRouter(
-      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', { method: 'GET' }),
-      '/api/v1/boards/board-1/state-transitions/rules',
+      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', {
+        method: 'GET',
+      }),
+      '/api/v1/boards/board-1/state-transitions/rules'
     );
 
     expect(res?.status).toBe(200);
@@ -139,8 +141,10 @@ describe('stateTransitionsRouter', () => {
 
   it('returns null for unsupported methods on matched routes', async () => {
     const res = await stateTransitionsRouter(
-      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', { method: 'PUT' }),
-      '/api/v1/boards/board-1/state-transitions/rules',
+      new Request('http://localhost/api/v1/boards/board-1/state-transitions/rules', {
+        method: 'PUT',
+      }),
+      '/api/v1/boards/board-1/state-transitions/rules'
     );
     expect(res).toBeNull();
   });

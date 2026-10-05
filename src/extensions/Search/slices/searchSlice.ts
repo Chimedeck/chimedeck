@@ -23,10 +23,7 @@ const searchSlice = createSlice({
   initialState,
   reducers: {
     /** Replace the entire cache after a successful search response */
-    setSearchResults(
-      state,
-      action: PayloadAction<{ results: SearchResult[]; query: string }>,
-    ) {
+    setSearchResults(state, action: PayloadAction<{ results: SearchResult[]; query: string }>) {
       state.results = action.payload.results;
       state.query = action.payload.query;
     },
@@ -48,7 +45,6 @@ const searchSlice = createSlice({
   },
 });
 
-export const { setSearchResults, purgeInaccessibleResult, clearSearchCache } =
-  searchSlice.actions;
+export const { setSearchResults, purgeInaccessibleResult, clearSearchCache } = searchSlice.actions;
 
 export default searchSlice.reducer;

@@ -31,37 +31,25 @@ function normalizeApiPath(url?: string): string | null {
   }
 }
 
-export function isPublicApiRoute({
-  url,
-  method,
-}: ApiRequestDescriptor): boolean {
+export function isPublicApiRoute({ url, method }: ApiRequestDescriptor): boolean {
   const pathname = normalizeApiPath(url);
   if (!pathname) return false;
 
   const normalizedMethod = (method ?? 'GET').toUpperCase();
   return PUBLIC_API_ROUTES.some(
-    (route) => route.method === normalizedMethod && route.pattern.test(pathname),
+    (route) => route.method === normalizedMethod && route.pattern.test(pathname)
   );
 }
 
-export function isRefreshApiRoute({
-  url,
-  method,
-}: ApiRequestDescriptor): boolean {
+export function isRefreshApiRoute({ url, method }: ApiRequestDescriptor): boolean {
   const pathname = normalizeApiPath(url);
   return pathname === '/auth/refresh' && (method ?? 'GET').toUpperCase() === 'POST';
 }
 
-export function shouldAttachAccessToken({
-  url,
-  method,
-}: ApiRequestDescriptor): boolean {
+export function shouldAttachAccessToken({ url, method }: ApiRequestDescriptor): boolean {
   return !isPublicApiRoute({ url, method });
 }
 
-export function shouldAttemptAuthRecovery({
-  url,
-  method,
-}: ApiRequestDescriptor): boolean {
+export function shouldAttemptAuthRecovery({ url, method }: ApiRequestDescriptor): boolean {
   return !isPublicApiRoute({ url, method }) && !isRefreshApiRoute({ url, method });
 }

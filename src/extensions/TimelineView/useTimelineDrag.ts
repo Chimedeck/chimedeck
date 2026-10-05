@@ -10,7 +10,6 @@ import type { MouseEvent } from 'react';
 import { apiClient } from '~/common/api/client';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { boardSliceActions } from '../Board/slices/boardSlice';
-import { localDateKey, parseLocalDate, toLocalDateKey } from '../../common/utils/dates';
 import type { UseTimelineDragOptions, UseTimelineDragResult, TimelineDragOverride } from './types';
 
 type DragType = 'move' | 'resize-left' | 'resize-right';
@@ -26,13 +25,21 @@ interface DragState {
   currentDueDate: string;
 }
 
-// Day math uses the shared date utils so the timeline interprets due_date and
-// start_date in the viewer's local timezone, matching every other surface.
+function parseLocalDate(s: string): Date {
+  // Slice the first 10 chars to handle both "YYYY-MM-DD" and full ISO "YYYY-MM-DDTHH:mm:ss...Z"
+  const datePart = s.slice(0, 10);
+  const parts = datePart.split('-');
+  return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+}
+
+function formatDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 function addDaysToStr(dateStr: string, days: number): string {
   const d = parseLocalDate(dateStr);
   d.setDate(d.getDate() + days);
-  return toLocalDateKey(d);
+  return formatDate(d);
 }
 
 export function useTimelineDrag({
@@ -62,8 +69,8 @@ export function useTimelineDrag({
       e.preventDefault();
       e.stopPropagation();
 
-      const origStart = localDateKey(card.start_date);
-      const origDue = localDateKey(card.due_date);
+      const origStart = card.start_date.slice(0, 10);
+      const origDue = card.due_date.slice(0, 10);
 
       dragRef.current = {
         type,
@@ -127,16 +134,20 @@ export function useTimelineDrag({
         if (drag.currentStartDate === origStart && drag.currentDueDate === origDue) return;
 
         // Apply optimistic update to Redux immediately.
-        dispatch(boardSliceActions.optimisticUpdateCardField({
-          cardId,
-          field: 'start_date',
-          value: drag.currentStartDate,
-        }));
-        dispatch(boardSliceActions.optimisticUpdateCardField({
-          cardId,
-          field: 'due_date',
-          value: drag.currentDueDate,
-        }));
+        dispatch(
+          boardSliceActions.optimisticUpdateCardField({
+            cardId,
+            field: 'start_date',
+            value: drag.currentStartDate,
+          })
+        );
+        dispatch(
+          boardSliceActions.optimisticUpdateCardField({
+            cardId,
+            field: 'due_date',
+            value: drag.currentDueDate,
+          })
+        );
 
         try {
           await apiClient.patch(`/cards/${cardId}`, {
@@ -145,16 +156,20 @@ export function useTimelineDrag({
           });
         } catch {
           // Revert Redux to original dates on API failure.
-          dispatch(boardSliceActions.optimisticUpdateCardField({
-            cardId,
-            field: 'start_date',
-            value: origStart,
-          }));
-          dispatch(boardSliceActions.optimisticUpdateCardField({
-            cardId,
-            field: 'due_date',
-            value: origDue,
-          }));
+          dispatch(
+            boardSliceActions.optimisticUpdateCardField({
+              cardId,
+              field: 'start_date',
+              value: origStart,
+            })
+          );
+          dispatch(
+            boardSliceActions.optimisticUpdateCardField({
+              cardId,
+              field: 'due_date',
+              value: origDue,
+            })
+          );
           addToast?.('Failed to update card dates. Changes reverted.', 'error');
         }
       };
@@ -163,22 +178,28 @@ export function useTimelineDrag({
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
     },
-    [cards, dispatch, addToast],
+    [cards, dispatch, addToast]
   );
 
   const handleMoveStart = useCallback(
-    (cardId: string, e: MouseEvent) => { startDrag('move', cardId, e); },
-    [startDrag],
+    (cardId: string, e: MouseEvent) => {
+      startDrag('move', cardId, e);
+    },
+    [startDrag]
   );
 
   const handleResizeLeftStart = useCallback(
-    (cardId: string, e: MouseEvent) => { startDrag('resize-left', cardId, e); },
-    [startDrag],
+    (cardId: string, e: MouseEvent) => {
+      startDrag('resize-left', cardId, e);
+    },
+    [startDrag]
   );
 
   const handleResizeRightStart = useCallback(
-    (cardId: string, e: MouseEvent) => { startDrag('resize-right', cardId, e); },
-    [startDrag],
+    (cardId: string, e: MouseEvent) => {
+      startDrag('resize-right', cardId, e);
+    },
+    [startDrag]
   );
 
   return { dragOverrides, handleMoveStart, handleResizeLeftStart, handleResizeRightStart };

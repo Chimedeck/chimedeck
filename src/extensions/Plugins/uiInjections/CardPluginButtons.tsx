@@ -3,7 +3,6 @@
 // button sends BUTTON_CLICKED to all active plugins that can handle it;
 // the plugin responds with UI_POPUP / UI_MODAL (handled in iteration 10).
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { usePluginBridgeContext } from '../iframeHost/usePluginBridge';
 import { selectBoardPlugins } from '../containers/PluginDashboardPage/PluginDashboardPage.duck';
@@ -16,6 +15,7 @@ interface PluginButton {
 }
 
 interface Props {
+  boardId: string;
   cardId: string;
   listId: string;
   cardTitle?: string;
@@ -30,8 +30,17 @@ interface Props {
   variant?: 'chip' | 'sidebar';
 }
 
-const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, cardAmount, cardCurrency, variant = 'chip' }: Props) => {
-  const { boardId } = useParams<{ boardId: string }>();
+const CardPluginButtons = ({
+  boardId,
+  cardId,
+  listId,
+  cardTitle,
+  listTitle,
+  boardTitle,
+  cardAmount,
+  cardCurrency,
+  variant = 'chip',
+}: Props) => {
   const bridge = usePluginBridgeContext();
   const boardPlugins = useAppSelector(selectBoardPlugins);
   const [buttons, setButtons] = useState<PluginButton[]>([]);
@@ -58,8 +67,7 @@ const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, c
         const all: PluginButton[] = [];
         for (const result of results) {
           if (Array.isArray(result)) all.push(...(result as PluginButton[]));
-          else if (result && typeof result === 'object')
-            all.push(result as PluginButton);
+          else if (result && typeof result === 'object') all.push(result as PluginButton);
         }
         setButtons(all);
       })
@@ -84,7 +92,7 @@ const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, c
       for (const bp of boardPlugins) {
         bridge.sendToPlugin(bp.plugin.id, {
           jhSdk: true,
-          id: `btn-${String(Date.now())}-${Math.random().toString(36).slice(2)}`,
+          id: `btn-${Date.now()}-${Math.random().toString(36).slice(2)}`,
           type: 'BUTTON_CLICKED',
           payload: {
             callbackId: button.callback.__callbackId,
@@ -92,19 +100,30 @@ const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, c
               card: { id: cardId, ...(cardTitle ? { name: cardTitle } : {}) },
               list: { id: listId, ...(listTitle ? { name: listTitle } : {}) },
               board: { id: boardId, ...(boardTitle ? { name: boardTitle } : {}) },
+              // WHY: pass click coordinates so the SDK can position t.popup() near the button
+              clientX: e.clientX,
+              clientY: e.clientY,
             },
           },
         });
       }
     },
-    [bridge, boardPlugins, cardId, listId, boardId, cardTitle, listTitle, boardTitle],
+    [bridge, boardPlugins, cardId, listId, boardId, cardTitle, listTitle, boardTitle]
   );
 
   if (buttons.length === 0) return null;
 
   if (variant === 'sidebar') {
     return (
-      <div className="space-y-1" onClick={(e) => { e.stopPropagation(); }} onKeyDown={(e) => { e.stopPropagation(); }}>
+      <div
+        className="space-y-1"
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+        }}
+      >
         {buttons.map((btn) => {
           const btnKey = `${btn.text ?? ''}-${btn.icon ?? ''}`;
           // [plugin-button-exception] Plugin-injected buttons use raw <button> to preserve
@@ -113,7 +132,9 @@ const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, c
             <button
               key={btnKey}
               type="button"
-              onClick={(e) => { handleButtonClick(btn, e); }}
+              onClick={(e) => {
+                handleButtonClick(btn, e);
+              }}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-subtle hover:bg-bg-overlay rounded-lg transition-colors"
             >
               {btn.icon && (
@@ -130,7 +151,15 @@ const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, c
   return (
     // WHY: stopPropagation on the wrapper prevents card-click when clicking
     // on any part of the buttons row that isn't a button itself
-    <div className="mt-1.5 flex flex-wrap gap-1" onClick={(e) => { e.stopPropagation(); }} onKeyDown={(e) => { e.stopPropagation(); }}>
+    <div
+      className="mt-1.5 flex flex-wrap gap-1"
+      onClick={(e) => {
+        e.stopPropagation();
+      }}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+      }}
+    >
       {buttons.map((btn) => {
         const btnKey = `${btn.text ?? ''}-${btn.icon ?? ''}`;
         // [plugin-button-exception] Plugin-injected buttons use raw <button> to preserve
@@ -138,12 +167,12 @@ const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, c
         return (
           <button
             key={btnKey}
-            onClick={(e) => { handleButtonClick(btn, e); }}
+            onClick={(e) => {
+              handleButtonClick(btn, e);
+            }}
             className="inline-flex items-center gap-1 rounded bg-bg-overlay px-2 py-0.5 text-xs text-base hover:bg-bg-sunken transition-colors"
           >
-            {btn.icon && (
-              <img src={btn.icon} alt="" className="h-3 w-3 object-contain" />
-            )}
+            {btn.icon && <img src={btn.icon} alt="" className="h-3 w-3 object-contain" />}
             {btn.text}
           </button>
         );

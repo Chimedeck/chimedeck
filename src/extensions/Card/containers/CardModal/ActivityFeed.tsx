@@ -11,6 +11,8 @@ import { listAttachments } from '~/extensions/Attachments/api';
 import type { Attachment } from '~/extensions/Attachments/types';
 import type { ActivityData } from '../../slices/cardDetailSlice';
 import type { CommentData } from '../../api/cardDetail';
+import { ActivityEventRenderer, isRichEventType } from '~/extensions/CardActivity';
+import translations from '../../translations/en.json';
 
 interface BoardMember {
   id: string;
@@ -47,23 +49,38 @@ interface Props {
    * can then call `insertMarkdownRef.current(md)` to insert text without a network call.
    */
   insertMarkdownRef?: React.MutableRefObject<((md: string) => void) | null>;
+  // Sprint 176 — rich event renderer callbacks
+  /** Callback when a file path in a diff summary is clicked. */
+  onFileClick?: (path: string) => void;
+  /** Callback for approve action on sprint generation / as-built sync runs. */
+  onApprove?: (runId: string) => void | Promise<void>;
+  /** Callback for re-run action on sprint generation / as-built sync runs. */
+  onRerun?: (runId: string) => void | Promise<void>;
+  /** Callback for edit action on sprint generation / as-built sync runs. */
+  onEdit?: (runId: string) => void | Promise<void>;
 }
 
 /** Consistent avatar colour based on user id. */
 // Darker shades guarantee sufficient contrast against text-inverse (white in light mode)
 const AVATAR_COLORS = [
-  'bg-blue-600', 'bg-green-700', 'bg-purple-600',
-  'bg-pink-600', 'bg-amber-700', 'bg-orange-700', 'bg-teal-700',
+  'bg-blue-600',
+  'bg-green-700',
+  'bg-purple-600',
+  'bg-pink-600',
+  'bg-amber-700',
+  'bg-orange-700',
+  'bg-teal-700',
 ];
 function avatarColor(userId: string): string {
   let hash = 0;
-  for (let i = 0; i < userId.length; i++) hash = Math.trunc(hash * 31 + (userId.codePointAt(i) ?? 0));
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length] ?? 'bg-blue-600';
+  for (let i = 0; i < userId.length; i++)
+    hash = Math.trunc(hash * 31 + (userId.codePointAt(i) ?? 0));
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]!;
 }
 function getInitials(name: string | null | undefined, email: string): string {
   const source = name || email || '?';
   const parts = source.split(/[\s@.]/).filter(Boolean);
-  if (parts.length >= 2) return `${parts[0]?.[0] ?? ''}${parts[1]?.[0] ?? ''}`.toUpperCase();
+  if (parts.length >= 2) return `${parts[0]![0]}${parts[1]![0]}`.toUpperCase();
   return source.slice(0, 2).toUpperCase();
 }
 
@@ -80,24 +97,26 @@ function renderSystemEventRow({
   activity: ActivityData;
   memberMap: Map<string, BoardMember>;
   currentUserId: string;
-  attachmentMap: Map<string, { thumbnail_url?: string | null; view_url?: string | null; content_type?: string | null }>;
-}): React.JSX.Element {
+  attachmentMap: Map<
+    string,
+    { thumbnail_url?: string | null; view_url?: string | null; content_type?: string | null }
+  >;
+}): JSX.Element {
   const member = memberMap.get(activity.actor_id);
   const displayName =
-    activity.actor_name ||
-    activity.actor_email ||
-    member?.name ||
-    member?.email ||
-    'Unknown';
+    activity.actor_name || activity.actor_email || member?.name || member?.email || 'Unknown';
   const initials = getInitials(
     activity.actor_name ?? member?.name,
-    activity.actor_email ?? member?.email ?? activity.actor_id,
+    activity.actor_email ?? member?.email ?? activity.actor_id
   );
   const color = avatarColor(activity.actor_id);
 
-  const attachmentId = typeof activity.payload.attachmentId === 'string' ? activity.payload.attachmentId : null;
+  const attachmentId =
+    typeof activity.payload.attachmentId === 'string' ? activity.payload.attachmentId : null;
   const attachmentInfo = attachmentId ? attachmentMap.get(attachmentId) : null;
-  const attachmentUrl = attachmentInfo?.view_url ?? attachmentInfo?.thumbnail_url;
+  const showThumbnail =
+    attachmentInfo?.content_type?.startsWith('image/') &&
+    (attachmentInfo.thumbnail_url ?? attachmentInfo.view_url);
   const actorAvatarUrl = activity.actor_avatar_url ?? null;
 
   const eventContext: ActivityEventContext = {
@@ -116,28 +135,31 @@ function renderSystemEventRow({
         className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${actorAvatarUrl ? '' : color} overflow-hidden`} // [theme-exception] text-white on dynamically-colored avatar background
         title={displayName}
       >
-        {actorAvatarUrl
-          ? <img src={actorAvatarUrl} alt={displayName} className="h-full w-full object-cover rounded-full" />
-          : initials
-        }
+        {actorAvatarUrl ? (
+          <img
+            src={actorAvatarUrl}
+            alt={displayName}
+            className="h-full w-full object-cover rounded-full"
+          />
+        ) : (
+          initials
+        )}
       </div>
       {/* Body */}
       <div className="flex-1 min-w-0">
         <p className="min-w-0 break-words text-sm text-subtle leading-5">
           {/* [theme-exception] text-white for actor name on activity feed (dark-bg avatar context) */}
-          <span className="font-semibold text-base">{displayName}</span>
-          {' '}
-          <span>{meta.label}</span>
+          <span className="font-semibold text-base">{displayName}</span> <span>{meta.label}</span>
         </p>
         <p className="mt-0.5 text-xs text-muted">{relativeTime(activity.created_at)}</p>
-        {attachmentInfo?.content_type?.startsWith('image/') && attachmentUrl && (
+        {showThumbnail && (
           <a
-            href={attachmentUrl}
+            href={(attachmentInfo!.view_url ?? attachmentInfo!.thumbnail_url)!}
             target="_blank"
             rel="noopener noreferrer"
           >
             <img
-              src={attachmentInfo.thumbnail_url ?? attachmentInfo.view_url ?? attachmentUrl}
+              src={(attachmentInfo!.thumbnail_url ?? attachmentInfo!.view_url)!}
               alt={typeof activity.payload.name === 'string' ? activity.payload.name : 'attachment'}
               className="mt-1.5 rounded border border-slate-700 max-h-24 max-w-[180px] object-cover hover:opacity-80 transition-opacity"
             />
@@ -158,8 +180,8 @@ function relativeTime(iso: string): string {
   const diff = (Date.now() - date.getTime()) / 1000;
   const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   if (diff < 60) return 'just now';
-  if (diff < 3600) return `${String(Math.floor(diff / 60))} min ago · ${time}`;
-  if (diff < 86400) return `${String(Math.floor(diff / 3600))} hr ago · ${time}`;
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago · ${time}`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago · ${time}`;
   const day = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   return `${day}, ${time}`;
 }
@@ -184,6 +206,10 @@ const ActivityFeed = ({
   canAddComment = true,
   onAttachmentsChange,
   insertMarkdownRef,
+  onFileClick,
+  onApprove,
+  onRerun,
+  onEdit,
 }: Props) => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   // [why] Local ref that is passed to CommentEditor so it can register its insert function.
@@ -205,19 +231,19 @@ const ActivityFeed = ({
     void loadAttachments();
   }, [loadAttachments]);
 
-  const handleAddComment = useCallback(async (content: string) => {
-    await Promise.all([
-      onAddComment(content),
-      loadAttachments(),
-    ]);
-  }, [onAddComment, loadAttachments]);
+  const handleAddComment = useCallback(
+    async (content: string) => {
+      await Promise.all([onAddComment(content), loadAttachments()]);
+    },
+    [onAddComment, loadAttachments]
+  );
 
-  const handleEditComment = useCallback(async (commentId: string, content: string) => {
-    await Promise.all([
-      onEditComment(commentId, content),
-      loadAttachments(),
-    ]);
-  }, [onEditComment, loadAttachments]);
+  const handleEditComment = useCallback(
+    async (commentId: string, content: string) => {
+      await Promise.all([onEditComment(commentId, content), loadAttachments()]);
+    },
+    [onEditComment, loadAttachments]
+  );
 
   const attachmentMap = new Map(
     attachments.map((attachment) => [
@@ -228,7 +254,7 @@ const ActivityFeed = ({
         view_url: attachment.view_url,
         content_type: attachment.content_type,
       },
-    ]),
+    ])
   );
 
   const memberMap = new Map(boardMembers.map((m) => [m.id, m]));
@@ -241,12 +267,15 @@ const ActivityFeed = ({
 
   // Convert system activity events to feed items (exclude comment-type events)
   const eventItems: FeedItem[] = activities
-    .filter((a) => VISIBLE_ACTIVITY_EVENT_TYPES.includes(a.action) || a.action === 'card.description.updated')
+    .filter(
+      (a) =>
+        VISIBLE_ACTIVITY_EVENT_TYPES.includes(a.action) || a.action === 'card.description.updated'
+    )
     .map((a) => ({ kind: 'event', ts: a.created_at, activity: a }));
 
   // Merge and sort descending (newest first)
   const feed: FeedItem[] = [...commentItems, ...eventItems].sort(
-    (a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime(),
+    (a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()
   );
 
   return (
@@ -260,7 +289,7 @@ const ActivityFeed = ({
           cardId={cardId}
           availableAttachments={attachments}
           {...(onAttachmentsChange ? { onAttachmentsChange } : {})}
-          placeholder="Add a comment…"
+          placeholder={translations['card.activity.commentPlaceholder']}
           onSubmit={handleAddComment}
           submitLabel="Comment"
           insertMarkdownRef={resolvedInsertRef}
@@ -268,9 +297,7 @@ const ActivityFeed = ({
       )}
 
       <div className="flex flex-col gap-3">
-        {feed.length === 0 && (
-          <p className="text-sm text-subtle italic">No activity yet.</p>
-        )}
+        {feed.length === 0 && <p className="text-sm text-subtle italic">No activity yet.</p>}
 
         {feed.map((item) => {
           if (item.kind === 'comment') {
@@ -295,12 +322,26 @@ const ActivityFeed = ({
             );
           }
 
-          return renderSystemEventRow({
-            activity: item.activity,
-            memberMap,
-            currentUserId,
-            attachmentMap,
-          });
+          return (
+            <>
+              {renderSystemEventRow({
+                activity: item.activity,
+                memberMap,
+                currentUserId,
+                attachmentMap,
+              })}
+              {isRichEventType(item.activity.action) && (
+                <ActivityEventRenderer
+                  activity={item.activity}
+                  cardId={cardId}
+                  onFileClick={onFileClick}
+                  onApprove={onApprove}
+                  onRerun={onRerun}
+                  onEdit={onEdit}
+                />
+              )}
+            </>
+          );
         })}
       </div>
     </div>

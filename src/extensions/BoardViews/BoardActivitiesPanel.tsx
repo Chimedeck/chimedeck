@@ -57,7 +57,7 @@ const BoardActivitiesPanel = ({ boardId, onCardClick }: Props) => {
         setLoading(false);
       }
     },
-    [boardId],
+    [boardId]
   );
 
   useEffect(() => {
@@ -102,11 +102,13 @@ const BoardActivitiesPanel = ({ boardId, onCardClick }: Props) => {
           const commentCardTitle = comment.card_title ?? 'Untitled card';
           return (
             <div key={`comment-${comment.id}`} className="flex items-start gap-2 py-1.5 text-sm">
-              <div className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-blue-400" aria-hidden="true" />
+              <div
+                className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-blue-400"
+                aria-hidden="true"
+              />
               <div className="flex-1">
                 <span>
-                  <span className="font-medium">{authorName}</span>
-                  {' '}
+                  <span className="font-medium">{authorName}</span>{' '}
                   {comment.deleted ? (
                     <span className="italic text-muted">deleted a comment on </span>
                   ) : (
@@ -125,9 +127,7 @@ const BoardActivitiesPanel = ({ boardId, onCardClick }: Props) => {
                   ) : (
                     <span className="font-medium">{`"${commentCardTitle}"`}</span>
                   )}
-                  {!comment.deleted && (
-                    <span className="text-muted">: {comment.content}</span>
-                  )}
+                  {!comment.deleted && <span className="text-muted">: {comment.content}</span>}
                 </span>
                 <span className="ml-2 text-xs text-muted">
                   {new Date(comment.created_at).toLocaleString()}
@@ -138,10 +138,18 @@ const BoardActivitiesPanel = ({ boardId, onCardClick }: Props) => {
         })}
       </div>
 
-      {loading && <p className="mt-2 text-xs text-muted">{translations['BoardViews.loadingComments']}</p>}
+      {loading && (
+        <p className="mt-2 text-xs text-muted">{translations['BoardViews.loadingComments']}</p>
+      )}
 
       {hasMore && !loading && (
-        <Button variant="link" size="sm" onClick={() => { void loadPage(cursor); }}>
+        <Button
+          variant="link"
+          size="sm"
+          onClick={() => {
+            void loadPage(cursor);
+          }}
+        >
           Load more
         </Button>
       )}

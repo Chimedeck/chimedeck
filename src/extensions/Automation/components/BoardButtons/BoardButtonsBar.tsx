@@ -55,7 +55,10 @@ const BoardButtonsBar: FC<Props> = ({ boardId, hasBackground = false }) => {
   const overflowCount = buttons.length - MAX_VISIBLE;
 
   return (
-    <div className="flex items-center gap-0.5" aria-label={translations['automation.boardButtonsBar.ariaLabel']}>
+    <div
+      className="flex items-center gap-0.5"
+      aria-label={translations['automation.boardButtonsBar.ariaLabel']}
+    >
       {visible.map((btn) => (
         <BoardButtonItem
           key={btn.id}

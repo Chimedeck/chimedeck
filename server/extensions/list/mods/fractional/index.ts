@@ -21,12 +21,7 @@ export function between(a: string, b: string): string {
   for (let i = 0; i <= maxLen; i++) {
     const ac = i < a.length ? a.charCodeAt(i) : MIN_CODE - 1;
     // HIGH_SENTINEL after its length is treated as MAX_CODE+1
-    const bc =
-      b === '~'
-        ? MAX_CODE + 1
-        : i < b.length
-          ? b.charCodeAt(i)
-          : MIN_CODE - 1;
+    const bc = b === '~' ? MAX_CODE + 1 : i < b.length ? b.charCodeAt(i) : MIN_CODE - 1;
 
     const gap = bc - ac;
 
@@ -71,9 +66,7 @@ export function generatePositions(count: number): string[] {
       const val = step * (i + 1);
       const hi = Math.floor(val / range);
       const lo = val % range;
-      positions.push(
-        String.fromCharCode(MIN_CODE + hi) + String.fromCharCode(MIN_CODE + lo),
-      );
+      positions.push(String.fromCharCode(MIN_CODE + hi) + String.fromCharCode(MIN_CODE + lo));
     }
   }
   return positions;

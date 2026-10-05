@@ -15,19 +15,39 @@ const configSchema = z
   })
   .superRefine((cfg, ctx) => {
     if (cfg.fieldType === 'TEXT' && typeof cfg.valueText !== 'string') {
-      ctx.addIssue({ code: 'custom', path: ['valueText'], message: 'valueText is required for TEXT fields' });
+      ctx.addIssue({
+        code: 'custom',
+        path: ['valueText'],
+        message: 'valueText is required for TEXT fields',
+      });
     }
     if (cfg.fieldType === 'NUMBER' && typeof cfg.valueNumber !== 'number') {
-      ctx.addIssue({ code: 'custom', path: ['valueNumber'], message: 'valueNumber is required for NUMBER fields' });
+      ctx.addIssue({
+        code: 'custom',
+        path: ['valueNumber'],
+        message: 'valueNumber is required for NUMBER fields',
+      });
     }
     if (cfg.fieldType === 'DATE' && typeof cfg.valueDate !== 'string') {
-      ctx.addIssue({ code: 'custom', path: ['valueDate'], message: 'valueDate is required for DATE fields' });
+      ctx.addIssue({
+        code: 'custom',
+        path: ['valueDate'],
+        message: 'valueDate is required for DATE fields',
+      });
     }
     if (cfg.fieldType === 'CHECKBOX' && typeof cfg.valueCheckbox !== 'boolean') {
-      ctx.addIssue({ code: 'custom', path: ['valueCheckbox'], message: 'valueCheckbox is required for CHECKBOX fields' });
+      ctx.addIssue({
+        code: 'custom',
+        path: ['valueCheckbox'],
+        message: 'valueCheckbox is required for CHECKBOX fields',
+      });
     }
     if (cfg.fieldType === 'DROPDOWN' && typeof cfg.valueOptionId !== 'string') {
-      ctx.addIssue({ code: 'custom', path: ['valueOptionId'], message: 'valueOptionId is required for DROPDOWN fields' });
+      ctx.addIssue({
+        code: 'custom',
+        path: ['valueOptionId'],
+        message: 'valueOptionId is required for DROPDOWN fields',
+      });
     }
   });
 

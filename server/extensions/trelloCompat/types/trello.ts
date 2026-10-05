@@ -150,9 +150,16 @@ export interface TrelloBoard {
   invitations: never[];
   invited: false;
   labelNames: {
-    green: string; yellow: string; orange: string; red: string;
-    purple: string; blue: string; sky: string; lime: string;
-    pink: string; black: string;
+    green: string;
+    yellow: string;
+    orange: string;
+    red: string;
+    purple: string;
+    blue: string;
+    sky: string;
+    lime: string;
+    pink: string;
+    black: string;
   };
   limits: Record<string, never>;
   memberships: TrelloBoardMembership[];
@@ -246,12 +253,15 @@ export interface TrelloReaction {
   member?: { id: string };
 }
 
-export type TrelloReactionSummary = Record<string, {
-  emoji: string;
-  idModel: string;
-  count: number;
-  idMembers: string[];
-}>;
+export type TrelloReactionSummary = Record<
+  string,
+  {
+    emoji: string;
+    idModel: string;
+    count: number;
+    idMembers: string[];
+  }
+>;
 
 export type TrelloActionType =
   | 'commentCard'

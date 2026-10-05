@@ -15,7 +15,8 @@ export const cardCreatedTrigger: TriggerHandler = {
     const parsed = configSchema.safeParse(config);
     if (!parsed.success) return false;
     const { listIds } = parsed.data;
-    if (listIds && listIds.length > 0 && !listIds.includes(event.payload['listId'] as string)) return false;
+    if (listIds && listIds.length > 0 && !listIds.includes(event.payload['listId'] as string))
+      return false;
     return true;
   },
 };

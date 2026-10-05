@@ -16,7 +16,7 @@ type BoardRow = { id: string; workspace_id: string };
 export async function handleRemoveReaction(
   req: Request,
   commentId: string,
-  emoji: string,
+  emoji: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -25,7 +25,7 @@ export async function handleRemoveReaction(
   if (!comment) {
     return Response.json(
       { error: { code: 'comment-not-found', message: 'Comment not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -39,13 +39,13 @@ export async function handleRemoveReaction(
   if (!card || !board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   const membershipError = await requireWorkspaceMembership(
     req as WorkspaceScopedRequest,
-    board.workspace_id,
+    board.workspace_id
   );
   if (membershipError) return membershipError;
 
@@ -78,7 +78,7 @@ export async function handleRemoveReaction(
         JSON.stringify({
           type: 'comment_reaction_removed',
           payload: { card_id: comment.card_id, comment_id: commentId, emoji, user_id: actorId },
-        }),
+        })
       )
       .catch(() => {});
   }

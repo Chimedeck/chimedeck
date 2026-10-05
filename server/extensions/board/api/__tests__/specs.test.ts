@@ -1,0 +1,633 @@
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+
+// ── In-memory fixtures ─────────────────────────────────────────────────────────
+
+type BoardRow = {
+  id: string;
+  workspace_id: string;
+  state: 'ACTIVE' | 'ARCHIVED';
+  github_project_url: string | null;
+};
+
+let board: BoardRow;
+let authenticated = true;
+let callerRole: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER' | 'GUEST' = 'MEMBER';
+
+// Fixture manifest produced by the download+build steps.
+const FAKE_REPO_PATH = '/tmp/fake-repo';
+const FAKE_REF = 'main';
+const FAKE_FETCHED_AT = '2026-06-03T00:00:00.000Z';
+const FAKE_MANIFEST_ETAG = 'abc123def456';
+
+const FAKE_MANIFEST = {
+  ref: FAKE_REF,
+  fetchedAt: FAKE_FETCHED_AT,
+  files: [
+    { path: 'README.md', sizeBytes: 512 },
+    { path: 'docs/architecture.md', sizeBytes: 1024 },
+  ],
+  etag: FAKE_MANIFEST_ETAG,
+};
+
+// ── Import handlers with DI deps exposed ─────────────────────────────────────
+
+const { handleLoadSpecsManifest, specsLoadDeps } = await import('../specs/load');
+const { handleReadSpecsFile, specsReadDeps } = await import('../specs/read');
+const { handlePutSpecsFile, specsFileWriteDeps } = await import('../github/specs/file');
+const { handleCommitSpecs, specsCommitDeps } = await import('../github/specs/commit');
+
+// ── Shared dep reset ──────────────────────────────────────────────────────────
+
+function makeBoardAccessMock() {
+  return async (req: Request & { board?: BoardRow }, boardId: string) => {
+    if (board.id !== boardId) {
+      return Response.json({ error: { code: 'board-not-found' } }, { status: 404 });
+    }
+    req.board = board;
+    return null;
+  };
+}
+
+function makeAuthMock() {
+  return async (req: Request & { currentUser?: { id: string } }) => {
+    if (!authenticated) {
+      return Response.json({ name: 'unauthorized' }, { status: 401 });
+    }
+    req.currentUser = { id: 'user-1' };
+    return null;
+  };
+}
+
+function makeMembershipMock() {
+  return async (
+    req: Request & { callerRole?: string; workspaceId?: string },
+    workspaceId: string
+  ) => {
+    req.workspaceId = workspaceId;
+    req.callerRole = callerRole;
+    return null;
+  };
+}
+
+function makeRoleMock() {
+  return (req: { callerRole?: string }, minRole: string) => {
+    const ranks: Record<string, number> = { OWNER: 4, ADMIN: 3, MEMBER: 2, VIEWER: 1, GUEST: 0 };
+    const callerRank = ranks[req.callerRole ?? ''] ?? -1;
+    const minRank = ranks[minRole] ?? 0;
+    if (callerRank < minRank) {
+      return Response.json({ name: 'insufficient-role' }, { status: 403 });
+    }
+    return null;
+  };
+}
+
+function makeDownloadMock(repoPath = FAKE_REPO_PATH) {
+  return async () => ({ repoPath, ref: FAKE_REF, fetchedAt: FAKE_FETCHED_AT });
+}
+
+function makeBuildManifestMock() {
+  return async () => ({ ...FAKE_MANIFEST });
+}
+
+function makeReadFileMock(content = '# Hello World', etag = 'fileetag001') {
+  return async () => ({ content, etag, sizeBytes: content.length });
+}
+
+async function createTempRepo(initialContent = '# Hello World') {
+  const repoPath = await mkdtemp(join(tmpdir(), 'specs-worktree-'));
+  await mkdir(join(repoPath, 'specs'), { recursive: true });
+  await writeFile(join(repoPath, 'specs', 'guide.md'), initialContent);
+  return repoPath;
+}
+
+const tempRepos: string[] = [];
+
+afterEach(async () => {
+  while (tempRepos.length > 0) {
+    const repoPath = tempRepos.pop() as string;
+    await rm(repoPath, { recursive: true, force: true });
+  }
+});
+
+function makeResolvePathMock(ok = true, absolutePath = `${FAKE_REPO_PATH}/README.md`) {
+  return ({ filePath }: { repoPath: string; filePath: string }) => {
+    if (!ok || filePath.includes('..') || filePath.startsWith('/')) {
+      return { ok: false as const, reason: 'path-traversal-detected' };
+    }
+    return { ok: true as const, absolutePath };
+  };
+}
+
+function resetDeps() {
+  board = {
+    id: 'board-1',
+    workspace_id: 'ws-1',
+    state: 'ACTIVE',
+    github_project_url: 'https://github.com/orgs/journeyh/projects/12',
+  };
+  authenticated = true;
+  callerRole = 'MEMBER';
+
+  specsLoadDeps.authenticate = makeAuthMock();
+  specsLoadDeps.requireBoardAccess = makeBoardAccessMock();
+  specsLoadDeps.requireWorkspaceMembership = makeMembershipMock();
+  specsLoadDeps.requireRole = makeRoleMock();
+  specsLoadDeps.downloadRepositoryFromProjectUrl = makeDownloadMock();
+  specsLoadDeps.buildSpecsManifest = makeBuildManifestMock();
+  specsLoadDeps.now = () => new Date('2026-06-03T01:00:00.000Z');
+
+  specsReadDeps.authenticate = makeAuthMock();
+  specsReadDeps.requireBoardAccess = makeBoardAccessMock();
+  specsReadDeps.requireWorkspaceMembership = makeMembershipMock();
+  specsReadDeps.requireRole = makeRoleMock();
+  specsReadDeps.downloadRepositoryFromProjectUrl = makeDownloadMock();
+  specsReadDeps.buildSpecsManifest = makeBuildManifestMock();
+  specsReadDeps.readSpecsFile = makeReadFileMock();
+  specsReadDeps.resolveSpecsFilePath = makeResolvePathMock();
+  specsReadDeps.now = () => new Date('2026-06-03T01:00:00.000Z');
+
+  specsFileWriteDeps.authenticate = makeAuthMock();
+  specsFileWriteDeps.requireBoardAccess = makeBoardAccessMock();
+  specsFileWriteDeps.requireWorkspaceMembership = makeMembershipMock();
+  specsFileWriteDeps.requireRole = makeRoleMock();
+  specsFileWriteDeps.downloadRepositoryFromProjectUrl = makeDownloadMock();
+  specsFileWriteDeps.writeSpecsFile = async ({ repoPath, filePath, content, ifMatch }) => {
+    const { writeSpecsFile } = await import('../../mods/specs/write');
+    return writeSpecsFile({ repoPath, filePath, content, ifMatch });
+  };
+  specsFileWriteDeps.invalidateSpecsCachesForBoard = () => {};
+
+  specsCommitDeps.authenticate = makeAuthMock();
+  specsCommitDeps.requireBoardAccess = makeBoardAccessMock();
+  specsCommitDeps.requireWorkspaceMembership = makeMembershipMock();
+  specsCommitDeps.requireRole = makeRoleMock();
+  specsCommitDeps.downloadRepositoryFromProjectUrl = makeDownloadMock();
+  specsCommitDeps.getGithubInstallationAccessToken = async () => 'installation-token';
+  specsCommitDeps.normalizeGithubProjectUrl = ({ value }: { value: string }) => ({
+    ok: true as const,
+    value: {
+      normalizedUrl: value,
+      hash: 'hash',
+      reference: {
+        scope: 'repo' as const,
+        owner: 'journeyhorizon',
+        repository: 'agentic-trello-replacement',
+        projectNumber: 12,
+      },
+    },
+  });
+  specsCommitDeps.commitSpecsChanges = async () => {
+    throw new Error('commit-mock-not-configured');
+  };
+}
+
+beforeEach(() => {
+  // Clear module-level caches between tests.
+  const {
+    specsManifestCache,
+    specsManifestInflight,
+    specsFileCache,
+    specsFileInflight,
+  } = require('../../mods/specs/cache');
+  specsManifestCache.clear();
+  specsManifestInflight.clear();
+  specsFileCache.clear();
+  specsFileInflight.clear();
+
+  resetDeps();
+});
+
+// ── GET /api/v1/boards/:id/specs/manifest ────────────────────────────────────
+
+describe('GET /api/v1/boards/:boardId/specs/manifest', () => {
+  it('returns the manifest for an authenticated member', async () => {
+    const res = await handleLoadSpecsManifest(
+      new Request('http://localhost/api/v1/boards/board-1/specs/manifest'),
+      'board-1'
+    );
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { data: typeof FAKE_MANIFEST };
+    expect(body.data.etag).toBe(FAKE_MANIFEST_ETAG);
+    expect(body.data.files).toHaveLength(2);
+    expect(res.headers.get('etag')).toBe(`"${FAKE_MANIFEST_ETAG}"`);
+  });
+
+  it('returns 304 when ETag matches If-None-Match', async () => {
+    const res = await handleLoadSpecsManifest(
+      new Request('http://localhost/api/v1/boards/board-1/specs/manifest', {
+        headers: { 'If-None-Match': `"${FAKE_MANIFEST_ETAG}"` },
+      }),
+      'board-1'
+    );
+
+    expect(res.status).toBe(304);
+  });
+
+  it('returns 401 for unauthenticated requests', async () => {
+    authenticated = false;
+    const res = await handleLoadSpecsManifest(
+      new Request('http://localhost/api/v1/boards/board-1/specs/manifest'),
+      'board-1'
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 403 for guests', async () => {
+    callerRole = 'GUEST';
+    const res = await handleLoadSpecsManifest(
+      new Request('http://localhost/api/v1/boards/board-1/specs/manifest'),
+      'board-1'
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 403 with the configured-repository hint when no github_project_url is configured', async () => {
+    board.github_project_url = null;
+    const res = await handleLoadSpecsManifest(
+      new Request('http://localhost/api/v1/boards/board-1/specs/manifest'),
+      'board-1'
+    );
+    expect(res.status).toBe(403);
+    const body = (await res.json()) as { name: string; data: { message: string } };
+    expect(body.name).toBe('specs-not-configured');
+    expect(body.data.message).toContain('configure your Github documentation');
+  });
+
+  it('returns 403 with the access-denied hint when the manifest cannot be loaded', async () => {
+    specsLoadDeps.downloadRepositoryFromProjectUrl = async () => {
+      throw new Error('github-repository-download-failed');
+    };
+    const res = await handleLoadSpecsManifest(
+      new Request('http://localhost/api/v1/boards/board-1/specs/manifest'),
+      'board-1'
+    );
+    expect(res.status).toBe(403);
+    const body = (await res.json()) as { name: string; data: { message: string } };
+    expect(body.name).toBe('specs-load-failed');
+    expect(body.data.message).toContain('do not have access to this respository');
+  });
+
+  it('deduplicates in-flight manifest requests for the same board+url', async () => {
+    let resolveTask!: () => void;
+    let callCount = 0;
+
+    specsLoadDeps.downloadRepositoryFromProjectUrl = () => {
+      callCount++;
+      return new Promise<{ repoPath: string; ref: string; fetchedAt: string }>((resolve) => {
+        resolveTask = () => {
+          resolve({ repoPath: FAKE_REPO_PATH, ref: FAKE_REF, fetchedAt: FAKE_FETCHED_AT });
+        };
+      });
+    };
+
+    // Fire two concurrent requests — only one download should be triggered.
+    const p1 = handleLoadSpecsManifest(
+      new Request('http://localhost/api/v1/boards/board-1/specs/manifest'),
+      'board-1'
+    );
+    const p2 = handleLoadSpecsManifest(
+      new Request('http://localhost/api/v1/boards/board-1/specs/manifest'),
+      'board-1'
+    );
+
+    // Flush microtasks so both handlers reach the downloadRepositoryFromProjectUrl call.
+    await new Promise((r) => setTimeout(r, 0));
+
+    resolveTask();
+    await Promise.all([p1, p2]);
+
+    expect(callCount).toBe(1);
+  });
+});
+
+// ── GET /api/v1/boards/:id/specs/files?path=... ───────────────────────────────
+
+describe('GET /api/v1/boards/:boardId/specs/files', () => {
+  it('returns file content for a valid manifest path', async () => {
+    const res = await handleReadSpecsFile(
+      new Request('http://localhost/api/v1/boards/board-1/specs/files?path=README.md'),
+      'board-1'
+    );
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { data: { path: string; content: string; etag: string } };
+    expect(body.data.path).toBe('README.md');
+    expect(body.data.content).toBe('# Hello World');
+    expect(body.data.etag).toBe('fileetag001');
+    expect(res.headers.get('etag')).toBe('"fileetag001"');
+  });
+
+  it('returns 304 when file ETag matches If-None-Match', async () => {
+    const res = await handleReadSpecsFile(
+      new Request('http://localhost/api/v1/boards/board-1/specs/files?path=README.md', {
+        headers: { 'If-None-Match': '"fileetag001"' },
+      }),
+      'board-1'
+    );
+    expect(res.status).toBe(304);
+  });
+
+  it('returns 400 when path query param is missing', async () => {
+    const res = await handleReadSpecsFile(
+      new Request('http://localhost/api/v1/boards/board-1/specs/files'),
+      'board-1'
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { name: string };
+    expect(body.name).toBe('missing-path');
+  });
+
+  it('rejects path traversal attempts (..)', async () => {
+    specsReadDeps.resolveSpecsFilePath = makeResolvePathMock(false);
+
+    const res = await handleReadSpecsFile(
+      new Request('http://localhost/api/v1/boards/board-1/specs/files?path=../../../etc/passwd'),
+      'board-1'
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { name: string };
+    expect(body.name).toBe('path-traversal-rejected');
+  });
+
+  it('returns 404 for a path not in the manifest', async () => {
+    const res = await handleReadSpecsFile(
+      new Request('http://localhost/api/v1/boards/board-1/specs/files?path=secret.md'),
+      'board-1'
+    );
+    expect(res.status).toBe(404);
+    const body = (await res.json()) as { name: string };
+    expect(body.name).toBe('specs-file-not-found');
+  });
+
+  it('returns 401 for unauthenticated requests', async () => {
+    authenticated = false;
+    const res = await handleReadSpecsFile(
+      new Request('http://localhost/api/v1/boards/board-1/specs/files?path=README.md'),
+      'board-1'
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 403 for guests', async () => {
+    callerRole = 'GUEST';
+    const res = await handleReadSpecsFile(
+      new Request('http://localhost/api/v1/boards/board-1/specs/files?path=README.md'),
+      'board-1'
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 403 when no github_project_url is configured', async () => {
+    board.github_project_url = null;
+    const res = await handleReadSpecsFile(
+      new Request('http://localhost/api/v1/boards/board-1/specs/files?path=README.md'),
+      'board-1'
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 403 with the access-denied hint when the manifest cannot be loaded', async () => {
+    specsLoadDeps.downloadRepositoryFromProjectUrl = async () => {
+      throw new Error('github-repository-download-failed');
+    };
+    const res = await handleReadSpecsFile(
+      new Request('http://localhost/api/v1/boards/board-1/specs/files?path=README.md'),
+      'board-1'
+    );
+    expect(res.status).toBe(403);
+    const body = (await res.json()) as { name: string; data: { message: string } };
+    expect(body.name).toBe('specs-load-failed');
+    expect(body.data.message).toContain('do not have access to this respository');
+  });
+});
+
+// ── PUT /api/v1/boards/:id/github/specs/file ─────────────────────────────────
+
+describe('PUT /api/v1/boards/:boardId/github/specs/file', () => {
+  it('saves markdown files with an If-Match guard', async () => {
+    const repoPath = await createTempRepo('# Hello World');
+    tempRepos.push(repoPath);
+    specsFileWriteDeps.downloadRepositoryFromProjectUrl = makeDownloadMock(repoPath);
+
+    const { readSpecsFile } = await import('../../mods/specs/read');
+    const current = await readSpecsFile({ absolutePath: join(repoPath, 'specs', 'guide.md') });
+
+    const res = await handlePutSpecsFile(
+      new Request('http://localhost/api/v1/boards/board-1/github/specs/file', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'If-Match': `"${current.etag}"`,
+        },
+        body: JSON.stringify({ path: 'specs/guide.md', content: '# Updated' }),
+      }),
+      'board-1'
+    );
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      data: { path: string; content: string; etag: string; created: boolean };
+    };
+    expect(body.data.path).toBe('specs/guide.md');
+    expect(body.data.content).toBe('# Updated');
+    expect(body.data.created).toBe(false);
+    expect(res.headers.get('etag')).toBe(`"${body.data.etag}"`);
+    expect(await readFile(join(repoPath, 'specs', 'guide.md'), 'utf8')).toBe('# Updated');
+  });
+
+  it('returns 412 when the If-Match precondition is stale', async () => {
+    const repoPath = await createTempRepo('# Hello World');
+    tempRepos.push(repoPath);
+    specsFileWriteDeps.downloadRepositoryFromProjectUrl = makeDownloadMock(repoPath);
+
+    const res = await handlePutSpecsFile(
+      new Request('http://localhost/api/v1/boards/board-1/github/specs/file', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'If-Match': '"stale-etag"',
+        },
+        body: JSON.stringify({ path: 'specs/guide.md', content: '# Updated' }),
+      }),
+      'board-1'
+    );
+
+    expect(res.status).toBe(412);
+    const body = (await res.json()) as { name: string };
+    expect(body.name).toBe('stale-specs-file-precondition');
+  });
+
+  it('returns 412 when If-Match is missing for an existing file', async () => {
+    const repoPath = await createTempRepo('# Hello World');
+    tempRepos.push(repoPath);
+    specsFileWriteDeps.downloadRepositoryFromProjectUrl = makeDownloadMock(repoPath);
+
+    const res = await handlePutSpecsFile(
+      new Request('http://localhost/api/v1/boards/board-1/github/specs/file', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: 'specs/guide.md', content: '# Updated' }),
+      }),
+      'board-1'
+    );
+
+    expect(res.status).toBe(412);
+    const body = (await res.json()) as { name: string };
+    expect(body.name).toBe('missing-specs-file-precondition');
+  });
+
+  it('returns 422 for non-markdown writes', async () => {
+    const repoPath = await createTempRepo('# Hello World');
+    tempRepos.push(repoPath);
+    specsFileWriteDeps.downloadRepositoryFromProjectUrl = makeDownloadMock(repoPath);
+
+    const res = await handlePutSpecsFile(
+      new Request('http://localhost/api/v1/boards/board-1/github/specs/file', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: 'specs/guide.txt', content: 'plain text' }),
+      }),
+      'board-1'
+    );
+
+    expect(res.status).toBe(422);
+    const body = (await res.json()) as { name: string };
+    expect(body.name).toBe('specs-file-must-be-markdown');
+  });
+});
+
+// ── POST /api/v1/boards/:id/github/specs/commit ───────────────────────────────
+
+describe('POST /api/v1/boards/:boardId/github/specs/commit', () => {
+  it('returns a pending commit response when push credentials are unavailable', async () => {
+    const repoPath = await createTempRepo('# Hello World');
+    tempRepos.push(repoPath);
+    specsCommitDeps.downloadRepositoryFromProjectUrl = makeDownloadMock(repoPath);
+    specsCommitDeps.getGithubInstallationAccessToken = async () => {
+      throw new Error('github-app-not-configured');
+    };
+
+    let capturedInput: Parameters<typeof specsCommitDeps.commitSpecsChanges>[0] | null = null;
+    specsCommitDeps.commitSpecsChanges = async (input) => {
+      capturedInput = input;
+      return {
+        commitHash: 'commit-sha-1',
+        pushStatus: 'pending',
+        branch: input.branch,
+        changedFiles: input.changedFiles,
+        footer: {
+          actorId: input.actorId,
+          boardId: input.boardId,
+          botAlias: input.botAlias,
+        },
+      };
+    };
+
+    const res = await handleCommitSpecs(
+      new Request('http://localhost/api/v1/boards/board-1/github/specs/commit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: 'Update specs',
+          changedFiles: ['specs/guide.md'],
+        }),
+      }),
+      'board-1'
+    );
+
+    expect(res.status).toBe(201);
+    const body = (await res.json()) as {
+      data: {
+        commitHash: string;
+        pushStatus: 'pushed' | 'pending';
+        footer: { actorId: string; boardId: string; botAlias: string };
+      };
+    };
+    expect(body.data.commitHash).toBe('commit-sha-1');
+    expect(body.data.pushStatus).toBe('pending');
+    expect(body.data.footer.actorId).toBe('user-1');
+    expect(body.data.footer.boardId).toBe('board-1');
+    expect(body.data.footer.botAlias).toBe('github-app[bot]');
+    expect(capturedInput?.pushToken).toBeNull();
+  });
+
+  it('returns a pushed commit response when installation token is available', async () => {
+    const repoPath = await createTempRepo('# Hello World');
+    tempRepos.push(repoPath);
+    specsCommitDeps.downloadRepositoryFromProjectUrl = makeDownloadMock(repoPath);
+    specsCommitDeps.getGithubInstallationAccessToken = async () => 'installation-token';
+
+    let capturedInput: Parameters<typeof specsCommitDeps.commitSpecsChanges>[0] | null = null;
+    specsCommitDeps.commitSpecsChanges = async (input) => {
+      capturedInput = input;
+      return {
+        commitHash: 'commit-sha-2',
+        pushStatus: 'pushed',
+        branch: input.branch,
+        changedFiles: input.changedFiles,
+        footer: {
+          actorId: input.actorId,
+          boardId: input.boardId,
+          botAlias: input.botAlias,
+        },
+      };
+    };
+
+    const res = await handleCommitSpecs(
+      new Request('http://localhost/api/v1/boards/board-1/github/specs/commit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: 'Update specs',
+          changedFiles: ['specs/guide.md'],
+        }),
+      }),
+      'board-1'
+    );
+
+    expect(res.status).toBe(201);
+    const body = (await res.json()) as {
+      data: {
+        commitHash: string;
+        pushStatus: 'pushed' | 'pending';
+        footer: { actorId: string; boardId: string; botAlias: string };
+      };
+    };
+    expect(body.data.commitHash).toBe('commit-sha-2');
+    expect(body.data.pushStatus).toBe('pushed');
+    expect(body.data.footer.actorId).toBe('user-1');
+    expect(body.data.footer.boardId).toBe('board-1');
+    expect(body.data.footer.botAlias).toBe('github-app[bot]');
+    expect(capturedInput?.pushToken).toBe('installation-token');
+  });
+
+  it('returns 422 when a non-markdown file is passed to commit', async () => {
+    const repoPath = await createTempRepo('# Hello World');
+    tempRepos.push(repoPath);
+    specsCommitDeps.downloadRepositoryFromProjectUrl = makeDownloadMock(repoPath);
+    specsCommitDeps.getGithubInstallationAccessToken = async () => 'installation-token';
+    specsCommitDeps.commitSpecsChanges = async () => {
+      throw new Error('specs-file-must-be-markdown');
+    };
+
+    const res = await handleCommitSpecs(
+      new Request('http://localhost/api/v1/boards/board-1/github/specs/commit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: 'Update specs',
+          changedFiles: ['specs/guide.txt'],
+        }),
+      }),
+      'board-1'
+    );
+
+    expect(res.status).toBe(422);
+    const body = (await res.json()) as { name: string };
+    expect(body.name).toBe('specs-file-must-be-markdown');
+  });
+});

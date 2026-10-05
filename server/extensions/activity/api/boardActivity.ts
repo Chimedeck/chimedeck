@@ -39,17 +39,16 @@ async function enrichRowsWithCardTitle(rows: unknown[]): Promise<unknown[]> {
   const typedRows = rows as ActivityRow[];
   const cardIds = Array.from(
     new Set(
-      typedRows
-        .map((row) => getCardIdFromActivity(row))
-        .filter((id): id is string => Boolean(id))
+      typedRows.map((row) => getCardIdFromActivity(row)).filter((id): id is string => Boolean(id))
     )
   );
 
   const cardsById = new Map<string, string>();
   if (cardIds.length > 0) {
-    const cardRows = await db('cards')
-      .whereIn('id', cardIds)
-      .select('id', 'title') as Array<{ id: string; title: string | null }>;
+    const cardRows = (await db('cards').whereIn('id', cardIds).select('id', 'title')) as Array<{
+      id: string;
+      title: string | null;
+    }>;
 
     for (const card of cardRows) {
       if (card.title) {
@@ -92,7 +91,7 @@ export async function handleBoardActivity(req: Request, boardId: string): Promis
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

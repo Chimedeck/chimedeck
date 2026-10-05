@@ -1,5 +1,3 @@
-// POST /api/v1/lists/:listId/cards — create a new card; min role: MEMBER.
-import { randomUUID } from 'node:crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { dispatchEvent } from '../../../mods/events/dispatch';
@@ -8,42 +6,22 @@ import {
   requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
-import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
-import { sanitizeText, sanitizeRichText } from '../../../common/sanitize';
+import {
+  requireBoardWritable,
+  type BoardScopedRequest,
+} from '../../board/middlewares/requireBoardWritable';
 import { emitCardCreated } from '../../activity/mods/createActivityEvent';
-import { resolveCoverImageUrl } from '../../../common/cards/cover';
-import { generateUniqueShortId } from '../../../common/ids/shortId';
-
-type ListRow = {
-  id: string;
-  board_id: string;
-  title: string | null;
-};
-
-type BoardRow = {
-  id: string;
-  workspace_id: string;
-};
-
-type CardRow = {
-  id: string;
-  list_id: string;
-  title: string;
-  position: string;
-  archived: boolean;
-  cover_attachment_id: string | null;
-};
+import { createCard } from '../mods/create';
 
 export async function handleCreateCard(req: Request, listId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const list = await db<ListRow>('lists').where({ id: listId }).first();
+  const list = await db('lists').where({ id: listId }).first();
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'List not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -51,8 +29,7 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
   const writableError = await requireBoardWritable(boardReq, list.board_id);
   if (writableError) return writableError;
 
-  const writableBoardReq = boardReq as BoardScopedRequest & { board: BoardRow };
-  const board = writableBoardReq.board;
+  const board = boardReq.board!;
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -67,21 +44,21 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
     return Response.json(
       { error: { code: 'bad-request', message: 'title is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (body.title.trim().length > 512) {
     return Response.json(
       { error: { code: 'card-title-too-long', message: 'title must be ≤ 512 characters' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -89,50 +66,38 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
     const parsed = new Date(body.start_date);
     if (Number.isNaN(parsed.getTime())) {
       return Response.json(
-        { error: { code: 'bad-request', message: 'start_date must be a valid ISO 8601 date string or null' } },
-        { status: 400 },
+        {
+          error: {
+            code: 'bad-request',
+            message: 'start_date must be a valid ISO 8601 date string or null',
+          },
+        },
+        { status: 400 }
       );
     }
   }
 
-  // Append to end of list
-  const lastCard = await db<CardRow>('cards')
-    .where({ list_id: listId, archived: false })
-    .orderBy('position', 'desc')
-    .first();
-
-  const position = between(lastCard ? lastCard.position : '', HIGH_SENTINEL);
-
-  const id = randomUUID();
-  const shortId = await generateUniqueShortId('cards');
-  await db('cards').insert({
-    id,
-    short_id: shortId,
-    list_id: listId,
-    title: sanitizeText(body.title.trim()),
-    description: body.description ? sanitizeRichText(body.description.trim()) : null,
-    position,
-    archived: false,
-    start_date: body.start_date ?? null,
+  const cardWithCover = await createCard({
+    listId,
+    title: body.title.trim(),
+    description: body.description ? body.description.trim() : null,
+    startDate: body.start_date ?? null,
   });
-
-  const card = await db<CardRow>('cards').where({ id }).first();
-  if (!card) {
-    return Response.json(
-      { error: { code: 'card-not-found', message: 'Card not found after creation' } },
-      { status: 404 },
-    );
-  }
-  const cardWithCover = await resolveCoverImageUrl(card);
 
   const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
 
   // Broadcast the full card object so clients can update their local state immediately
   await Promise.all([
-    dispatchEvent({ type: 'card.created', boardId: list.board_id, entityId: id, actorId, payload: { card: cardWithCover, listId } }),
+    dispatchEvent({
+      type: 'card.created',
+      boardId: list.board_id,
+      entityId: cardWithCover.id,
+      actorId,
+      payload: { card: cardWithCover, listId },
+    }),
     emitCardCreated({
       actorId,
-      cardId: id,
+      cardId: cardWithCover.id,
       cardTitle: cardWithCover.title,
       listId,
       listName: list.title ?? null,

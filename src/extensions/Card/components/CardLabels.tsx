@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { Label } from '../api';
 import { LabelChip } from './LabelChip';
 import Button from '../../../common/components/Button';
+import translations from '../translations/en.json';
 
 const PRESET_COLORS = [
   { name: 'Slate', hex: '#64748b' },
@@ -64,7 +65,7 @@ const CardLabels = ({
 
   // Labels not yet assigned, filtered by name search
   const unassigned = allLabels.filter(
-    (l) => !assignedIds.has(l.id) && l.name.toLowerCase().includes(newLabelName.toLowerCase()),
+    (l) => !assignedIds.has(l.id) && l.name.toLowerCase().includes(newLabelName.toLowerCase())
   );
 
   return (
@@ -75,7 +76,7 @@ const CardLabels = ({
           <LabelChip
             key={label.id}
             label={label}
-            onRemove={disabled ? undefined : () => void onDetach(label.id)}
+            onRemove={disabled ? undefined : () => onDetach(label.id)}
           />
         ))}
       </div>
@@ -85,7 +86,9 @@ const CardLabels = ({
           <button
             type="button"
             className="text-xs text-muted hover:text-base flex items-center gap-1 transition-colors"
-            onClick={() => { setPickerOpen((v) => !v); }}
+            onClick={() => {
+              setPickerOpen((v) => !v);
+            }}
             aria-haspopup="true"
             aria-expanded={pickerOpen}
           >
@@ -97,17 +100,23 @@ const CardLabels = ({
               {/* Backdrop to close picker */}
               <div
                 className="fixed inset-0 z-10"
-                onClick={() => { setPickerOpen(false); }}
+                onClick={() => {
+                  setPickerOpen(false);
+                }}
                 aria-hidden="true"
               />
               <div className="absolute left-0 top-6 z-20 w-64 rounded-xl bg-bg-surface border border-border shadow-2xl p-3 space-y-3">
                 {/* Search / create input */}
                 <input
                   className="w-full bg-bg-overlay border border-border rounded-lg px-2 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Label name…"
+                  placeholder={translations['card.labels.namePlaceholder']}
                   value={newLabelName}
-                  onChange={(e) => { setNewLabelName(e.target.value); }}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); }}
+                  onChange={(e) => {
+                    setNewLabelName(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleCreate();
+                  }}
                   autoFocus
                 />
 
@@ -121,10 +130,14 @@ const CardLabels = ({
                         type="button"
                         title={c.name}
                         className={`h-7 w-full rounded-md transition-colors focus:outline-none ${
-                          selectedColor === c.hex ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-800' : ''
+                          selectedColor === c.hex
+                            ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-800'
+                            : ''
                         }`}
                         style={{ backgroundColor: c.hex }}
-                        onClick={() => { setSelectedColor(c.hex); }}
+                        onClick={() => {
+                          setSelectedColor(c.hex);
+                        }}
                         aria-label={c.name}
                       />
                     ))}
@@ -137,7 +150,7 @@ const CardLabels = ({
                     variant="primary"
                     type="button"
                     className="w-full py-1.5 rounded-lg text-sm"
-                    onClick={() => void handleCreate()}
+                    onClick={handleCreate}
                     disabled={creating}
                   >
                     {creating ? 'Creating…' : `Create "${newLabelName.trim()}"`}
@@ -153,7 +166,7 @@ const CardLabels = ({
                         key={label.id}
                         type="button"
                         className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-base hover:bg-bg-overlay transition-colors"
-                        onClick={() => void handleToggle(label)}
+                        onClick={() => handleToggle(label)}
                       >
                         <span
                           className="h-3 w-3 rounded-full flex-shrink-0"
@@ -174,7 +187,7 @@ const CardLabels = ({
                         key={label.id}
                         type="button"
                         className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-base hover:bg-bg-overlay transition-colors"
-                        onClick={() => void handleToggle(label)}
+                        onClick={() => handleToggle(label)}
                       >
                         <span
                           className="h-3 w-3 rounded-full flex-shrink-0"

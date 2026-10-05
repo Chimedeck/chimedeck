@@ -24,7 +24,11 @@ interface Props {
 
 function formatDate(iso: string | null): string {
   if (!iso) return '';
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 function isOverdue(iso: string | null): boolean {
@@ -49,7 +53,9 @@ const TableRow = ({ row, onCardClick }: Props) => {
         <Button
           variant="ghost"
           className="text-sm font-semibold text-base hover:text-primary justify-start underline-offset-2 hover:underline px-0 py-0"
-          onClick={() => { onCardClick(row.id); }}
+          onClick={() => {
+            onCardClick(row.id);
+          }}
           aria-label={`${translations['TableView.ariaOpenCard']} ${row.title}`}
           data-testid={`table-card-title-${row.id}`}
         >
@@ -62,10 +68,14 @@ const TableRow = ({ row, onCardClick }: Props) => {
         {(() => {
           const t = (row.listTitle ?? '').toLowerCase();
           let cls = 'text-muted';
-          if (t.includes('done') || t.includes('complete') || t.includes('finished')) cls = 'text-success font-medium';
-          else if (t.includes('backlog') || t.includes('todo') || t.includes('to do')) cls = 'text-warning font-medium';
-          else if (t.includes('progress') || t.includes('doing') || t.includes('active')) cls = 'text-info font-medium';
-          else if (t.includes('review') || t.includes('verify') || t.includes('test')) cls = 'text-accent font-medium';
+          if (t.includes('done') || t.includes('complete') || t.includes('finished'))
+            cls = 'text-success font-medium';
+          else if (t.includes('backlog') || t.includes('todo') || t.includes('to do'))
+            cls = 'text-warning font-medium';
+          else if (t.includes('progress') || t.includes('doing') || t.includes('active'))
+            cls = 'text-info font-medium';
+          else if (t.includes('review') || t.includes('verify') || t.includes('test'))
+            cls = 'text-accent font-medium';
           return <span className={cls}>{row.listTitle}</span>;
         })()}
       </td>
@@ -103,7 +113,10 @@ const TableRow = ({ row, onCardClick }: Props) => {
           {overflowCount > 0 && (
             <span
               className="inline-block rounded px-1.5 py-0.5 text-xs font-medium bg-black/[0.06] text-gray-600"
-              title={row.labels.slice(MAX_VISIBLE_LABELS).map((l) => l.name).join(', ')}
+              title={row.labels
+                .slice(MAX_VISIBLE_LABELS)
+                .map((l) => l.name)
+                .join(', ')}
             >
               +{overflowCount}
             </span>
@@ -125,10 +138,17 @@ const TableRow = ({ row, onCardClick }: Props) => {
       </td>
 
       {/* Value — right-aligned for financial readability */}
-      <td className="px-4 py-3 text-sm text-right font-mono" data-testid={`table-cell-value-${row.id}`}>
+      <td
+        className="px-4 py-3 text-sm text-right font-mono"
+        data-testid={`table-cell-value-${row.id}`}
+      >
         {row.amount != null ? (
           <span className="text-primary font-medium">
-            {row.currency ?? ''}{' '}{Number.parseFloat(row.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {row.currency ?? ''}{' '}
+            {Number.parseFloat(row.amount).toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </span>
         ) : (
           <span className="text-muted">—</span>

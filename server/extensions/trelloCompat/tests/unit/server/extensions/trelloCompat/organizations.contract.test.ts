@@ -15,7 +15,7 @@ describe('trelloCompat organizations adapter contract', () => {
           { user_id: 'member-admin', role: 'ADMIN' },
           { user_id: 'member-viewer', role: 'VIEWER' },
         ],
-      }),
+      })
     );
 
     expect(organization).toMatchObject({
@@ -102,13 +102,13 @@ describe('trelloCompat organizations adapter contract', () => {
       createOrganizationFixture({
         visibility: 'PUBLIC',
         website: 'https://example.com',
-      }),
+      })
     );
     const privateOrg = serializeOrganization(
       createOrganizationFixture({
         visibility: 'WORKSPACE',
         website: null,
-      }),
+      })
     );
 
     expect(publicOrg.prefs.permissionLevel).toBe('public');
@@ -122,7 +122,7 @@ describe('trelloCompat organizations adapter contract', () => {
     const organization = serializeOrganization(
       createOrganizationFixture({
         website: '   ',
-      }),
+      })
     );
 
     expect(organization.website).toBeNull();
@@ -169,7 +169,7 @@ describe('trelloCompat organizations adapter contract', () => {
           { user_id: 'member-viewer', role: 'VIEWER' },
           { user_id: 'member-normal', role: 'MEMBER' },
         ],
-      }),
+      })
     );
 
     expect(organization.memberships).toHaveLength(4);

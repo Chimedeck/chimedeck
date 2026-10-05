@@ -45,7 +45,7 @@ const BoardActivityPanel = ({ boardId }: Props) => {
         setLoading(false);
       }
     },
-    [boardId],
+    [boardId]
   );
 
   useEffect(() => {

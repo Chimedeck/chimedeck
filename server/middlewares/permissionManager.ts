@@ -51,12 +51,12 @@ export interface WorkspaceScopedRequest extends AuthenticatedRequest {
 // Returns null on success (populates req.workspaceId and req.callerRole), or a 403/404 Response.
 export async function requireWorkspaceMembership(
   req: WorkspaceScopedRequest,
-  workspaceId: string,
+  workspaceId: string
 ): Promise<Response | null> {
   if (!req.currentUser) {
     return Response.json(
       { error: { code: 'unauthorized', message: 'Authentication required' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -64,14 +64,12 @@ export async function requireWorkspaceMembership(
     .where({ user_id: req.currentUser.id, workspace_id: workspaceId })
     .select('role');
 
-  const resolvedRole = resolveHighestRole(
-    memberships.map((m: { role: string }) => m.role),
-  );
+  const resolvedRole = resolveHighestRole(memberships.map((m: { role: string }) => m.role));
 
   if (!resolvedRole) {
     return Response.json(
       { error: { code: 'insufficient-role', message: 'You are not a member of this workspace' } },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -82,14 +80,11 @@ export async function requireWorkspaceMembership(
 
 // Returns null on success, or a 403 Response when caller lacks the minimum role.
 // Must be called after requireWorkspaceMembership() has populated req.callerRole.
-export function requireRole(
-  req: WorkspaceScopedRequest,
-  minRole: Role,
-): Response | null {
+export function requireRole(req: WorkspaceScopedRequest, minRole: Role): Response | null {
   if (!req.callerRole || !hasRole(req.callerRole, minRole)) {
     return Response.json(
       { error: { code: 'insufficient-role', message: `Requires at least ${minRole} role` } },
-      { status: 403 },
+      { status: 403 }
     );
   }
   return null;
@@ -100,12 +95,12 @@ export function requireRole(
 // Must be called after requireWorkspaceMembership() has populated req.callerRole and req.currentUser.
 export async function requireMemberOrBoardGuestMember(
   req: WorkspaceScopedRequest,
-  boardId: string,
+  boardId: string
 ): Promise<Response | null> {
   if (!req.callerRole) {
     return Response.json(
       { error: { code: 'insufficient-role', message: 'Requires at least MEMBER role' } },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -125,6 +120,6 @@ export async function requireMemberOrBoardGuestMember(
 
   return Response.json(
     { error: { code: 'insufficient-role', message: 'Requires at least MEMBER role' } },
-    { status: 403 },
+    { status: 403 }
   );
 }

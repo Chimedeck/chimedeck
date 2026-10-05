@@ -10,47 +10,12 @@ import {
   requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
-import { s3ServerClient, s3Config } from '../../common/config/s3';
+import { s3Client, s3Config } from '../../common/config/s3';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from '../../config/allowedTypes';
 import { resolveCardId } from '../../../../common/ids/resolveEntityId';
 import { generateUniqueShortId } from '../../../../common/ids/shortId';
-import { buildUploadS3Key } from '../uploadKey';
-
-interface MultipartStartBody {
-  filename?: string;
-  mimeType?: string;
-  sizeBytes?: number;
-}
-
-interface CardRow {
-  id: string;
-  list_id: string;
-}
-
-interface ListRow {
-  id: string;
-  board_id: string;
-}
-
-interface BoardRow {
-  id: string;
-  workspace_id: string;
-}
-
-interface PendingAttachmentRow {
-  id: string;
-  short_id: string;
-  card_id: string;
-  uploaded_by: string;
-  name: string;
-  type: 'FILE';
-  s3_key: string;
-  s3_bucket: string;
-  mime_type: string;
-  size_bytes: number;
-  status: 'PENDING';
-  created_at: string;
-}
+import { applyLimitGuard } from '../../../../middlewares/limitGuard';
+import { getStorageBytesUsed } from '../../../subscription/common/usage';
 
 export async function handleMultipartStart(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -61,38 +26,47 @@ export async function handleMultipartStart(req: Request, cardId: string): Promis
     return Response.json({ name: 'card-not-found', data: { cardId } }, { status: 404 });
   }
 
-  let body: MultipartStartBody;
+  let body: { filename?: string; mimeType?: string; sizeBytes?: number };
   try {
-    body = (await req.json()) as MultipartStartBody;
+    body = (await req.json()) as typeof body;
   } catch {
-    return Response.json({ name: 'bad-request', data: { message: 'Invalid JSON body' } }, { status: 400 });
+    return Response.json(
+      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { status: 400 }
+    );
   }
 
   if (!body.filename || !body.mimeType || typeof body.sizeBytes !== 'number') {
     return Response.json(
       { name: 'bad-request', data: { message: 'filename, mimeType, and sizeBytes are required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!ALLOWED_MIME_TYPES.includes(body.mimeType)) {
-    return Response.json({ name: 'mime-type-not-allowed', data: { mimeType: body.mimeType } }, { status: 400 });
+    return Response.json(
+      { name: 'mime-type-not-allowed', data: { mimeType: body.mimeType } },
+      { status: 400 }
+    );
   }
 
   if (body.sizeBytes > MAX_FILE_SIZE_BYTES) {
     return Response.json(
-      { name: 'file-too-large', data: { sizeBytes: body.sizeBytes, maxBytes: MAX_FILE_SIZE_BYTES } },
-      { status: 413 },
+      {
+        name: 'file-too-large',
+        data: { sizeBytes: body.sizeBytes, maxBytes: MAX_FILE_SIZE_BYTES },
+      },
+      { status: 413 }
     );
   }
 
-  const card = await db<CardRow>('cards').where({ id: resolvedCardId }).first();
+  const card = await db('cards').where({ id: resolvedCardId }).first();
   if (!card) {
     return Response.json({ name: 'card-not-found', data: { cardId } }, { status: 404 });
   }
 
-  const list = await db<ListRow>('lists').where({ id: card.list_id }).first();
-  const board = list ? await db<BoardRow>('boards').where({ id: list.board_id }).first() : null;
+  const list = await db('lists').where({ id: card.list_id }).first();
+  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
     return Response.json({ name: 'board-not-found', data: {} }, { status: 404 });
   }
@@ -103,15 +77,18 @@ export async function handleMultipartStart(req: Request, cardId: string): Promis
   const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
-  const actor = (req as AuthenticatedRequest).currentUser;
-  if (!actor) {
-    return Response.json({ name: 'unauthorized', data: { message: 'Authentication required' } }, { status: 401 });
-  }
+  const storageBytes = await getStorageBytesUsed(board.workspace_id);
+  const limitError = await applyLimitGuard({
+    workspaceId: board.workspace_id,
+    limitKey: 'maxStorageBytes',
+    currentUsage: storageBytes + body.sizeBytes,
+  });
+  if (limitError) return limitError;
 
-  const actorId = actor.id;
+  const actorId = (req as AuthenticatedRequest).currentUser!.id;
   const attachmentId = randomUUID();
   const shortId = await generateUniqueShortId('attachments');
-  const s3Key = buildUploadS3Key(resolvedCardId, attachmentId, body.filename);
+  const s3Key = `attachments/${resolvedCardId}/${attachmentId}/${body.filename}`;
 
   const createCmd = new CreateMultipartUploadCommand({
     Bucket: s3Config.bucket,
@@ -121,15 +98,18 @@ export async function handleMultipartStart(req: Request, cardId: string): Promis
 
   let uploadId: string;
   try {
-    const result = await s3ServerClient.send(createCmd);
+    const result = await s3Client.send(createCmd);
     if (!result.UploadId) throw new Error('S3 did not return an UploadId');
     uploadId = result.UploadId;
   } catch (err: unknown) {
     console.error('[multipart/start] S3 error:', err);
-    return Response.json({ name: 's3-error', data: { message: 'Failed to initiate multipart upload' } }, { status: 502 });
+    return Response.json(
+      { name: 's3-error', data: { message: 'Failed to initiate multipart upload' } },
+      { status: 502 }
+    );
   }
 
-  await db<PendingAttachmentRow>('attachments').insert({
+  await db('attachments').insert({
     id: attachmentId,
     short_id: shortId,
     card_id: resolvedCardId,

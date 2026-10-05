@@ -25,10 +25,7 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setCredentials(
-      state,
-      action: PayloadAction<{ user: AuthUser; accessToken: string }>
-    ) {
+    setCredentials(state, action: PayloadAction<{ user: AuthUser; accessToken: string }>) {
       state.user = action.payload.user;
       state.accessToken = action.payload.accessToken;
       state.status = 'authenticated';
@@ -50,6 +47,5 @@ export const authReducer = authSlice.reducer;
 // Selectors
 export const selectAccessToken = (state: RootState) => state.auth.accessToken;
 export const selectCurrentUser = (state: RootState) => state.auth.user;
-export const selectIsAuthenticated = (state: RootState) =>
-  state.auth.status === 'authenticated';
+export const selectIsAuthenticated = (state: RootState) => state.auth.status === 'authenticated';
 export const selectAuthStatus = (state: RootState) => state.auth.status;

@@ -10,5 +10,6 @@
   "ProfilePage.saveChanges": "Save Changes",
   "ProfilePage.saved": "Profile updated.",
   "ProfilePage.nicknameTaken": "This nickname is already taken.",
-  "ProfilePage.invalidFile": "Please upload a JPEG, PNG, WebP or GIF under 5 MB."
+  "ProfilePage.invalidFile": "Please upload a JPEG, PNG, WebP or GIF under 5 MB.",
+  "avatarUploader.uploadAria": "Upload avatar"
 }

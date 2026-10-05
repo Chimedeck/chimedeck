@@ -16,7 +16,9 @@ export default function TypographySample({
 }: TypographySampleProps) {
   return (
     <div className="flex flex-col gap-1 py-3 border-b border-border-subtle last:border-b-0">
-      <span className="text-xs font-medium text-text-secondary uppercase tracking-wide">{label}</span>
+      <span className="text-xs font-medium text-text-secondary uppercase tracking-wide">
+        {label}
+      </span>
       <p className={`text-text-primary ${className}`}>{sample}</p>
     </div>
   );

@@ -22,7 +22,10 @@ export function extractS3KeyFromAvatarUrl({ avatarUrl }: { avatarUrl: string }):
     }
 
     // Virtual-hosted style URL: <bucket>.s3.<region>.amazonaws.com/<key>
-    if (parsed.hostname === `${s3Config.bucket}.s3.amazonaws.com` || parsed.hostname.startsWith(`${s3Config.bucket}.s3.`)) {
+    if (
+      parsed.hostname === `${s3Config.bucket}.s3.amazonaws.com` ||
+      parsed.hostname.startsWith(`${s3Config.bucket}.s3.`)
+    ) {
       return pathname.replace(/^\/+/, '');
     }
 
@@ -51,7 +54,7 @@ export async function resolveAvatarUrl({
         Bucket: s3Config.bucket,
         Key: s3Key,
       }),
-      { expiresIn: ttlSeconds },
+      { expiresIn: ttlSeconds }
     );
   } catch {
     // Fall back to the stored URL to avoid breaking profile rendering.
@@ -77,7 +80,7 @@ export function buildAvatarProxyUrl({
 }
 
 export async function resolveAvatarUrlsInCollection<T extends { avatar_url?: string | null }>(
-  items: T[],
+  items: T[]
 ): Promise<T[]> {
   const cache = new Map<string, string | null>();
 
@@ -93,7 +96,7 @@ export async function resolveAvatarUrlsInCollection<T extends { avatar_url?: str
       }
 
       return { ...item, avatar_url: cache.get(rawAvatarUrl) ?? null };
-    }),
+    })
   );
 }
 
@@ -103,7 +106,7 @@ export async function resolveAvatarUrlsInCollection<T extends { avatar_url?: str
  * Synchronous — no S3 presigning needed.
  */
 export function buildAvatarProxyUrlsInCollection<T extends Record<string, unknown>>(
-  items: T[],
+  items: T[]
 ): T[] {
   return items.map((item) => {
     const id = item['id'] as string | undefined;

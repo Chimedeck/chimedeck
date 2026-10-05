@@ -102,7 +102,10 @@ function getInput(url: URL, body: Record<string, unknown>, ...keys: string[]): u
   return undefined;
 }
 
-async function getWorkspaceRole(userId: string, workspaceId: string): Promise<MembershipRole | null> {
+async function getWorkspaceRole(
+  userId: string,
+  workspaceId: string
+): Promise<MembershipRole | null> {
   const memberships = await db('memberships')
     .where({ user_id: userId, workspace_id: workspaceId })
     .select('role');
@@ -116,15 +119,22 @@ async function getWorkspaceRole(userId: string, workspaceId: string): Promise<Me
   return highest;
 }
 
-async function getBoardMemberRole(userId: string, boardId: string): Promise<'ADMIN' | 'MEMBER' | 'VIEWER' | null> {
-  const row = await db('board_members').where({ user_id: userId, board_id: boardId }).first() as { role?: string } | undefined;
+async function getBoardMemberRole(
+  userId: string,
+  boardId: string
+): Promise<'ADMIN' | 'MEMBER' | 'VIEWER' | null> {
+  const row = (await db('board_members').where({ user_id: userId, board_id: boardId }).first()) as
+    | { role?: string }
+    | undefined;
   const role = row?.role;
   if (role === 'ADMIN' || role === 'MEMBER' || role === 'VIEWER') return role;
   return null;
 }
 
 async function hasGuestAccess(userId: string, boardId: string): Promise<boolean> {
-  const row = await db('board_guest_access').where({ user_id: userId, board_id: boardId }).first() as { id: string } | undefined;
+  const row = (await db('board_guest_access')
+    .where({ user_id: userId, board_id: boardId })
+    .first()) as { id: string } | undefined;
   return !!row;
 }
 
@@ -154,57 +164,72 @@ async function canMutateBoard(userId: string, board: BoardRow): Promise<boolean>
 }
 
 async function resolveChecklistContext(checklistId: string): Promise<ChecklistContext | null> {
-  const checklist = await db('checklists').where({ id: checklistId }).first() as ChecklistRow | undefined;
+  const checklist = (await db('checklists').where({ id: checklistId }).first()) as
+    | ChecklistRow
+    | undefined;
   if (!checklist) return null;
 
-  const card = await db('cards').where({ id: checklist.card_id }).first() as CardRow | undefined;
+  const card = (await db('cards').where({ id: checklist.card_id }).first()) as CardRow | undefined;
   if (!card) return null;
 
-  const list = await db('lists').where({ id: card.list_id }).first() as ListRow | undefined;
+  const list = (await db('lists').where({ id: card.list_id }).first()) as ListRow | undefined;
   if (!list) return null;
 
-  const board = await db('boards').where({ id: list.board_id }).first() as BoardRow | undefined;
+  const board = (await db('boards').where({ id: list.board_id }).first()) as BoardRow | undefined;
   if (!board) return null;
 
   return { checklist, card, list, board };
 }
 
-async function resolveChecklistPosition(cardId: string, posValue: unknown, excludeChecklistId?: string): Promise<string> {
-  const rows = await db('checklists')
+async function resolveChecklistPosition(
+  cardId: string,
+  posValue: unknown,
+  excludeChecklistId?: string
+): Promise<string> {
+  const rows = (await db('checklists')
     .where({ card_id: cardId })
-    .orderBy('position', 'asc') as ChecklistRow[];
-  const checklists = excludeChecklistId ? rows.filter((row) => row.id !== excludeChecklistId) : rows;
+    .orderBy('position', 'asc')) as ChecklistRow[];
+  const checklists = excludeChecklistId
+    ? rows.filter((row) => row.id !== excludeChecklistId)
+    : rows;
   const first = checklists[0];
   const last = checklists.at(-1);
 
   if (typeof posValue === 'string') {
     const normalized = posValue.trim().toLowerCase();
     if (normalized === 'top') return between('', first?.position ?? HIGH_SENTINEL);
-    if (normalized === 'bottom' || normalized === '') return between(last?.position ?? '', HIGH_SENTINEL);
+    if (normalized === 'bottom' || normalized === '')
+      return between(last?.position ?? '', HIGH_SENTINEL);
 
     const asNumber = Number(normalized);
     if (!Number.isNaN(asNumber)) {
       const index = Math.max(0, Math.min(checklists.length, Math.floor(asNumber / 65535)));
-      const left = index > 0 ? checklists[index - 1]?.position ?? '' : '';
-      const right = index < checklists.length ? checklists[index]?.position ?? HIGH_SENTINEL : HIGH_SENTINEL;
+      const left = index > 0 ? (checklists[index - 1]?.position ?? '') : '';
+      const right =
+        index < checklists.length ? (checklists[index]?.position ?? HIGH_SENTINEL) : HIGH_SENTINEL;
       return between(left, right);
     }
   }
 
   if (typeof posValue === 'number' && !Number.isNaN(posValue)) {
     const index = Math.max(0, Math.min(checklists.length, Math.floor(posValue / 65535)));
-    const left = index > 0 ? checklists[index - 1]?.position ?? '' : '';
-    const right = index < checklists.length ? checklists[index]?.position ?? HIGH_SENTINEL : HIGH_SENTINEL;
+    const left = index > 0 ? (checklists[index - 1]?.position ?? '') : '';
+    const right =
+      index < checklists.length ? (checklists[index]?.position ?? HIGH_SENTINEL) : HIGH_SENTINEL;
     return between(left, right);
   }
 
   return between(last?.position ?? '', HIGH_SENTINEL);
 }
 
-async function resolveCheckItemPosition(checklistId: string, posValue: unknown, excludeCheckItemId?: string): Promise<string> {
-  const rows = await db('checklist_items')
+async function resolveCheckItemPosition(
+  checklistId: string,
+  posValue: unknown,
+  excludeCheckItemId?: string
+): Promise<string> {
+  const rows = (await db('checklist_items')
     .where({ checklist_id: checklistId })
-    .orderBy('position', 'asc') as CheckItemRow[];
+    .orderBy('position', 'asc')) as CheckItemRow[];
   const items = excludeCheckItemId ? rows.filter((row) => row.id !== excludeCheckItemId) : rows;
   const first = items[0];
   const last = items.at(-1);
@@ -212,42 +237,54 @@ async function resolveCheckItemPosition(checklistId: string, posValue: unknown, 
   if (typeof posValue === 'string') {
     const normalized = posValue.trim().toLowerCase();
     if (normalized === 'top') return between('', first?.position ?? HIGH_SENTINEL);
-    if (normalized === 'bottom' || normalized === '') return between(last?.position ?? '', HIGH_SENTINEL);
+    if (normalized === 'bottom' || normalized === '')
+      return between(last?.position ?? '', HIGH_SENTINEL);
 
     const asNumber = Number(normalized);
     if (!Number.isNaN(asNumber)) {
       const index = Math.max(0, Math.min(items.length, Math.floor(asNumber / 65535)));
-      const left = index > 0 ? items[index - 1]?.position ?? '' : '';
-      const right = index < items.length ? items[index]?.position ?? HIGH_SENTINEL : HIGH_SENTINEL;
+      const left = index > 0 ? (items[index - 1]?.position ?? '') : '';
+      const right =
+        index < items.length ? (items[index]?.position ?? HIGH_SENTINEL) : HIGH_SENTINEL;
       return between(left, right);
     }
   }
 
   if (typeof posValue === 'number' && !Number.isNaN(posValue)) {
     const index = Math.max(0, Math.min(items.length, Math.floor(posValue / 65535)));
-    const left = index > 0 ? items[index - 1]?.position ?? '' : '';
-    const right = index < items.length ? items[index]?.position ?? HIGH_SENTINEL : HIGH_SENTINEL;
+    const left = index > 0 ? (items[index - 1]?.position ?? '') : '';
+    const right = index < items.length ? (items[index]?.position ?? HIGH_SENTINEL) : HIGH_SENTINEL;
     return between(left, right);
   }
 
   return between(last?.position ?? '', HIGH_SENTINEL);
 }
 
-async function listSerializedCheckItems(checklist: ChecklistRow): Promise<ReturnType<typeof serializeCheckItem>[]> {
-  const items = await db('checklist_items')
+async function listSerializedCheckItems(
+  checklist: ChecklistRow
+): Promise<ReturnType<typeof serializeCheckItem>[]> {
+  const items = (await db('checklist_items')
     .where({ checklist_id: checklist.id, card_id: checklist.card_id })
-    .orderBy('position', 'asc') as CheckItemRow[];
-  return items.map((item, index) => serializeCheckItem({
-    ...item,
-    _rank: index,
-  }));
+    .orderBy('position', 'asc')) as CheckItemRow[];
+  return items.map((item, index) =>
+    serializeCheckItem({
+      ...item,
+      _rank: index,
+    })
+  );
 }
 
-async function serializeChecklistByRow(checklist: ChecklistRow, boardId: string): Promise<ReturnType<typeof serializeChecklist>> {
-  const cardChecklists = await db('checklists')
+async function serializeChecklistByRow(
+  checklist: ChecklistRow,
+  boardId: string
+): Promise<ReturnType<typeof serializeChecklist>> {
+  const cardChecklists = (await db('checklists')
     .where({ card_id: checklist.card_id })
-    .orderBy('position', 'asc') as Array<{ id: string }>;
-  const rank = Math.max(0, cardChecklists.findIndex((row) => row.id === checklist.id));
+    .orderBy('position', 'asc')) as Array<{ id: string }>;
+  const rank = Math.max(
+    0,
+    cardChecklists.findIndex((row) => row.id === checklist.id)
+  );
   const checkItems = await listSerializedCheckItems(checklist);
   return serializeChecklist({
     id: checklist.id,
@@ -262,7 +299,7 @@ async function serializeChecklistByRow(checklist: ChecklistRow, boardId: string)
 async function updateChecklist(
   userId: string,
   context: ChecklistContext,
-  inputs: { name: unknown; pos: unknown },
+  inputs: { name: unknown; pos: unknown }
 ): Promise<Response> {
   if (!(await canMutateBoard(userId, context.board))) return TRELLO_PERMISSION_DENIED();
 
@@ -274,20 +311,29 @@ async function updateChecklist(
     updates['title'] = inputs.name.trim();
   }
   if (inputs.pos !== undefined) {
-    updates['position'] = await resolveChecklistPosition(context.checklist.card_id, inputs.pos, context.checklist.id);
+    updates['position'] = await resolveChecklistPosition(
+      context.checklist.card_id,
+      inputs.pos,
+      context.checklist.id
+    );
   }
 
   if (Object.keys(updates).length > 0) {
     await db('checklists').where({ id: context.checklist.id }).update(updates);
   }
 
-  const updated = await db('checklists').where({ id: context.checklist.id }).first() as ChecklistRow | undefined;
+  const updated = (await db('checklists').where({ id: context.checklist.id }).first()) as
+    | ChecklistRow
+    | undefined;
   if (!updated) return TRELLO_CHECKLIST_NOT_FOUND();
 
   return Response.json(await serializeChecklistByRow(updated, context.board.id));
 }
 
-export async function checklistsRouter(req: AuthenticatedRequest, path: string): Promise<Response | null> {
+export async function checklistsRouter(
+  req: AuthenticatedRequest,
+  path: string
+): Promise<Response | null> {
   const user = getTrelloAuthUser(req);
   if (!user) return TRELLO_PERMISSION_DENIED();
 
@@ -301,16 +347,17 @@ export async function checklistsRouter(req: AuthenticatedRequest, path: string):
     const pos = getInput(url, body, 'pos');
     const sourceChecklistId = getInput(url, body, 'idChecklistSource');
 
-    if (typeof idCardInput !== 'string' || !idCardInput.trim()) return trelloError('invalid value for idCard', 400);
+    if (typeof idCardInput !== 'string' || !idCardInput.trim())
+      return trelloError('invalid value for idCard', 400);
 
     const cardId = await resolveCardId(idCardInput);
     if (!cardId) return TRELLO_CARD_NOT_FOUND();
 
-    const card = await db('cards').where({ id: cardId }).first() as CardRow | undefined;
+    const card = (await db('cards').where({ id: cardId }).first()) as CardRow | undefined;
     if (!card) return TRELLO_CARD_NOT_FOUND();
-    const list = await db('lists').where({ id: card.list_id }).first() as ListRow | undefined;
+    const list = (await db('lists').where({ id: card.list_id }).first()) as ListRow | undefined;
     if (!list) return TRELLO_NOT_FOUND();
-    const board = await db('boards').where({ id: list.board_id }).first() as BoardRow | undefined;
+    const board = (await db('boards').where({ id: list.board_id }).first()) as BoardRow | undefined;
     if (!board) return TRELLO_NOT_FOUND();
     if (!(await canMutateBoard(user.id, board))) return TRELLO_PERMISSION_DENIED();
 
@@ -319,11 +366,13 @@ export async function checklistsRouter(req: AuthenticatedRequest, path: string):
       if (typeof sourceChecklistId !== 'string' || !sourceChecklistId.trim()) {
         return trelloError('invalid value for idChecklistSource', 400);
       }
-      const sourceChecklist = await db('checklists').where({ id: sourceChecklistId }).first() as ChecklistRow | undefined;
+      const sourceChecklist = (await db('checklists').where({ id: sourceChecklistId }).first()) as
+        | ChecklistRow
+        | undefined;
       if (!sourceChecklist) return TRELLO_CHECKLIST_NOT_FOUND();
-      sourceItems = await db('checklist_items')
+      sourceItems = (await db('checklist_items')
         .where({ checklist_id: sourceChecklist.id })
-        .orderBy('position', 'asc') as CheckItemRow[];
+        .orderBy('position', 'asc')) as CheckItemRow[];
     }
 
     const checklistId = randomUUID();
@@ -353,7 +402,9 @@ export async function checklistsRouter(req: AuthenticatedRequest, path: string):
       });
     }
 
-    const created = await db('checklists').where({ id: checklistId }).first() as ChecklistRow | undefined;
+    const created = (await db('checklists').where({ id: checklistId }).first()) as
+      | ChecklistRow
+      | undefined;
     if (!created) return TRELLO_CHECKLIST_NOT_FOUND();
     return Response.json(await serializeChecklistByRow(created, board.id));
   }
@@ -386,7 +437,9 @@ export async function checklistsRouter(req: AuthenticatedRequest, path: string):
   }
 
   if (subPath === 'board' && req.method === 'GET') {
-    return Response.json(serializeBoard({ ...context.board, idMemberCreator: '', memberships: [] }));
+    return Response.json(
+      serializeBoard({ ...context.board, idMemberCreator: '', memberships: [] })
+    );
   }
 
   if (subPath === 'cards' && req.method === 'GET') {
@@ -434,34 +487,50 @@ export async function checklistsRouter(req: AuthenticatedRequest, path: string):
       assigned_member_id: updates['assigned_member_id'] ?? null,
     });
 
-    const inserted = await db('checklist_items').where({ id: checkItemId }).first() as CheckItemRow | undefined;
+    const inserted = (await db('checklist_items').where({ id: checkItemId }).first()) as
+      | CheckItemRow
+      | undefined;
     if (!inserted) return TRELLO_NOT_FOUND();
 
-    const rows = await db('checklist_items')
+    const rows = (await db('checklist_items')
       .where({ checklist_id: context.checklist.id })
-      .orderBy('position', 'asc') as Array<{ id: string }>;
-    const rank = Math.max(0, rows.findIndex((row) => row.id === inserted.id));
+      .orderBy('position', 'asc')) as Array<{ id: string }>;
+    const rank = Math.max(
+      0,
+      rows.findIndex((row) => row.id === inserted.id)
+    );
     return Response.json(serializeCheckItem({ ...inserted, _rank: rank }));
   }
 
   const checkItemMatch = subPath.match(/^checkItems\/([^/]+)$/);
   if (checkItemMatch && req.method === 'GET') {
-    const item = await db('checklist_items')
-      .where({ id: checkItemMatch[1], checklist_id: context.checklist.id, card_id: context.checklist.card_id })
-      .first() as CheckItemRow | undefined;
+    const item = (await db('checklist_items')
+      .where({
+        id: checkItemMatch[1],
+        checklist_id: context.checklist.id,
+        card_id: context.checklist.card_id,
+      })
+      .first()) as CheckItemRow | undefined;
     if (!item) return TRELLO_NOT_FOUND();
 
-    const rows = await db('checklist_items')
+    const rows = (await db('checklist_items')
       .where({ checklist_id: context.checklist.id })
-      .orderBy('position', 'asc') as Array<{ id: string }>;
-    const rank = Math.max(0, rows.findIndex((row) => row.id === item.id));
+      .orderBy('position', 'asc')) as Array<{ id: string }>;
+    const rank = Math.max(
+      0,
+      rows.findIndex((row) => row.id === item.id)
+    );
     return Response.json(serializeCheckItem({ ...item, _rank: rank }));
   }
 
   if (checkItemMatch && req.method === 'DELETE') {
     if (!(await canMutateBoard(user.id, context.board))) return TRELLO_PERMISSION_DENIED();
     await db('checklist_items')
-      .where({ id: checkItemMatch[1], checklist_id: context.checklist.id, card_id: context.checklist.card_id })
+      .where({
+        id: checkItemMatch[1],
+        checklist_id: context.checklist.id,
+        card_id: context.checklist.card_id,
+      })
       .delete();
     return Response.json({});
   }

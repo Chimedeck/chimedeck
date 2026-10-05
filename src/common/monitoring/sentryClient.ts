@@ -37,15 +37,28 @@ const IGNORED_ERROR_PATTERNS: RegExp[] = [
  * Values are replaced with [redacted] before the event leaves the browser.
  */
 const SENSITIVE_QUERY_PARAMS = new Set([
-  'token', 'access_token', 'auth', 'api_key', 'key', 'secret',
-  'password', 'passwd', 'pwd', 'code', 'state',
+  'token',
+  'access_token',
+  'auth',
+  'api_key',
+  'key',
+  'secret',
+  'password',
+  'passwd',
+  'pwd',
+  'code',
+  'state',
 ]);
 
 /**
  * HTTP header names (lower-cased) that must never be forwarded to Sentry.
  */
 const SENSITIVE_HEADERS = new Set([
-  'authorization', 'cookie', 'set-cookie', 'x-auth-token', 'x-api-key',
+  'authorization',
+  'cookie',
+  'set-cookie',
+  'x-auth-token',
+  'x-api-key',
 ]);
 
 /**
@@ -112,8 +125,7 @@ function redactBreadcrumbs(event: Sentry.ErrorEvent): void {
  * Returns null to discard or the scrubbed event to forward.
  */
 function beforeSend(event: Sentry.ErrorEvent): Sentry.ErrorEvent | null {
-  const message =
-    event.exception?.values?.[0]?.value ?? event.message ?? '';
+  const message = event.exception?.values?.[0]?.value ?? event.message ?? '';
 
   if (IGNORED_ERROR_PATTERNS.some((pattern) => pattern.test(message))) {
     return null;
@@ -180,9 +192,6 @@ export function captureError(error: unknown): void {
  * Capture a custom message at the given severity level.
  * Silently no-ops when Sentry is not initialised.
  */
-export function captureMessage(
-  message: string,
-  level: Sentry.SeverityLevel = 'info'
-): void {
+export function captureMessage(message: string, level: Sentry.SeverityLevel = 'info'): void {
   Sentry.captureMessage(message, level);
 }

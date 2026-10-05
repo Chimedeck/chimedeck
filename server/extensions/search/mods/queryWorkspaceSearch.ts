@@ -11,7 +11,6 @@
 // | OWNER / ADMIN | ✅     | ✅        | ✅ (always)               |
 // | MEMBER/VIEWER | ✅     | ✅        | ✅ if in board_members    |
 // | GUEST         | ✅     | ❌        | ✅ if in board_guest_access|
-import type { Knex } from 'knex';
 import { db } from '../../../common/db';
 import { buildQuery } from './buildQuery';
 import type { Role } from '../../../middlewares/permissionManager';
@@ -55,42 +54,10 @@ export interface WorkspaceSearchOutput {
   message?: string;
 }
 
-// Row shapes produced by the raw `.select()` projections below (see
-// db/migrations/0004_board.ts, 0027_board_extensions.ts, 0109_board_card_short_ids.ts
-// for boards; 0006_card.ts, 0109_board_card_short_ids.ts for cards). Narrowing these
-// removes the `any` propagation from Knex's untyped `.select(db.raw(...))` result.
-interface BoardSearchRow {
-  id: string;
-  short_id: string;
-  title: string;
-  workspace_id: string;
-  state: string;
-  background: string | null;
-  type: 'board';
-  rank: number;
-}
-
-interface CardSearchRow {
-  id: string;
-  short_id: string;
-  title: string;
-  list_id: string;
-  board_id: string;
-  board_short_id: string;
-  workspace_id: string;
-  archived: boolean;
-  type: 'card';
-  rank: number;
-}
-
 // Builds a Knex `.where` callback that restricts board rows to only those
 // accessible by the caller. Called for both the board query and the card
 // query (via a join to the boards table).
-function applyBoardAccessFilter(
-  qb: Knex.QueryBuilder,
-  userId: string,
-  callerRole: Role,
-): void {
+function applyBoardAccessFilter(qb: ReturnType<typeof db>, userId: string, callerRole: Role): void {
   if (callerRole === 'OWNER' || callerRole === 'ADMIN') {
     // Admins and owners can see every board — no extra clause needed.
     return;
@@ -100,38 +67,30 @@ function applyBoardAccessFilter(
     // Guests: PUBLIC boards, or PRIVATE boards with explicit guest access.
     // WORKSPACE boards are never accessible to guests.
     qb.where(function (inner) {
-      inner
-        .where('boards.visibility', 'PUBLIC')
-        .orWhere(function (priv) {
-          priv
-            .where('boards.visibility', 'PRIVATE')
-            .whereExists(function (sub) {
-              sub
-                .select(db.raw('1'))
-                .from('board_guest_access')
-                .whereRaw('board_guest_access.board_id = boards.id')
-                .where('board_guest_access.user_id', userId);
-            });
+      inner.where('boards.visibility', 'PUBLIC').orWhere(function (priv) {
+        priv.where('boards.visibility', 'PRIVATE').whereExists(function (sub) {
+          sub
+            .select(db.raw('1'))
+            .from('board_guest_access')
+            .whereRaw('board_guest_access.board_id = boards.id')
+            .where('board_guest_access.user_id', userId);
         });
+      });
     });
     return;
   }
 
   // MEMBER / VIEWER: PUBLIC + WORKSPACE + PRIVATE where they're in board_members.
   qb.where(function (inner) {
-    inner
-      .whereIn('boards.visibility', ['PUBLIC', 'WORKSPACE'])
-      .orWhere(function (priv) {
-        priv
-          .where('boards.visibility', 'PRIVATE')
-          .whereExists(function (sub) {
-            sub
-              .select(db.raw('1'))
-              .from('board_members')
-              .whereRaw('board_members.board_id = boards.id')
-              .where('board_members.user_id', userId);
-          });
+    inner.whereIn('boards.visibility', ['PUBLIC', 'WORKSPACE']).orWhere(function (priv) {
+      priv.where('boards.visibility', 'PRIVATE').whereExists(function (sub) {
+        sub
+          .select(db.raw('1'))
+          .from('board_members')
+          .whereRaw('board_members.board_id = boards.id')
+          .where('board_members.user_id', userId);
       });
+    });
   });
 }
 
@@ -145,17 +104,31 @@ export async function queryWorkspaceSearch({
   includeArchived = false,
   limit: rawLimit,
 }: WorkspaceSearchOptions): Promise<WorkspaceSearchOutput> {
-  if (q.length < 2) {
-    return { status: 400, name: 'search-query-too-short', message: 'Query must be at least 2 characters' };
+  const isMatchAll = q === '*';
+
+  if (!isMatchAll && q.length < 2) {
+    return {
+      status: 400,
+      name: 'search-query-too-short',
+      message: 'Query must be at least 2 characters',
+    };
   }
 
-  const tsquery = buildQuery({ q });
-  if (!tsquery) {
-    return { status: 400, name: 'search-query-invalid', message: 'Query contains no searchable terms' };
+  const tsquery = isMatchAll ? null : buildQuery({ q });
+  if (!isMatchAll && !tsquery) {
+    return {
+      status: 400,
+      name: 'search-query-invalid',
+      message: 'Query contains no searchable terms',
+    };
   }
 
   const limit = Math.min(rawLimit ?? DEFAULT_LIMIT, MAX_LIMIT);
   const results: WorkspaceSearchResult[] = [];
+
+  // [why] Extract a guaranteed non-null tsquery for the branches that need it,
+  // so we avoid forbidden non-null assertions later.
+  const safeTsquery = tsquery ?? '';
 
   // Log the permission filter being applied so access control decisions are observable.
   searchLog.permissionFilterApplied({
@@ -168,17 +141,20 @@ export async function queryWorkspaceSearch({
 
   // ── Board search ──────────────────────────────────────────────────────────
   if (!type || type === 'board') {
-    const boardQ = db('boards')
-      .select<BoardSearchRow[]>(
-        db.raw(
-          `boards.id, boards.short_id, boards.title, boards.workspace_id, boards.state,
+    const rankExpr = "ts_rank_cd(boards.search_vector, to_tsquery('english', ?)) AS rank";
+    const selectExpr = `boards.id, boards.short_id, boards.title, boards.workspace_id, boards.state,
            boards.background, 'board' as type,
-           ts_rank_cd(boards.search_vector, to_tsquery('english', ?)) AS rank`,
-          [tsquery],
-        ),
-      )
-      .where('boards.workspace_id', workspaceId)
-      .whereRaw(`boards.search_vector @@ to_tsquery('english', ?)`, [tsquery]);
+           ${isMatchAll ? '0 as rank' : rankExpr}`;
+
+    const boardQ = db('boards').where('boards.workspace_id', workspaceId);
+
+    if (isMatchAll) {
+      boardQ.select(db.raw(selectExpr));
+    } else {
+      boardQ
+        .select(db.raw(selectExpr, [safeTsquery]))
+        .whereRaw("boards.search_vector @@ to_tsquery('english', ?)", [safeTsquery]);
+    }
 
     if (!includeArchived) boardQ.where('boards.state', 'ACTIVE');
     if (cursor) boardQ.where('boards.id', '>', cursor);
@@ -186,32 +162,49 @@ export async function queryWorkspaceSearch({
     // Apply caller-specific board visibility filter
     applyBoardAccessFilter(boardQ, userId, callerRole);
 
-    const boards = await boardQ.orderBy('rank', 'desc').limit(limit);
-    results.push(...boards.map((b) => ({
-      ...b,
-      type: 'board' as const,
-      rank: b.rank,
-      // [why] Never expose raw S3 URLs — proxy through the authenticated background endpoint.
-      background: resolveBackgroundUrl({ boardId: b.id, backgroundUrl: b.background }),
-    })));
+    if (isMatchAll) {
+      boardQ.orderBy('boards.updated_at', 'desc').limit(limit);
+    } else {
+      boardQ
+        .orderByRaw("ts_rank_cd(boards.search_vector, to_tsquery('english', ?)) DESC", [
+          safeTsquery,
+        ])
+        .limit(limit);
+    }
+
+    const boards = await boardQ;
+
+    results.push(
+      ...boards.map((b) => ({
+        ...b,
+        type: 'board' as const,
+        rank: Number(b.rank),
+        // [why] Never expose raw S3 URLs — proxy through the authenticated background endpoint.
+        background: resolveBackgroundUrl({ boardId: b.id, backgroundUrl: b.background }),
+      }))
+    );
   }
 
   // ── Card search ───────────────────────────────────────────────────────────
   if (!type || type === 'card') {
+    const rankExpr = "ts_rank_cd(cards.search_vector, to_tsquery('english', ?)) AS rank";
+    const selectExpr = `cards.id, cards.short_id, cards.title, cards.list_id, boards.id as board_id,
+           boards.short_id as board_short_id,
+           boards.workspace_id, cards.archived, 'card' as type,
+           ${isMatchAll ? '0 as rank' : rankExpr}`;
+
     const cardQ = db('cards')
       .join('lists', 'cards.list_id', 'lists.id')
       .join('boards', 'lists.board_id', 'boards.id')
-      .select<CardSearchRow[]>(
-        db.raw(
-          `cards.id, cards.short_id, cards.title, cards.list_id, boards.id as board_id,
-           boards.short_id as board_short_id,
-           boards.workspace_id, cards.archived, 'card' as type,
-           ts_rank_cd(cards.search_vector, to_tsquery('english', ?)) AS rank`,
-          [tsquery],
-        ),
-      )
-      .where('boards.workspace_id', workspaceId)
-      .whereRaw(`cards.search_vector @@ to_tsquery('english', ?)`, [tsquery]);
+      .where('boards.workspace_id', workspaceId);
+
+    if (isMatchAll) {
+      cardQ.select(db.raw(selectExpr));
+    } else {
+      cardQ
+        .select(db.raw(selectExpr, [safeTsquery]))
+        .whereRaw("cards.search_vector @@ to_tsquery('english', ?)", [safeTsquery]);
+    }
 
     if (!includeArchived) cardQ.where('cards.archived', false);
     if (cursor) cardQ.where('cards.id', '>', cursor);
@@ -219,8 +212,17 @@ export async function queryWorkspaceSearch({
     // Apply the same board-level access filter (boards table is joined)
     applyBoardAccessFilter(cardQ, userId, callerRole);
 
-    const cards = await cardQ.orderBy('rank', 'desc').limit(limit);
-    results.push(...cards.map((c) => ({ ...c, type: 'card' as const, rank: c.rank })));
+    if (isMatchAll) {
+      cardQ.orderBy('cards.updated_at', 'desc').limit(limit);
+    } else {
+      cardQ
+        .orderByRaw("ts_rank_cd(cards.search_vector, to_tsquery('english', ?)) DESC", [safeTsquery])
+        .limit(limit);
+    }
+
+    const cards = await cardQ;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return
+    results.push(...cards.map((c) => ({ ...c, type: 'card' as const, rank: Number(c.rank) })));
   }
 
   results.sort((a, b) => b.rank - a.rank);

@@ -2,7 +2,7 @@
 // Higher-priority sources (env, json, remote) override these.
 export const defaults: Record<string, boolean> = {
   USE_REDIS: true,
-  USE_LOCAL_STORAGE: true,          // true = LocalStack in dev, false = AWS S3 in prod
+  USE_LOCAL_STORAGE: true, // true = LocalStack in dev, false = AWS S3 in prod
   VIRUS_SCAN_ENABLED: true,
   OAUTH_GOOGLE_ENABLED: true,
   OAUTH_GITHUB_ENABLED: true,
@@ -15,4 +15,13 @@ export const defaults: Record<string, boolean> = {
   NOTIFICATION_PREFERENCES_ENABLED: true,
   EMAIL_NOTIFICATIONS_ENABLED: false,
   TRELLO_COMPAT_ENABLED: false,
+  BOARD_CHAT_ENABLED: true,
+  GITHUB_EDITING_ENABLED: true,
+  INNER_CARD_CHAT_ENABLED: false,
+  AGENTIC_WORKFLOW_ENABLED: false,
+  AI_CONTEXT_ENABLED: false,
+  AI_EDIT_ENABLED: false,
+  SPRINT_GENERATION_ENABLED: false,
+  AS_BUILT_SYNC_ENABLED: false,
+  MULTI_INSTANCE_HANDLING_ENABLED: false,
 };

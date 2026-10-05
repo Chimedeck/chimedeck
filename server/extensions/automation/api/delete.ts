@@ -9,7 +9,7 @@ type MembershipRow = { role: string };
 export async function handleDeleteAutomation(
   req: Request,
   boardId: string,
-  automationId: string,
+  automationId: string
 ): Promise<Response> {
   if (!automationConfig.enabled) {
     return Response.json({ error: { name: 'feature-disabled' } }, { status: 404 });

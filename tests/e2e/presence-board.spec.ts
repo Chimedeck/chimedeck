@@ -176,17 +176,21 @@ test.describe('Board Presence', () => {
     const idB = await idOf(tokenB);
 
     const socketA = await subscribeToBoard(tokenA, boardId);
-    const socketB = await subscribeToBoard(tokenB, boardId);
-
     try {
-      // Both specific subscribers must be listed by id — not merely "two users".
-      await expect
-        .poll(readPresenceIds, { timeout: 8000 })
-        .toEqual(expect.arrayContaining([idA, idB]));
+      // Acquire B INSIDE A's cleanup scope: if B's subscribe rejects or times
+      // out, A is still drained and cannot leak presence into the next test.
+      const socketB = await subscribeToBoard(tokenB, boardId);
+      try {
+        // Both specific subscribers must be listed by id — not merely "two users".
+        await expect
+          .poll(readPresenceIds, { timeout: 8000 })
+          .toEqual(expect.arrayContaining([idA, idB]));
+      } finally {
+        // Drain both so this test's unsubscribe cannot race the next test.
+        await closeAndDrain(request, socketB, boardId, tokenA, idB).catch(() => {});
+      }
     } finally {
-      // Drain both so this test's unsubscribe cannot race the next test.
       await closeAndDrain(request, socketA, boardId, tokenA, idA).catch(() => {});
-      await closeAndDrain(request, socketB, boardId, tokenA, idB).catch(() => {});
     }
   });
 
@@ -219,26 +223,29 @@ test.describe('Board Presence', () => {
     const idB = await idOf(tokenB);
 
     const socketA = await subscribeToBoard(tokenA, boardId);
-    const socketB = await subscribeToBoard(tokenB, boardId);
-
     try {
-      // Both subscribers are recorded, by id.
-      await expect
-        .poll(readPresenceIds, { timeout: 8000 })
-        .toEqual(expect.arrayContaining([idA, idB]));
+      // B acquired INSIDE A's cleanup scope so a failed B subscribe still drains A.
+      const socketB = await subscribeToBoard(tokenB, boardId);
+      try {
+        // Both subscribers are recorded, by id.
+        await expect
+          .poll(readPresenceIds, { timeout: 8000 })
+          .toEqual(expect.arrayContaining([idA, idB]));
 
-      // B leaves. B must disappear while A remains — asserting identity, not
-      // just a smaller count, so a collapse of both connections cannot pass.
-      socketB.close();
-      await expect
-        .poll(async () => (await readPresenceIds()).includes(idB), { timeout: 10000 })
-        .toBe(false);
-      expect(await readPresenceIds()).toContain(idA);
+        // B leaves. B must disappear while A remains — asserting identity, not
+        // just a smaller count, so a collapse of both connections cannot pass.
+        socketB.close();
+        await expect
+          .poll(async () => (await readPresenceIds()).includes(idB), { timeout: 10000 })
+          .toBe(false);
+        expect(await readPresenceIds()).toContain(idA);
+      } finally {
+        socketB.close();
+      }
     } finally {
-      // Drain A (B already left and been asserted gone) so the next test that
-      // uses this board starts from a clean presence list.
+      // Drain A so the next test that uses this board starts from a clean
+      // presence list, even when B's flow threw mid-way.
       await closeAndDrain(request, socketA, boardId, tokenA, idA).catch(() => {});
-      socketB.close();
     }
   });
 

@@ -9,10 +9,7 @@ import type { SuggestionOptions } from '@tiptap/suggestion';
 import tippy, { type Instance } from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
 import apiClient from '~/common/api/client';
-import MentionList, {
-  type MentionListHandle,
-  type MentionSuggestion,
-} from './MentionList';
+import MentionList, { type MentionListHandle, type MentionSuggestion } from './MentionList';
 
 const DEBOUNCE_MS = 150;
 
@@ -26,17 +23,15 @@ function buildSuggestion(boardId: string): Partial<SuggestionOptions<MentionSugg
     items: ({ query }): Promise<MentionSuggestion[]> =>
       new Promise((resolve) => {
         if (debounceTimer) clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-          void (async () => {
-            try {
-              const result = (await apiClient.get(
-                `/boards/${boardId}/members/suggestions?q=${encodeURIComponent(query)}`,
-              )) as { data: MentionSuggestion[] };
-              resolve(result.data);
-            } catch {
-              resolve([]);
-            }
-          })();
+        debounceTimer = setTimeout(async () => {
+          try {
+            const result = await apiClient.get(
+              `/boards/${boardId}/members/suggestions?q=${encodeURIComponent(query)}`
+            );
+            resolve(result.data);
+          } catch {
+            resolve([]);
+          }
         }, DEBOUNCE_MS);
       }),
 
@@ -79,7 +74,17 @@ function buildSuggestion(boardId: string): Partial<SuggestionOptions<MentionSugg
             popup[0]?.hide();
             return true;
           }
-          return renderer.ref?.onKeyDown(props) ?? false;
+
+          const mentionListRef = renderer?.ref;
+          if (!mentionListRef || typeof mentionListRef.onKeyDown !== 'function') {
+            return false;
+          }
+
+          try {
+            return mentionListRef.onKeyDown(props) ?? false;
+          } catch {
+            return false;
+          }
         },
 
         onExit() {
@@ -107,10 +112,11 @@ export function buildMentionExtension(boardId: string) {
     },
   }).configure({
     HTMLAttributes: {
-      class: 'rounded bg-blue-100 dark:bg-blue-900/60 px-1 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300',
+      class:
+        'rounded bg-blue-100 dark:bg-blue-900/60 px-1 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300',
     },
     renderText({ node }) {
-      return `@${String(node.attrs.label ?? node.attrs.id ?? '')}`;
+      return `@${node.attrs.label ?? node.attrs.id ?? ''}`;
     },
     suggestion: buildSuggestion(boardId),
   });

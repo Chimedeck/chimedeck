@@ -18,7 +18,7 @@ export async function handleDeleteLabel(req: Request, labelId: string): Promise<
   if (!label) {
     return Response.json(
       { error: { code: 'label-not-found', message: 'Label not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -27,7 +27,7 @@ export async function handleDeleteLabel(req: Request, labelId: string): Promise<
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

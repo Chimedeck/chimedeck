@@ -47,32 +47,29 @@ export function useMentionInput({
     setTriggerStart(null);
   }, []);
 
-
   // Fetch suggestions from the server
   const fetchSuggestions = useCallback(
     (query: string) => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        void (async () => {
-          try {
-            // apiClient auto-attaches the Bearer token and unwraps response.data
-            const result = (await apiClient.get(
-              `/boards/${boardId}/members/suggestions?q=${encodeURIComponent(query)}`,
-            )) as { data: MentionSuggestion[] };
-            if (result.data.length === 0) {
-              dismissSuggestions();
-            } else {
-              setSuggestions(result.data);
-              setShowSuggestions(true);
-              setHighlightedIndex(0);
-            }
-          } catch {
+      debounceRef.current = setTimeout(async () => {
+        try {
+          // apiClient auto-attaches the Bearer token and unwraps response.data
+          const result = await apiClient.get(
+            `/boards/${boardId}/members/suggestions?q=${encodeURIComponent(query)}`
+          );
+          if (result.data.length === 0) {
             dismissSuggestions();
+          } else {
+            setSuggestions(result.data);
+            setShowSuggestions(true);
+            setHighlightedIndex(0);
           }
-        })();
+        } catch {
+          dismissSuggestions();
+        }
       }, DEBOUNCE_MS);
     },
-    [boardId, dismissSuggestions],
+    [boardId, dismissSuggestions]
   );
 
   const handleChange = useCallback(
@@ -93,7 +90,7 @@ export function useMentionInput({
         dismissSuggestions();
       }
     },
-    [onChange, fetchSuggestions, dismissSuggestions],
+    [onChange, fetchSuggestions, dismissSuggestions]
   );
 
   const selectSuggestion = useCallback(
@@ -118,7 +115,7 @@ export function useMentionInput({
 
       dismissSuggestions();
     },
-    [triggerStart, value, onChange, dismissSuggestions],
+    [triggerStart, value, onChange, dismissSuggestions]
   );
 
   const handleKeyDown = useCallback(
@@ -142,7 +139,7 @@ export function useMentionInput({
         dismissSuggestions();
       }
     },
-    [showSuggestions, suggestions, highlightedIndex, selectSuggestion, dismissSuggestions],
+    [showSuggestions, suggestions, highlightedIndex, selectSuggestion, dismissSuggestions]
   );
 
   // Cleanup debounce on unmount

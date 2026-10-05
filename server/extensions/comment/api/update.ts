@@ -13,30 +13,15 @@ import { sanitizeRichText } from '../../../common/sanitize';
 import { createNotificationsForMentions } from '../../notifications/mods/createNotifications';
 import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 
-type CommentRow = {
-  id: string;
-  card_id: string;
-  user_id: string;
-  content: string;
-  version: number;
-  deleted: boolean;
-  parent_id: string | null;
-  created_at: string | Date;
-  updated_at: string | Date;
-};
+function hasNonPersistableMediaUrl(content: string): boolean {
+  return (
+    /\]\((?:<)?(?:blob:|data:|file:)/i.test(content) ||
+    /<img[^>]+src\s*=\s*["'](?:blob:|data:|file:)/i.test(content)
+  );
+}
 
-type CommentWithAuthorRow = CommentRow & {
-  author_name: string | null;
-  author_email: string | null;
-  author_avatar_url: string | null;
-};
-
-type CardRow = { id: string; list_id: string; title: string };
-type ListRow = { id: string; board_id: string };
-type BoardRow = { id: string; workspace_id: string; state: string; title: string };
-
-async function loadCommentWithAuthor(commentId: string): Promise<CommentWithAuthorRow | null> {
-  const row = (await db<CommentRow>('comments')
+async function loadCommentWithAuthor(commentId: string): Promise<Record<string, unknown> | null> {
+  const row = await db('comments')
     .leftJoin('users', 'comments.user_id', 'users.id')
     .where('comments.id', commentId)
     .select(
@@ -51,62 +36,67 @@ async function loadCommentWithAuthor(commentId: string): Promise<CommentWithAuth
       'comments.updated_at',
       db.raw('COALESCE(users.name, users.email) as author_name'),
       'users.email as author_email',
-      'users.avatar_url as author_avatar_url',
+      'users.avatar_url as author_avatar_url'
     )
-    .first()) as CommentWithAuthorRow | undefined;
+    .first();
 
   if (!row) return null;
 
   const avatarUrl = buildAvatarProxyUrl({
-    userId: row.user_id,
-    avatarUrl: row.author_avatar_url,
+    userId: ((row as Record<string, unknown>).user_id as string) ?? null,
+    avatarUrl: ((row as Record<string, unknown>).author_avatar_url as string | null) ?? null,
   });
 
-  return { ...row, author_avatar_url: avatarUrl };
+  return { ...row, author_avatar_url: avatarUrl } as Record<string, unknown>;
 }
 
 export async function handleUpdateComment(req: Request, commentId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const comment = await db<CommentRow>('comments').where({ id: commentId }).first();
+  const comment = await db('comments').where({ id: commentId }).first();
   if (!comment) {
     return Response.json(
       { error: { code: 'comment-not-found', message: 'Comment not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   if (comment.deleted) {
     return Response.json(
       { error: { code: 'comment-deleted', message: 'Cannot edit a deleted comment' } },
-      { status: 409 },
+      { status: 409 }
     );
   }
 
-  const actorId = (req as AuthenticatedRequest & { currentUser: { id: string } }).currentUser.id;
+  const actorId = (req as AuthenticatedRequest).currentUser!.id;
 
   if (comment.user_id !== actorId) {
     return Response.json(
       { error: { code: 'comment-not-owner', message: 'You can only edit your own comments' } },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
-  const card = await db<CardRow>('cards').where({ id: comment.card_id }).first();
-  const list = card ? await db<ListRow>('lists').where({ id: card.list_id }).first() : null;
-  const board = list ? await db<BoardRow>('boards').where({ id: list.board_id }).first() : null;
-  if (!card || !board) {
+  const card = await db('cards').where({ id: comment.card_id }).first();
+  const list = card ? await db('lists').where({ id: card.list_id }).first() : null;
+  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
+  if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   if (board.state === 'ARCHIVED') {
     return Response.json(
-      { error: { code: 'board-is-archived', message: 'This board is archived and cannot be modified.' } },
-      { status: 403 },
+      {
+        error: {
+          code: 'board-is-archived',
+          message: 'This board is archived and cannot be modified.',
+        },
+      },
+      { status: 403 }
     );
   }
 
@@ -120,18 +110,30 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.content || typeof body.content !== 'string' || body.content.trim() === '') {
     return Response.json(
       { error: { code: 'bad-request', message: 'content is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   const trimmedContent = sanitizeRichText(body.content.trim());
+  if (hasNonPersistableMediaUrl(trimmedContent)) {
+    return Response.json(
+      {
+        error: {
+          code: 'bad-request',
+          message:
+            'Comment contains a temporary local media URL. Please re-upload the image before saving.',
+        },
+      },
+      { status: 400 }
+    );
+  }
 
   // [why] No-op edits should not bump version or emit edit activity/events.
   // This keeps the (edited) marker only for actual content changes.
@@ -143,7 +145,7 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
   const newVersion = comment.version + 1;
 
   await db.transaction(async (trx) => {
-    await trx<CommentRow>('comments').where({ id: commentId }).update({
+    await trx('comments').where({ id: commentId }).update({
       content: trimmedContent,
       version: newVersion,
       updated_at: new Date().toISOString(),
@@ -167,7 +169,7 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
       sourceText: trimmedContent,
       cardId: comment.card_id,
       boardId: board.id,
-      cardTitle: card.title,
+      cardTitle: card?.title,
       boardName: board.title,
     });
   });
@@ -180,7 +182,12 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
       boardId: board.id,
       entityId: comment.card_id,
       actorId,
-      payload: { commentId, version: newVersion, cardId: comment.card_id, cardTitle: card.title },
+      payload: {
+        commentId,
+        version: newVersion,
+        cardId: comment.card_id,
+        cardTitle: card?.title ?? null,
+      },
     }),
     writeActivity({
       entityType: 'card',
@@ -192,7 +199,7 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
         commentId,
         version: newVersion,
         cardId: comment.card_id,
-        cardTitle: card.title,
+        cardTitle: card?.title ?? null,
         before: comment.content,
         after: trimmedContent,
       },
@@ -200,10 +207,9 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
   ]);
 
   // Broadcast so open card modals in other browser sessions reflect the edit in real time
-  publisher.publish(
-    board.id,
-    JSON.stringify({ type: 'comment_updated', payload: { comment: updated } }),
-  ).catch(() => {});
+  publisher
+    .publish(board.id, JSON.stringify({ type: 'comment_updated', payload: { comment: updated } }))
+    .catch(() => {});
 
   return Response.json({ data: updated });
 }

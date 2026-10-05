@@ -38,39 +38,51 @@ export function AttachmentDropZone({
     return Array.from(transfer.types ?? []).includes('Files');
   }, []);
 
-  const isExcludedTarget = useCallback((target: EventTarget | null): boolean => {
-    if (!(target instanceof Element)) return false;
+  const isExcludedTarget = useCallback(
+    (target: EventTarget | null): boolean => {
+      if (!(target instanceof Element)) return false;
 
-    if (activeWithinSelector && !target.closest(activeWithinSelector)) {
-      return true;
-    }
+      if (activeWithinSelector && !target.closest(activeWithinSelector)) {
+        return true;
+      }
 
-    return excludeSelectors.some((selector) => target.closest(selector));
-  }, [activeWithinSelector, excludeSelectors]);
+      return excludeSelectors.some((selector) => target.closest(selector));
+    },
+    [activeWithinSelector, excludeSelectors]
+  );
 
-  const handleDragEnter = useCallback((ev: React.DragEvent) => {
-    if (!handlesLocal) return;
-    if (!hasFilePayload(ev.dataTransfer)) return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    dragDepth.current++;
-    if (!disabled) setIsDragOver(true);
-  }, [disabled, handlesLocal, hasFilePayload]);
+  const handleDragEnter = useCallback(
+    (ev: React.DragEvent) => {
+      if (!handlesLocal) return;
+      if (!hasFilePayload(ev.dataTransfer)) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      dragDepth.current++;
+      if (!disabled) setIsDragOver(true);
+    },
+    [disabled, handlesLocal, hasFilePayload]
+  );
 
-  const handleDragLeave = useCallback((ev: React.DragEvent) => {
-    if (!handlesLocal) return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    dragDepth.current--;
-    if (dragDepth.current === 0) setIsDragOver(false);
-  }, [handlesLocal]);
+  const handleDragLeave = useCallback(
+    (ev: React.DragEvent) => {
+      if (!handlesLocal) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      dragDepth.current--;
+      if (dragDepth.current === 0) setIsDragOver(false);
+    },
+    [handlesLocal]
+  );
 
-  const handleDragOver = useCallback((ev: React.DragEvent) => {
-    if (!handlesLocal) return;
-    if (!hasFilePayload(ev.dataTransfer)) return;
-    ev.preventDefault();
-    ev.dataTransfer.dropEffect = 'copy';
-  }, [handlesLocal, hasFilePayload]);
+  const handleDragOver = useCallback(
+    (ev: React.DragEvent) => {
+      if (!handlesLocal) return;
+      if (!hasFilePayload(ev.dataTransfer)) return;
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = 'copy';
+    },
+    [handlesLocal, hasFilePayload]
+  );
 
   const handleDrop = useCallback(
     (ev: React.DragEvent) => {
@@ -87,7 +99,7 @@ export function AttachmentDropZone({
         onFiles(files);
       }
     },
-    [disabled, handlesLocal, hasFilePayload, onFiles],
+    [disabled, handlesLocal, hasFilePayload, onFiles]
   );
 
   React.useEffect(() => {
@@ -165,7 +177,9 @@ export function AttachmentDropZone({
           aria-hidden="true"
         >
           <ArrowUpTrayIcon className="h-10 w-10 text-blue-400 mb-2" />
-          <span className="text-sm font-medium text-blue-600">{translations['attachments.dropZone.hint']}</span>
+          <span className="text-sm font-medium text-blue-600">
+            {translations['attachments.dropZone.hint']}
+          </span>
         </div>
       )}
     </div>

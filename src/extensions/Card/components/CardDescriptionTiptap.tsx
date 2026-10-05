@@ -46,6 +46,8 @@ import {
 import { selectCurrentUser, selectAccessToken } from '~/slices/authSlice';
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
 import { getInlineTitleFromUrl, normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
+import { sanitizeUserGeneratedHtml } from '~/common/utils/sanitizeUserGeneratedHtml';
+import { escapeScriptTags } from '~/common/utils/escapeScriptTags';
 
 /**
  * Add target="_blank" rel="noopener noreferrer" to external links that don't already
@@ -56,7 +58,7 @@ import { getInlineTitleFromUrl, normalizeHttpUrlInput } from '~/common/utils/url
 function addLinkTargetBlank(html: string): string {
   return html.replaceAll(
     /<a(?=[^>]*\bhref="(?!#))(?![^>]*\btarget=)/gi,
-    '<a target="_blank" rel="noopener noreferrer"',
+    '<a target="_blank" rel="noopener noreferrer"'
   );
 }
 
@@ -76,7 +78,9 @@ function normalizePreviewLinkHref(rawHref: string): string {
   const hrefCandidate = (markdownHrefMatch?.[1] ?? decoded).trim();
   const unwrapped = hrefCandidate.replace(/^<([^>]+)>$/, '$1').trim();
 
-  const embeddedUrls = Array.from(unwrapped.matchAll(/https?:\/\/[^\s<>)\]]+/gi)).map((match) => match[0]);
+  const embeddedUrls = Array.from(unwrapped.matchAll(/https?:\/\/[^\s<>)\]]+/gi)).map(
+    (match) => match[0]
+  );
   const bestEmbeddedUrl = (() => {
     if (embeddedUrls.length === 0) return null;
 
@@ -166,7 +170,7 @@ function detectLinkDisplayMode(
   className: string | null | undefined,
   text: string,
   title?: string | null,
-  hasVisualLineBreak = false,
+  hasVisualLineBreak = false
 ): LinkDisplayMode {
   const modeFromMetadata = getModeFromClassName(className);
   if (modeFromMetadata) return modeFromMetadata;
@@ -175,7 +179,8 @@ function detectLinkDisplayMode(
   if (modeFromTitle) return modeFromTitle;
 
   if (className?.includes(LINK_CLASS_URL)) return 'url';
-  if (className?.includes(LINK_CLASS_CARD) || hasVisualLineBreak || text.includes('\n')) return 'card';
+  if (className?.includes(LINK_CLASS_CARD) || hasVisualLineBreak || text.includes('\n'))
+    return 'card';
   // [why] Default link presentation in edit mode should be the compact button
   // style, not raw URL text mode.
   if (className?.includes(LINK_CLASS_BUTTON)) return 'button';
@@ -229,7 +234,7 @@ function classifyPreviewLinkMode(anchor: HTMLAnchorElement): LinkDisplayMode {
 }
 
 function hydratePreviewLinkModes(root: HTMLElement): void {
-  const anchors = Array.from(root.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+  const anchors = Array.from(root.querySelectorAll('a[href]'));
   anchors.forEach((anchor) => {
     anchor.classList.remove(
       'meta-link-chip',
@@ -238,7 +243,7 @@ function hydratePreviewLinkModes(root: HTMLElement): void {
       LINK_CLASS_CARD,
       LINK_MODE_META_URL,
       LINK_MODE_META_BUTTON,
-      LINK_MODE_META_CARD,
+      LINK_MODE_META_CARD
     );
 
     const mode = classifyPreviewLinkMode(anchor);
@@ -248,12 +253,16 @@ function hydratePreviewLinkModes(root: HTMLElement): void {
 }
 
 function mergeConsecutiveDuplicateHrefLinks(root: ParentNode): void {
-  const anchors = Array.from(root.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+  const anchors = Array.from(root.querySelectorAll('a[href]'));
   anchors.forEach((anchor) => {
     if (!anchor.isConnected) return;
 
     let separator: Node | null = anchor.nextSibling;
-    while (separator && separator.nodeType === Node.TEXT_NODE && !(separator.textContent ?? '').trim()) {
+    while (
+      separator &&
+      separator.nodeType === Node.TEXT_NODE &&
+      !(separator.textContent ?? '').trim()
+    ) {
       separator = separator.nextSibling;
     }
 
@@ -261,7 +270,11 @@ function mergeConsecutiveDuplicateHrefLinks(root: ParentNode): void {
     let nextNode: Node | null = separator;
     if (hadBrSeparator) {
       nextNode = separator.nextSibling;
-      while (nextNode && nextNode.nodeType === Node.TEXT_NODE && !(nextNode.textContent ?? '').trim()) {
+      while (
+        nextNode &&
+        nextNode.nodeType === Node.TEXT_NODE &&
+        !(nextNode.textContent ?? '').trim()
+      ) {
         nextNode = nextNode.nextSibling;
       }
     }
@@ -286,7 +299,7 @@ function mergeConsecutiveDuplicateHrefLinks(root: ParentNode): void {
       LINK_CLASS_BUTTON,
       LINK_MODE_META_URL,
       LINK_MODE_META_BUTTON,
-      LINK_MODE_META_CARD,
+      LINK_MODE_META_CARD
     );
     anchor.classList.add(LINK_CLASS_CARD, LINK_MODE_META_CARD);
 
@@ -314,7 +327,10 @@ function normalizeRenderedLinkHtml(html: string): string {
   return doc.body.innerHTML;
 }
 
-function findActiveLinkFromAnchor(editor: Editor, anchorEl: HTMLAnchorElement): ActiveEditorLink | null {
+function findActiveLinkFromAnchor(
+  editor: Editor,
+  anchorEl: HTMLAnchorElement
+): ActiveEditorLink | null {
   const href = anchorEl.getAttribute('href')?.trim() ?? '';
   if (!href) return null;
 
@@ -341,7 +357,7 @@ function findActiveLinkFromAnchor(editor: Editor, anchorEl: HTMLAnchorElement): 
     anchorEl.getAttribute('class'),
     text,
     anchorEl.getAttribute('title'),
-    Boolean(anchorEl.querySelector('br')),
+    Boolean(anchorEl.querySelector('br'))
   );
 
   return {
@@ -389,7 +405,12 @@ function findActiveLinkFromSelection(editor: Editor): ActiveEditorLink | null {
     anchorEl = null;
   }
 
-  const mode = detectLinkDisplayMode(className, text, title, Boolean(anchorEl?.querySelector('br')));
+  const mode = detectLinkDisplayMode(
+    className,
+    text,
+    title,
+    Boolean(anchorEl?.querySelector('br'))
+  );
 
   return {
     anchorEl,
@@ -413,13 +434,20 @@ interface Props {
 // Map draft status to a human-readable footer label.
 function draftStatusLabel(status: DraftStatus): string | null {
   switch (status) {
-    case 'saving_local': return 'Saving draft…';
-    case 'saved_local':  return 'Draft saved locally';
-    case 'syncing':      return 'Syncing draft…';
-    case 'synced':       return 'Synced draft';
-    case 'will_sync_when_online': return 'Will sync when online';
-    case 'sync_failed':  return 'Sync failed';
-    default:             return null;
+    case 'saving_local':
+      return 'Saving draft…';
+    case 'saved_local':
+      return 'Draft saved locally';
+    case 'syncing':
+      return 'Syncing draft…';
+    case 'synced':
+      return 'Synced draft';
+    case 'will_sync_when_online':
+      return 'Will sync when online';
+    case 'sync_failed':
+      return 'Sync failed';
+    default:
+      return null;
   }
 }
 
@@ -454,13 +482,20 @@ function normalizeMarkdownLinkUrls(markdown: string): string {
       const normalized = normalizeHttpUrlInput(destinationCandidate);
       if (!normalized) return fullMatch;
       return `](${normalized}${rawTitle ?? ''})`;
-    },
+    }
   );
 }
 
 function buildDescriptionMarkdown(editor: Editor, attachments: Attachment[]): string {
   let markdown = normalizeEscapedBlockquoteMarkers(editor.getMarkdown() || '');
   const imageSnippets: string[] = [];
+  const scriptLiterals = Array.from(
+    new Set(
+      (editor.state.doc.textContent.match(/<script\b[\s\S]*?<\/script>/gi) ?? []).map((value) =>
+        value.trim()
+      )
+    )
+  );
 
   editor.state.doc.descendants((node) => {
     if (node.type.name !== 'image') return;
@@ -474,27 +509,36 @@ function buildDescriptionMarkdown(editor: Editor, attachments: Attachment[]): st
     const urlMatch = /\((.*)\)$/.exec(snippet);
     const url = urlMatch?.[1] ?? '';
     if (url && markdown.includes(url)) return;
-    markdown = markdown.trim().length > 0
-      ? `${markdown.trim()}\n\n${snippet}`
-      : snippet;
+    markdown = markdown.trim().length > 0 ? `${markdown.trim()}\n\n${snippet}` : snippet;
   });
 
   markdown = normalizeMarkdownLinkUrls(markdown);
 
-  return dehydrateCommentAttachmentMarkdown(markdown, attachments);
+  scriptLiterals.forEach((snippet) => {
+    if (!snippet || markdown.includes(snippet)) return;
+    const escapedSnippet = escapeScriptTags(snippet);
+    markdown =
+      markdown.trim().length > 0 ? `${markdown.trim()}\n\n${escapedSnippet}` : escapedSnippet;
+  });
+
+  return dehydrateCommentAttachmentMarkdown(escapeScriptTags(markdown), attachments);
 }
 
 function escapeMdLabel(value: string): string {
-  return value
-    .replaceAll('[', String.raw`\[`)
-    .replaceAll(']', String.raw`\]`);
+  return value.replaceAll('[', String.raw`\[`).replaceAll(']', String.raw`\]`);
 }
 
-function buildAttachmentSnippet({ name, url, isImage }: { name: string; url: string; isImage: boolean }): string {
+function buildAttachmentSnippet({
+  name,
+  url,
+  isImage,
+}: {
+  name: string;
+  url: string;
+  isImage: boolean;
+}): string {
   const safeName = escapeMdLabel(name || 'attachment');
-  return isImage
-    ? `![${safeName}](${url}) `
-    : `[${safeName}](${url}) `;
+  return isImage ? `![${safeName}](${url}) ` : `[${safeName}](${url}) `;
 }
 
 function insertSnippetAt(editor: Editor, pos: number, snippet: string): void {
@@ -506,7 +550,10 @@ function insertSnippetAt(editor: Editor, pos: number, snippet: string): void {
     .run();
 }
 
-function resolvePendingHydratedContent(pendingContent: string | null, attachments: Attachment[]): string | null {
+function resolvePendingHydratedContent(
+  pendingContent: string | null,
+  attachments: Attachment[]
+): string | null {
   if (!pendingContent) return null;
   const normalized = normalizeEscapedBlockquoteMarkers(pendingContent);
   if (hasAttachmentPlaceholder(normalized) && attachments.length === 0) return null;
@@ -535,7 +582,11 @@ function buildEditorContentHtml(source: string, attachments: Attachment[]): stri
   return normalizeRenderedLinkHtml(marked.parse(initialContent) as string);
 }
 
-function setEditorContentFromSource(editor: Editor, source: string, attachments: Attachment[]): void {
+function setEditorContentFromSource(
+  editor: Editor,
+  source: string,
+  attachments: Attachment[]
+): void {
   const htmlContent = buildEditorContentHtml(source, attachments);
   if (!htmlContent) {
     editor.commands.clearContent();
@@ -562,7 +613,7 @@ function hydrateEditorLinkMarkClasses(editor: Editor): void {
     const range = getMarkRange(editor.state.doc.resolve(resolvePos), linkType);
     if (!range) return;
 
-    const rangeKey = `${String(range.from)}:${String(range.to)}`;
+    const rangeKey = `${range.from}:${range.to}`;
     if (seenRanges.has(rangeKey)) return;
     seenRanges.add(rangeKey);
 
@@ -585,19 +636,28 @@ function hydrateEditorLinkMarkClasses(editor: Editor): void {
       return undefined;
     });
     const title = typeof linkAttrs?.title === 'string' ? linkAttrs.title : null;
-    const inferredMode = detectLinkDisplayMode(currentClass, text, title, hasHardBreak || text.includes('\n'));
+    const inferredMode = detectLinkDisplayMode(
+      currentClass,
+      text,
+      title,
+      hasHardBreak || text.includes('\n')
+    );
     const nextClass = buildLinkClassName(inferredMode);
 
     if (currentClass === nextClass) return;
 
     tr.removeMark(range.from, range.to, linkType);
-    tr.addMark(range.from, range.to, linkType.create({
-      ...linkAttrs,
-      class: nextClass,
-      title: buildLinkModeTitle(inferredMode),
-      target: '_blank',
-      rel: 'noopener noreferrer',
-    }));
+    tr.addMark(
+      range.from,
+      range.to,
+      linkType.create({
+        ...linkAttrs,
+        class: nextClass,
+        title: buildLinkModeTitle(inferredMode),
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      })
+    );
   });
 
   if (tr.steps.length > 0) {
@@ -648,7 +708,7 @@ function replaceLinkRangeText(
   editor: Editor,
   target: LinkRangeTarget,
   text: string,
-  className: string,
+  className: string
 ): void {
   const linkType = editor.state.schema.marks.link;
   if (!linkType) return;
@@ -695,11 +755,7 @@ function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number)
     return true;
   }
 
-  insertSnippetAt(
-    editor,
-    pos,
-    buildAttachmentSnippet({ name: attachment.name, url, isImage }),
-  );
+  insertSnippetAt(editor, pos, buildAttachmentSnippet({ name: attachment.name, url, isImage }));
   return true;
 }
 
@@ -713,13 +769,16 @@ function buildDescriptionSaveMarkdown(
   editMode: 'rich' | 'markdown',
   editor: Editor | null,
   draft: string,
-  attachments: Attachment[],
+  attachments: Attachment[]
 ): string {
   if (editMode === 'rich' && editor) {
     return buildDescriptionMarkdown(editor, attachments);
   }
 
-  return dehydrateCommentAttachmentMarkdown(normalizeMarkdownLinkUrls(draft), attachments);
+  return dehydrateCommentAttachmentMarkdown(
+    escapeScriptTags(normalizeMarkdownLinkUrls(draft)),
+    attachments
+  );
 }
 
 function buildPreviewMarkdown(markdown: string, attachments: Attachment[]): string {
@@ -788,7 +847,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
     try {
       const res = await listAttachments({ cardId });
       const sorted = [...res.data].sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
       replaceCardAttachments(sorted);
     } catch {
@@ -807,7 +866,12 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
   }, [assetPickerOpen, loadCardAttachments]);
 
   // Attachment upload — only active when a cardId is provided.
-  const { uploads, upload: uploadFiles, removeEntry, flush: flushUploads } = useAttachmentUpload({
+  const {
+    uploads,
+    upload: uploadFiles,
+    removeEntry,
+    flush: flushUploads,
+  } = useAttachmentUpload({
     cardId: cardId ?? '',
     deferred: true,
     onSuccess(attachment: Attachment, clientId: string) {
@@ -817,7 +881,8 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
       const savedPos = insertPosMap.current.get(clientId);
       insertPosMap.current.delete(clientId);
       const docSize = ed.state.doc.content.size;
-      const insertAt = savedPos === undefined ? ed.state.selection.anchor : Math.min(savedPos, docSize);
+      const insertAt =
+        savedPos === undefined ? ed.state.selection.anchor : Math.min(savedPos, docSize);
       if (insertAttachmentAt(ed, attachment, insertAt)) return;
       // [why] Some fresh upload responses arrive before the card attachment URLs are
       // hydrated. Retry once the follow-up attachment list fetch returns URLs.
@@ -912,13 +977,27 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
         const clipboardData = event.clipboardData;
         if (!clipboardData) return false;
         const clipboardText = clipboardData.getData('text/plain').trim();
+
+        if (/<script\b[^>]*>|<\/script>/i.test(clipboardText)) {
+          event.preventDefault();
+          const pos = view.state.selection.from;
+          const escapedText = escapeScriptTags(clipboardText);
+          editorRef.current
+            ?.chain()
+            .focus()
+            .insertContentAt(pos, [{ type: 'text', text: escapedText }])
+            .setTextSelection(pos + escapedText.length)
+            .run();
+          return true;
+        }
+
         const href = normalizeHttpUrlInput(clipboardText);
         if (!href) return false;
 
         event.preventDefault();
         const pos = view.state.selection.from;
 
-        const loadingToken = `link-loading-${String(Date.now())}-${Math.random().toString(36).slice(2, 8)}`;
+        const loadingToken = `link-loading-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const loadingClass = buildLinkClassName('url', [LINK_CLASS_LOADING, loadingToken]);
 
         editorRef.current
@@ -928,7 +1007,17 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
             {
               type: 'text',
               text: href,
-              marks: [{ type: 'link', attrs: { href, target: '_blank', rel: 'noopener noreferrer', class: loadingClass } }],
+              marks: [
+                {
+                  type: 'link',
+                  attrs: {
+                    href,
+                    target: '_blank',
+                    rel: 'noopener noreferrer',
+                    class: loadingClass,
+                  },
+                },
+              ],
             },
             { type: 'text', text: ' ' },
           ])
@@ -964,7 +1053,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
     if (!editor || editor.isDestroyed) return;
     const hydratedContent = resolvePendingHydratedContent(
       pendingHydratedContentRef.current,
-      cardAttachmentsRef.current,
+      cardAttachmentsRef.current
     );
     if (!hydratedContent) return;
     setEditorContentFromSource(editor, hydratedContent, cardAttachmentsRef.current);
@@ -988,7 +1077,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
       editor.setEditable(editing && !disabled);
     }
   }, [editor, editing, disabled]);
-  
+
   const handleEnterEdit = useCallback(() => {
     if (disabled) return;
     setEditing(true);
@@ -1022,7 +1111,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
 
       setEditMode(mode);
     },
-    [editor, editMode, draft],
+    [editor, editMode, draft]
   );
 
   // Sync external description changes when not editing
@@ -1044,7 +1133,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
       editMode,
       editor,
       draft,
-      cardAttachmentsRef.current,
+      cardAttachmentsRef.current
     );
     setDraft(markdown);
 
@@ -1101,9 +1190,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files ?? []);
       if (files.length > 0) {
-        const pos = editor && !editor.isDestroyed
-          ? editor.state.selection.anchor
-          : 0;
+        const pos = editor && !editor.isDestroyed ? editor.state.selection.anchor : 0;
         const ids = uploadFiles(files);
         ids.forEach((id) => insertPosMap.current.set(id, pos));
         void flushUploads()
@@ -1113,7 +1200,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
       setAssetPickerOpen(false);
       e.target.value = '';
     },
-    [editor, uploadFiles, flushUploads, loadCardAttachments],
+    [editor, uploadFiles, flushUploads, loadCardAttachments]
   );
 
   const handleEditorKeyDown = useCallback(
@@ -1127,36 +1214,42 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
         handleCancel();
       }
     },
-    [handleSave, handleCancel],
+    [handleSave, handleCancel]
   );
 
-  const getEditorLinkFromTarget = useCallback((target: EventTarget | null): ActiveEditorLink | null => {
-    if (!editor) return null;
-    const element = target as HTMLElement | null;
-    if (!element) return null;
-    const anchor = element.closest('a');
-    if (!(anchor instanceof HTMLAnchorElement)) return null;
-    if (!anchor.closest('.ProseMirror')) return null;
-    return findActiveLinkFromAnchor(editor, anchor);
-  }, [editor]);
+  const getEditorLinkFromTarget = useCallback(
+    (target: EventTarget | null): ActiveEditorLink | null => {
+      if (!editor) return null;
+      const element = target as HTMLElement | null;
+      if (!element) return null;
+      const anchor = element.closest('a');
+      if (!(anchor instanceof HTMLAnchorElement)) return null;
+      if (!anchor.closest('.ProseMirror')) return null;
+      return findActiveLinkFromAnchor(editor, anchor);
+    },
+    [editor]
+  );
 
-  const updateStoredLinkRect = useCallback((link: ActiveEditorLink | null): ActiveEditorLink | null => {
-    if (!link) return null;
-    if (link.anchorEl?.isConnected) {
-      return { ...link, rect: link.anchorEl.getBoundingClientRect() };
-    }
-    const fromCoords = editor?.view.coordsAtPos(link.from);
-    const toCoords = editor?.view.coordsAtPos(Math.max(link.from + 1, link.to));
-    if (!fromCoords || !toCoords) return link;
-    const left = Math.min(fromCoords.left, toCoords.left);
-    const top = Math.min(fromCoords.top, toCoords.top);
-    const right = Math.max(fromCoords.right, toCoords.right);
-    const bottom = Math.max(fromCoords.bottom, toCoords.bottom);
-    return {
-      ...link,
-      rect: new DOMRect(left, top, Math.max(1, right - left), Math.max(1, bottom - top)),
-    };
-  }, [editor]);
+  const updateStoredLinkRect = useCallback(
+    (link: ActiveEditorLink | null): ActiveEditorLink | null => {
+      if (!link) return null;
+      if (link.anchorEl?.isConnected) {
+        return { ...link, rect: link.anchorEl.getBoundingClientRect() };
+      }
+      const fromCoords = editor?.view.coordsAtPos(link.from);
+      const toCoords = editor?.view.coordsAtPos(Math.max(link.from + 1, link.to));
+      if (!fromCoords || !toCoords) return link;
+      const left = Math.min(fromCoords.left, toCoords.left);
+      const top = Math.min(fromCoords.top, toCoords.top);
+      const right = Math.max(fromCoords.right, toCoords.right);
+      const bottom = Math.max(fromCoords.bottom, toCoords.bottom);
+      return {
+        ...link,
+        rect: new DOMRect(left, top, Math.max(1, right - left), Math.max(1, bottom - top)),
+      };
+    },
+    [editor]
+  );
 
   const closeLinkConfigUi = useCallback(() => {
     setLinkConfigOpen(false);
@@ -1176,75 +1269,81 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
     });
   }, []);
 
-  const applyLinkChange = useCallback((payload: {
-    href: string;
-    displayMode: LinkDisplayMode;
-    baseLabel?: string;
-    openEdit?: boolean;
-  }) => {
-    if (!editor || !activeEditorLink) return;
+  const applyLinkChange = useCallback(
+    (payload: {
+      href: string;
+      displayMode: LinkDisplayMode;
+      baseLabel?: string;
+      openEdit?: boolean;
+    }) => {
+      if (!editor || !activeEditorLink) return;
 
-    const normalizedHref = normalizeHttpUrlInput(payload.href) ?? payload.href.trim();
-    if (!normalizedHref) return;
+      const normalizedHref = normalizeHttpUrlInput(payload.href) ?? payload.href.trim();
+      if (!normalizedHref) return;
 
-    let text = payload.baseLabel?.trim() || getLinkLabelText(activeEditorLink.text);
-    if (!text) {
-      text = getInlineTitleFromUrl(normalizedHref);
-    }
+      let text = payload.baseLabel?.trim() || getLinkLabelText(activeEditorLink.text);
+      if (!text) {
+        text = getInlineTitleFromUrl(normalizedHref);
+      }
 
-    if (payload.displayMode === 'card') {
-      text = buildCardLinkText(text, normalizedHref);
-    } else if (payload.displayMode === 'url' && !payload.baseLabel?.trim()) {
-      // [why] URL mode should still allow a custom display label from the edit
-      // popover. Fall back to raw URL only when no label is provided.
-      text = normalizedHref;
-    }
+      if (payload.displayMode === 'card') {
+        text = buildCardLinkText(text, normalizedHref);
+      } else if (payload.displayMode === 'url' && !payload.baseLabel?.trim()) {
+        // [why] URL mode should still allow a custom display label from the edit
+        // popover. Fall back to raw URL only when no label is provided.
+        text = normalizedHref;
+      }
 
-    const linkClass = buildLinkClassName(payload.displayMode);
+      const linkClass = buildLinkClassName(payload.displayMode);
 
-    const attrs = {
-      href: normalizedHref,
-      target: '_blank',
-      rel: 'noopener noreferrer',
-      class: linkClass,
-      title: buildLinkModeTitle(payload.displayMode),
-    };
+      const attrs = {
+        href: normalizedHref,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        class: linkClass,
+        title: buildLinkModeTitle(payload.displayMode),
+      };
 
-    editor
-      .chain()
-      .focus()
-      .insertContentAt(
-        { from: activeEditorLink.from, to: activeEditorLink.to },
-        {
-          type: 'text',
-          text,
-          marks: [{ type: 'link', attrs }],
-        },
-      )
-      .setTextSelection(activeEditorLink.from + text.length)
-      .run();
+      editor
+        .chain()
+        .focus()
+        .insertContentAt(
+          { from: activeEditorLink.from, to: activeEditorLink.to },
+          {
+            type: 'text',
+            text,
+            marks: [{ type: 'link', attrs }],
+          }
+        )
+        .setTextSelection(activeEditorLink.from + text.length)
+        .run();
 
-    const updatedLink = findActiveLinkFromSelection(editor)
-      ?? (activeEditorLink.anchorEl ? findActiveLinkFromAnchor(editor, activeEditorLink.anchorEl) : null);
-    if (updatedLink) {
-      setActiveEditorLink(updatedLink);
-      setHoveredLink(updatedLink);
-    } else {
-      setActiveEditorLink((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          href: normalizedHref,
-          text,
-          mode: payload.displayMode,
-        };
-      });
-    }
+      const updatedLink =
+        findActiveLinkFromSelection(editor) ??
+        (activeEditorLink.anchorEl
+          ? findActiveLinkFromAnchor(editor, activeEditorLink.anchorEl)
+          : null);
+      if (updatedLink) {
+        setActiveEditorLink(updatedLink);
+        setHoveredLink(updatedLink);
+      } else {
+        setActiveEditorLink((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            href: normalizedHref,
+            text,
+            mode: payload.displayMode,
+          };
+        });
+      }
 
-    if (!payload.openEdit) {
-      setLinkEditOpen(false);
-    }
-  }, [editor, activeEditorLink]);
+      if (!payload.openEdit) {
+        setLinkEditOpen(false);
+      }
+    },
+    [editor, activeEditorLink]
+  );
 
   const linkOverlayTarget = (linkConfigOpen ? activeEditorLink : hoveredLink) ?? null;
   const linkOverlayPosition = (() => {
@@ -1253,13 +1352,15 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
     if (!container) return null;
     const containerRect = container.getBoundingClientRect();
     // [why] Keep the trigger vertically aligned to the link line center.
-    const left = Math.max(8, Math.min(
-      linkOverlayTarget.rect.right - containerRect.left - 12,
-      containerRect.width - 32,
-    ));
+    const left = Math.max(
+      8,
+      Math.min(linkOverlayTarget.rect.right - containerRect.left - 12, containerRect.width - 32)
+    );
     const iconSize = 24;
-    const centeredTop = linkOverlayTarget.rect.top - containerRect.top
-      + ((linkOverlayTarget.rect.height - iconSize) / 2);
+    const centeredTop =
+      linkOverlayTarget.rect.top -
+      containerRect.top +
+      (linkOverlayTarget.rect.height - iconSize) / 2;
     const top = Math.max(6, centeredTop);
     return { left, top };
   })();
@@ -1271,10 +1372,10 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
     const containerRect = container.getBoundingClientRect();
     const toolbarHeight = 40;
     const gap = 10;
-    const left = Math.max(8, Math.min(
-      activeEditorLink.rect.left - containerRect.left,
-      containerRect.width - 296,
-    ));
+    const left = Math.max(
+      8,
+      Math.min(activeEditorLink.rect.left - containerRect.left, containerRect.width - 296)
+    );
 
     const linkTop = activeEditorLink.rect.top - containerRect.top;
     const linkBottom = activeEditorLink.rect.bottom - containerRect.top;
@@ -1345,11 +1446,20 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
       input.focus();
       input.select();
     });
-  }, [editing, editMode, linkConfigOpen, linkEditOpen, activeEditorLink?.from, activeEditorLink?.to]);
+  }, [
+    editing,
+    editMode,
+    linkConfigOpen,
+    linkEditOpen,
+    activeEditorLink?.from,
+    activeEditorLink?.to,
+  ]);
 
   const hydratedPreviewMarkdown = buildPreviewMarkdown(draft || '', cardAttachments);
   const isEmpty = !draft.trim();
-  const previewHtml = addLinkTargetBlank(normalizeRenderedLinkHtml(marked.parse(hydratedPreviewMarkdown) as string));
+  const previewHtml = sanitizeUserGeneratedHtml(
+    addLinkTargetBlank(normalizeRenderedLinkHtml(marked.parse(hydratedPreviewMarkdown) as string))
+  );
   const attachProps = cardId ? { onAttach: handleAttach } : undefined;
 
   useEffect(() => {
@@ -1440,14 +1550,18 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
               <button
                 type="button"
                 className={`px-2 py-1 text-xs ${editMode === 'rich' ? 'bg-indigo-600 text-inverse' : 'bg-bg-surface text-muted'}`}
-                onClick={() => { handleModeChange('rich'); }}
+                onClick={() => {
+                  handleModeChange('rich');
+                }}
               >
                 Rich text
               </button>
               <button
                 type="button"
                 className={`px-2 py-1 text-xs ${editMode === 'markdown' ? 'bg-indigo-600 text-inverse' : 'bg-bg-surface text-muted'}`}
-                onClick={() => { handleModeChange('markdown'); }}
+                onClick={() => {
+                  handleModeChange('markdown');
+                }}
               >
                 Markdown
               </button>
@@ -1455,13 +1569,18 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
           </div>
 
           {editMode === 'rich' ? (
-            <div className="flex max-h-[55vh] flex-col overflow-visible rounded-lg border border-border bg-bg-surface" data-upload-drop-exclude="true">
+            <div
+              className="flex max-h-[55vh] flex-col overflow-visible rounded-lg border border-border bg-bg-surface"
+              data-upload-drop-exclude="true"
+            >
               {/* Single-line toolbar: primary controls always visible, secondary behind + */}
               <div className="relative">
                 <OneLineToolbar
                   editor={editor}
                   overflowOpen={overflowOpen}
-                  onToggleOverflow={() => { setOverflowOpen((o) => !o); }}
+                  onToggleOverflow={() => {
+                    setOverflowOpen((o) => !o);
+                  }}
                   linkPopoverOpen={linkPopoverOpen}
                   onToggleLinkPopover={() => {
                     closeLinkConfigUi();
@@ -1473,7 +1592,9 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                 {linkPopoverOpen && (
                   <LinkInsertPopover
                     editor={editor}
-                    onClose={() => { setLinkPopoverOpen(false); }}
+                    onClose={() => {
+                      setLinkPopoverOpen(false);
+                    }}
                   />
                 )}
                 {assetPickerOpen && cardId && (
@@ -1481,7 +1602,9 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                     attachments={cardAttachments}
                     onUploadNew={() => fileInputRef.current?.click()}
                     onInsert={handleInsertExisting}
-                    onClose={() => { setAssetPickerOpen(false); }}
+                    onClose={() => {
+                      setAssetPickerOpen(false);
+                    }}
                   />
                 )}
               </div>
@@ -1605,7 +1728,9 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                           applyLinkChange({
                             href: activeEditorLink.href,
                             displayMode: 'card',
-                            baseLabel: getLinkLabelText(activeEditorLink.text) || getInlineTitleFromUrl(activeEditorLink.href),
+                            baseLabel:
+                              getLinkLabelText(activeEditorLink.text) ||
+                              getInlineTitleFromUrl(activeEditorLink.href),
                           });
                         }}
                       >
@@ -1640,7 +1765,11 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                       aria-label="Open Link In New Tab"
                       className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-bg-overlay hover:text-base"
                       onClick={() => {
-                        window.open(normalizePreviewLinkHref(activeEditorLink.href), '_blank', 'noopener,noreferrer');
+                        window.open(
+                          normalizePreviewLinkHref(activeEditorLink.href),
+                          '_blank',
+                          'noopener,noreferrer'
+                        );
                       }}
                     >
                       <ArrowTopRightOnSquareIcon className="h-4 w-4" aria-hidden="true" />
@@ -1668,7 +1797,10 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                         editor
                           .chain()
                           .focus()
-                          .setTextSelection({ from: activeEditorLink.from, to: activeEditorLink.to })
+                          .setTextSelection({
+                            from: activeEditorLink.from,
+                            to: activeEditorLink.to,
+                          })
                           .unsetLink()
                           .run();
                         closeLinkConfigUi();
@@ -1687,7 +1819,10 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                     ref={linkEditRef}
                     className="absolute z-50 w-80 rounded-xl border border-border bg-bg-base p-3 shadow-2xl"
                     style={{
-                      left: Math.min(linkConfigPosition.left + 12, Math.max(8, (editorScrollRef.current?.clientWidth ?? 380) - 328)),
+                      left: Math.min(
+                        linkConfigPosition.left + 12,
+                        Math.max(8, (editorScrollRef.current?.clientWidth ?? 380) - 328)
+                      ),
                       top: linkConfigPosition.top + 44,
                     }}
                   >
@@ -1796,12 +1931,16 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                   <button
                     type="button"
                     className="text-indigo-400 hover:text-indigo-300 underline transition-colors"
-                    onClick={() => { retrySync(buildDescriptionSaveMarkdown(
-                      editMode,
-                      editor,
-                      draft,
-                      cardAttachmentsRef.current,
-                    )); }}
+                    onClick={() => {
+                      retrySync(
+                        buildDescriptionSaveMarkdown(
+                          editMode,
+                          editor,
+                          draft,
+                          cardAttachmentsRef.current
+                        )
+                      );
+                    }}
                     data-testid="draft-retry-sync"
                   >
                     {/* [why] "Retry Save" clarifies the user's pending action vs a background sync retry */}
@@ -1827,12 +1966,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
           )}
 
           <div className="flex gap-2 mt-2">
-            <Button
-              variant="primary"
-              size="sm"
-              type="button"
-              onClick={handleSave}
-            >
+            <Button variant="primary" size="sm" type="button" onClick={handleSave}>
               Save
             </Button>
             <button
@@ -1865,39 +1999,50 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
           <button
             ref={previewContainerRef}
             type="button"
-            aria-label={isEmpty ? 'Add a description (click to edit)' : 'Description (click to edit)'}
-            onClick={disabled ? undefined : (e) => {
-              const target = e.target as HTMLElement;
-              const image = target.closest('img');
-              if (image) {
-                const src = image.getAttribute('src');
-                if (src) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setPreviewImage({ src, alt: image.getAttribute('alt') ?? 'Description image' });
-                }
-                return;
-              }
+            aria-label={
+              isEmpty ? 'Add a description (click to edit)' : 'Description (click to edit)'
+            }
+            onClick={
+              disabled
+                ? undefined
+                : (e) => {
+                    const target = e.target as HTMLElement;
+                    const image = target.closest('img');
+                    if (image) {
+                      const src = image.getAttribute('src');
+                      if (src) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setPreviewImage({
+                          src,
+                          alt: image.getAttribute('alt') ?? 'Description image',
+                        });
+                      }
+                      return;
+                    }
 
-              // [why] Intercept link clicks so they open in a new tab and don't
-              // trigger edit mode — same pattern as CardDescription.tsx.
-              const link = target.closest('a');
-              if (link) {
-                const href = link.getAttribute('href');
-                if (href && href !== '#') {
-                  e.preventDefault();
-                  window.open(normalizePreviewLinkHref(href), '_blank', 'noopener,noreferrer');
-                }
-                return;
-              }
-              handleEnterEdit();
-            }}
+                    // [why] Intercept link clicks so they open in a new tab and don't
+                    // trigger edit mode — same pattern as CardDescription.tsx.
+                    const link = target.closest('a');
+                    if (link) {
+                      const href = link.getAttribute('href');
+                      if (href && href !== '#') {
+                        e.preventDefault();
+                        window.open(
+                          normalizePreviewLinkHref(href),
+                          '_blank',
+                          'noopener,noreferrer'
+                        );
+                      }
+                      return;
+                    }
+                    handleEnterEdit();
+                  }
+            }
             disabled={disabled}
             className={[
               'w-full text-left rounded-lg p-3 min-h-[80px] transition-colors',
-              disabled
-                ? 'cursor-default'
-                : 'cursor-text hover:bg-bg-overlay',
+              disabled ? 'cursor-default' : 'cursor-text',
               isEmpty
                 ? 'text-muted text-sm italic bg-bg-overlay'
                 : 'prose dark:prose-invert prose-sm max-w-none text-base break-words [&_a]:break-all',
@@ -1912,7 +2057,9 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
         <ImageLightbox
           src={previewImage.src}
           name={previewImage.alt}
-          onClose={() => { setPreviewImage(null); }}
+          onClose={() => {
+            setPreviewImage(null);
+          }}
         />
       )}
     </section>

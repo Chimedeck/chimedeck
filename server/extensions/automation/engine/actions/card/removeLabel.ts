@@ -16,8 +16,6 @@ export const cardRemoveLabelAction: ActionHandler = {
     if (!cardId) throw new Error('card-id-missing');
 
     // Idempotent: no-op if not attached
-    await trx('card_labels')
-      .where({ card_id: cardId, label_id: config.labelId })
-      .delete();
+    await trx('card_labels').where({ card_id: cardId, label_id: config.labelId }).delete();
   },
 };

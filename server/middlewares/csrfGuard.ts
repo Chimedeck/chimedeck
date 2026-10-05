@@ -46,7 +46,7 @@ export function csrfGuard(req: Request): Response | null {
           message: 'Cross-site request blocked.',
         },
       },
-      { status: 403 },
+      { status: 403 }
     );
   }
 

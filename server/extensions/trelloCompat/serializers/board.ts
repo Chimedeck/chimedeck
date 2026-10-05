@@ -9,13 +9,16 @@ function visibilityToPermLevel(v: string | null | undefined): VisibilityPermLeve
   return 'private';
 }
 
-export function serializeBoardLabels(labels: Array<{
-  id: string;
-  board_id?: string | null;
-  idBoard?: string | null;
-  name?: string | null;
-  color?: string | null;
-}>, boardId: string): Array<{
+export function serializeBoardLabels(
+  labels: Array<{
+    id: string;
+    board_id?: string | null;
+    idBoard?: string | null;
+    name?: string | null;
+    color?: string | null;
+  }>,
+  boardId: string
+): Array<{
   id: string;
   idBoard: string;
   name: string;

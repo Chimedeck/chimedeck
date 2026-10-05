@@ -51,5 +51,7 @@
   "attachment.rename.save": "Save",
   "attachment.rename.cancel": "Cancel rename",
   "attachment.comment.insert": "Comment",
-  "attachment.item.action.comment.ariaLabel": "Insert attachment link into comment"
+  "attachment.item.action.comment.ariaLabel": "Insert attachment link into comment",
+  "attachments.externalLink.optionsAria": "Link options",
+  "attachments.cardAttachment.optionsAria": "Card attachment options"
 }

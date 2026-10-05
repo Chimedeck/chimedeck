@@ -4,7 +4,12 @@ import { ChecklistSection as ChecklistWidget } from '../../../components/Checkli
 
 interface Props {
   checklist: Checklist;
-  boardMembers: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
+  boardMembers: Array<{
+    id: string;
+    email: string;
+    name: string | null;
+    avatar_url?: string | null;
+  }>;
   onRename: (title: string) => Promise<void>;
   onDelete: () => Promise<void>;
   onItemAdd: (title: string) => Promise<void>;

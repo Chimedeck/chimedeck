@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
-import type { db as database } from '../../../../common/db';
 import { StateTransitionForbiddenError } from '../../common/errors';
 
 type Row = Record<string, unknown>;
@@ -14,10 +13,15 @@ class QueryBuilder {
   private orderedBy: string | null = null;
   private orderDirection: 'asc' | 'desc' = 'asc';
 
-  constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
+  constructor(
+    private readonly store: DataStore,
+    private readonly tableName: keyof DataStore
+  ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -37,27 +41,27 @@ class QueryBuilder {
     return rows[0];
   }
 
-  update(patch: Row, returning?: string[]): Promise<Row[] | number> {
+  async update(patch: Row, returning?: string[]): Promise<Row[] | number> {
     const rows = this.store[this.tableName].filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+      this.filters.every((predicate) => predicate(row))
     );
     for (const row of rows) Object.assign(row, patch);
     if (returning && returning.length > 0) {
-      return Promise.resolve(rows.map((row) => ({ ...row })));
+      return rows.map((row) => ({ ...row }));
     }
-    return Promise.resolve(rows.length);
+    return rows.length;
   }
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     return this.execute().then(onfulfilled, onrejected);
   }
 
-  private execute(): Promise<Row[]> {
+  private async execute(): Promise<Row[]> {
     let rows = this.store[this.tableName].filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+      this.filters.every((predicate) => predicate(row))
     );
 
     if (this.orderedBy) {
@@ -71,16 +75,15 @@ class QueryBuilder {
       });
     }
 
-    const selectedColumns = this.selectedColumns;
-    if (selectedColumns) {
+    if (this.selectedColumns) {
       rows = rows.map((row) => {
         const next: Row = {};
-        for (const key of selectedColumns) next[key] = row[key];
+        for (const key of this.selectedColumns!) next[key] = row[key];
         return next;
       });
     }
 
-    return Promise.resolve(rows.map((row) => ({ ...row })));
+    return rows.map((row) => ({ ...row }));
   }
 }
 
@@ -112,40 +115,43 @@ function resetStore(): DataStore {
   };
 }
 
-void mock.module('../../../../config/featureFlags', () => ({
+mock.module('../../../../config/featureFlags', () => ({
   featureFlags: {
     STATE_TRANSITIONS_ENABLED: true,
   },
 }));
 
-void mock.module('../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof database,
+mock.module('../../../../common/db', () => ({
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
 }));
 
-void mock.module('../../../auth/middlewares/authentication', () => ({
-  authenticate: (req: Request & { currentUser?: { id: string; email: string } }) => {
+mock.module('../../../auth/middlewares/authentication', () => ({
+  authenticate: async (req: Request & { currentUser?: { id: string; email: string } }) => {
     req.currentUser = { id: 'actor-1', email: 'actor@example.com' };
-    return Promise.resolve(null);
+    return null;
   },
 }));
 
-void mock.module('../../../../middlewares/permissionManager', () => ({
-  requireWorkspaceMembership: () => Promise.resolve(null),
+mock.module('../../../../middlewares/permissionManager', () => ({
+  requireWorkspaceMembership: async () => null,
   requireRole: () => null,
 }));
 
-void mock.module('../../../board/middlewares/requireBoardWritable', () => ({
-  requireBoardWritable: (req: Request & { board?: { id: string; workspace_id: string } }, boardId: string) => {
+mock.module('../../../board/middlewares/requireBoardWritable', () => ({
+  requireBoardWritable: async (
+    req: Request & { board?: { id: string; workspace_id: string } },
+    boardId: string
+  ) => {
     req.board = { id: boardId, workspace_id: 'ws-1' };
-    return Promise.resolve(null);
+    return null;
   },
 }));
 
-void mock.module('../../../../mods/pubsub/publisher', () => ({
+mock.module('../../../../mods/pubsub/publisher', () => ({
   publisher: {
-    publish: (boardId: string, message: string) => {
+    publish: async (boardId: string, message: string) => {
       publishedMessages.push({ boardId, message });
-      return Promise.resolve();
     },
   },
 }));
@@ -213,13 +219,9 @@ describe('PUT state transitions websocket broadcast', () => {
       },
     };
 
-    let initialValidationError: unknown;
-    try {
-      await Promise.resolve(validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' }));
-    } catch (error) {
-      initialValidationError = error;
-    }
-    expect(initialValidationError).toBeUndefined();
+    await expect(
+      validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' })
+    ).resolves.toBeUndefined();
 
     const req = new Request('http://localhost/api/v1/boards/board-1/state-transitions', {
       method: 'PUT',
@@ -239,12 +241,8 @@ describe('PUT state transitions websocket broadcast', () => {
     const putRes = await handlePutStateTransitions(req, 'board-1');
     expect(putRes.status).toBe(200);
 
-    let updatedValidationError: unknown;
-    try {
-      await Promise.resolve(validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' }));
-    } catch (error) {
-      updatedValidationError = error;
-    }
-    expect(updatedValidationError).toBeInstanceOf(StateTransitionForbiddenError);
+    await expect(
+      validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' })
+    ).rejects.toBeInstanceOf(StateTransitionForbiddenError);
   });
 });

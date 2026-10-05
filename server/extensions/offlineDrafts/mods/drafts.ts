@@ -59,15 +59,13 @@ export async function upsertDraft({
     .first<DraftRow>();
 
   if (existing) {
-    await db('user_card_drafts')
-      .where({ id: existing.id })
-      .update({
-        content_markdown: contentMarkdown,
-        intent,
-        client_updated_at: clientUpdatedAt,
-        synced_at: now,
-        updated_at: now,
-      });
+    await db('user_card_drafts').where({ id: existing.id }).update({
+      content_markdown: contentMarkdown,
+      intent,
+      client_updated_at: clientUpdatedAt,
+      synced_at: now,
+      updated_at: now,
+    });
     const updated = await db('user_card_drafts').where({ id: existing.id }).first<DraftRow>();
     return updated;
   }

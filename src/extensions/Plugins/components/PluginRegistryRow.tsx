@@ -15,7 +15,9 @@ const PluginIcon = ({ iconUrl, name }: { iconUrl: string; name: string }) => {
       src={iconUrl}
       alt={name}
       className="w-full h-full object-cover"
-      onError={() => { setBroken(true); }}
+      onError={() => {
+        setBroken(true);
+      }}
     />
   );
 };
@@ -39,12 +41,16 @@ const PluginRegistryRow = ({
 }: Props) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const handleDeactivateClick = () => { setConfirmOpen(true); };
+  const handleDeactivateClick = () => {
+    setConfirmOpen(true);
+  };
   const handleConfirmYes = () => {
     setConfirmOpen(false);
     onDeactivate(plugin.id);
   };
-  const handleConfirmNo = () => { setConfirmOpen(false); };
+  const handleConfirmNo = () => {
+    setConfirmOpen(false);
+  };
 
   return (
     <tr className="border-b border-border hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
@@ -62,9 +68,7 @@ const PluginRegistryRow = ({
       {/* Name + Author */}
       <td className="px-4 py-3 max-w-[180px]">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-sm text-base truncate">
-            {plugin.name}
-          </span>
+          <span className="font-medium text-sm text-base truncate">{plugin.name}</span>
           {!plugin.isActive && (
             <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 rounded px-1.5 py-0.5 whitespace-nowrap">
               {translations['plugins.registry.row.inactiveBadge']}
@@ -72,17 +76,13 @@ const PluginRegistryRow = ({
           )}
         </div>
         {plugin.authorEmail && (
-          <p className="text-xs text-subtle truncate mt-0.5">
-            {plugin.authorEmail}
-          </p>
+          <p className="text-xs text-subtle truncate mt-0.5">{plugin.authorEmail}</p>
         )}
       </td>
 
       {/* Description */}
       <td className="px-4 py-3 max-w-[240px]">
-        <p className="text-sm text-muted line-clamp-2">
-          {plugin.description}
-        </p>
+        <p className="text-sm text-muted line-clamp-2">{plugin.description}</p>
       </td>
 
       {/* Categories */}
@@ -109,7 +109,9 @@ const PluginRegistryRow = ({
           {/* Edit button */}
           <button
             type="button"
-            onClick={() => { onEdit(plugin); }}
+            onClick={() => {
+              onEdit(plugin);
+            }}
             className="inline-flex items-center gap-1 text-xs text-muted hover:text-indigo-600 dark:hover:text-indigo-400 px-2 py-1 rounded border border-border hover:border-indigo-400 transition-colors"
             aria-label={`${translations['plugins.registry.row.edit']} ${plugin.name}`}
           >
@@ -129,7 +131,7 @@ const PluginRegistryRow = ({
                   onClick={handleConfirmYes}
                   disabled={isDeactivating}
                   className="px-2 py-1 rounded bg-danger hover:opacity-90 text-white transition-colors disabled:opacity-50" // [theme-exception] text-white on danger button
-                  aria-label="Confirm deactivate"
+                  aria-label={translations['plugins.registry.confirmDeactivateAria']}
                 >
                   {isDeactivating
                     ? translations['plugins.registry.row.deactivating']
@@ -139,7 +141,7 @@ const PluginRegistryRow = ({
                   type="button"
                   onClick={handleConfirmNo}
                   className="px-2 py-1 rounded border border-slate-300 dark:border-slate-600 text-muted hover:bg-bg-overlay dark:hover:bg-slate-700 transition-colors"
-                  aria-label="Cancel deactivate"
+                  aria-label={translations['plugins.registry.cancelDeactivateAria']}
                 >
                   {translations['plugins.registry.row.confirmNo']}
                 </button>
@@ -158,7 +160,9 @@ const PluginRegistryRow = ({
           ) : (
             <button
               type="button"
-              onClick={() => { onReactivate(plugin.id); }}
+              onClick={() => {
+                onReactivate(plugin.id);
+              }}
               disabled={isReactivating}
               className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 px-2 py-1 rounded border border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 transition-colors disabled:opacity-50"
               aria-label={`${translations['plugins.registry.row.reactivate']} ${plugin.name}`}

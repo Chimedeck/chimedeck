@@ -1,5 +1,6 @@
 // RunLogTable — paginated table of automation run logs.
 // Columns: Status | Automation (name + type chip) | Card | Triggered by | When | Details
+import { useState } from 'react';
 import type { FC } from 'react';
 import type { AutomationRunLog, PaginatedRunLogs } from '../../types';
 import RunLogRow from './RunLogRow';
@@ -18,9 +19,17 @@ interface Props {
 
 const COLUMN_HEADERS = [
   { key: 'status', label: '', className: 'w-8 pl-4 pr-2' },
-  { key: 'automation', label: translations['automation.runLogTable.col.automation'], className: 'px-2' },
+  {
+    key: 'automation',
+    label: translations['automation.runLogTable.col.automation'],
+    className: 'px-2',
+  },
   { key: 'card', label: translations['automation.runLogTable.col.card'], className: 'px-2' },
-  { key: 'triggeredBy', label: translations['automation.runLogTable.col.triggeredBy'], className: 'px-2' },
+  {
+    key: 'triggeredBy',
+    label: translations['automation.runLogTable.col.triggeredBy'],
+    className: 'px-2',
+  },
   { key: 'when', label: translations['automation.runLogTable.col.when'], className: 'px-2' },
   { key: 'expand', label: '', className: 'w-8 pl-2 pr-4' },
 ];
@@ -34,10 +43,7 @@ const RunLogTable: FC<Props> = ({
   onOpenCard,
   prependedRuns = [],
 }) => {
-  const rows: AutomationRunLog[] = [
-    ...prependedRuns,
-    ...(result?.data ?? []),
-  ];
+  const rows: AutomationRunLog[] = [...prependedRuns, ...(result?.data ?? [])];
   const totalPage = result?.metadata?.totalPage ?? 1;
 
   return (
@@ -78,9 +84,11 @@ const RunLogTable: FC<Props> = ({
                 </td>
               </tr>
             )}
-            {!loading && !error && rows.map((run) => (
-              <RunLogRow key={run.id} run={run} {...(onOpenCard ? { onOpenCard } : {})} />
-            ))}
+            {!loading &&
+              !error &&
+              rows.map((run) => (
+                <RunLogRow key={run.id} run={run} {...(onOpenCard ? { onOpenCard } : {})} />
+              ))}
           </tbody>
         </table>
       </div>
@@ -91,7 +99,9 @@ const RunLogTable: FC<Props> = ({
           <button
             className="px-2 py-1 text-xs text-muted hover:text-subtle disabled:opacity-40"
             disabled={page <= 1}
-            onClick={() => { onPageChange(page - 1); }}
+            onClick={() => {
+              onPageChange(page - 1);
+            }}
             aria-label={translations['automation.runLogTable.prevAriaLabel']}
           >
             {translations['automation.runLogTable.prev']}
@@ -102,7 +112,9 @@ const RunLogTable: FC<Props> = ({
           <button
             className="px-2 py-1 text-xs text-muted hover:text-subtle disabled:opacity-40"
             disabled={page >= totalPage}
-            onClick={() => { onPageChange(page + 1); }}
+            onClick={() => {
+              onPageChange(page + 1);
+            }}
             aria-label={translations['automation.runLogTable.nextAriaLabel']}
           >
             {translations['automation.runLogTable.next']}

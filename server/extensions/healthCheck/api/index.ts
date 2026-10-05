@@ -7,10 +7,7 @@ import { handleProbeHealthCheck } from './probe';
 import { handleProbeAllHealthChecks } from './probeAll';
 
 // Returns a Response if the path matches a health-check route, otherwise null.
-export async function healthCheckRouter(
-  req: Request,
-  pathname: string,
-): Promise<Response | null> {
+export async function healthCheckRouter(req: Request, pathname: string): Promise<Response | null> {
   // GET /api/v1/health-check/presets — global presets list (no board scope)
   if (pathname === '/api/v1/health-check/presets' && req.method === 'GET') {
     return handleGetPresets(req);

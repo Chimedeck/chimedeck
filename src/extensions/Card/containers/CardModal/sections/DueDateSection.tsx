@@ -9,7 +9,13 @@ interface Props {
   disabled?: boolean;
 }
 
-export const DueDateSection = ({ dueDate, dueComplete, onChange, onDoneChange, disabled }: Props) => (
+export const DueDateSection = ({
+  dueDate,
+  dueComplete,
+  onChange,
+  onDoneChange,
+  disabled,
+}: Props) => (
   <section aria-label="Due date">
     <h3 className="mb-2 text-sm font-semibold text-base">Due date</h3>
     <CardDueDate

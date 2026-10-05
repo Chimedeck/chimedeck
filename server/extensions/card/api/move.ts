@@ -43,14 +43,14 @@ async function parseMoveBody(req: Request): Promise<MoveBody | Response> {
     if (!body.targetListId) {
       return Response.json(
         { error: { code: 'bad-request', message: 'targetListId is required' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     return body;
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 }
@@ -66,7 +66,7 @@ async function validateMoveLists({
   if (!targetList) {
     return Response.json(
       { error: { code: 'target-list-not-found', message: 'Target list not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -74,7 +74,7 @@ async function validateMoveLists({
   if (!sourceList) {
     return Response.json(
       { error: { code: 'source-list-not-found', message: 'Source list not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -94,7 +94,13 @@ function resolveInsertIndex({
   return afterIndex === -1 ? null : afterIndex + 1;
 }
 
-function computeStrictPositionBetween({ left, right }: { left: string; right: string }): string | null {
+function computeStrictPositionBetween({
+  left,
+  right,
+}: {
+  left: string;
+  right: string;
+}): string | null {
   try {
     const candidate = between(left, right);
     const leftOk = left === '' ? true : left < candidate;
@@ -138,7 +144,7 @@ async function rebalanceAndMoveCard({
           updateData.list_id = targetListId;
         }
         return trx('cards').where({ id }).update(updateData);
-      }),
+      })
     );
   });
 
@@ -222,7 +228,7 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
             allowedNextStates: error.allowedNextStates,
           },
         },
-        { status: 422 },
+        { status: 422 }
       );
     }
     throw error;
@@ -236,7 +242,10 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
       return Response.json({ error: { name: 'target-board-not-found' } }, { status: 404 });
     }
     const targetScopedReq = req as WorkspaceScopedRequest;
-    const targetMembershipError = await requireWorkspaceMembership(targetScopedReq, targetBoard.workspace_id);
+    const targetMembershipError = await requireWorkspaceMembership(
+      targetScopedReq,
+      targetBoard.workspace_id
+    );
     if (targetMembershipError) return targetMembershipError;
     const targetRoleError = await requireMemberOrBoardGuestMember(targetScopedReq, targetBoard.id);
     if (targetRoleError) return targetRoleError;
@@ -252,7 +261,7 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
   if (insertIndex === null) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'afterCardId not found in target list' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -264,23 +273,26 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
       .where({ list_id: card.list_id, archived: false })
       .orderBy('position', 'asc')
       .select('id');
-    const currentIndex = currentListCardIds.findIndex((entry: { id: string }) => entry.id === cardId);
+    const currentIndex = currentListCardIds.findIndex(
+      (entry: { id: string }) => entry.id === cardId
+    );
     if (currentIndex === insertIndex) {
       const unchangedCard = await db<CardRow>('cards').where({ id: cardId }).first();
       if (!unchangedCard) {
         return Response.json(
           { error: { code: 'card-not-found', message: 'Card not found after move' } },
-          { status: 404 },
+          { status: 404 }
         );
       }
       return Response.json({ data: unchangedCard });
     }
   }
 
-  const left = insertIndex > 0 ? targetCards[insertIndex - 1]?.position ?? '' : '';
-  const right = insertIndex < targetCards.length
-    ? targetCards[insertIndex]?.position ?? HIGH_SENTINEL
-    : HIGH_SENTINEL;
+  const left = insertIndex > 0 ? (targetCards[insertIndex - 1]?.position ?? '') : '';
+  const right =
+    insertIndex < targetCards.length
+      ? (targetCards[insertIndex]?.position ?? HIGH_SENTINEL)
+      : HIGH_SENTINEL;
 
   const position = computeStrictPositionBetween({ left, right });
 
@@ -298,7 +310,7 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
   if (!updatedCard) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found after move' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
   const updatedPosition = updatedCard.position;
@@ -317,7 +329,13 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
 
   if (fromListId !== updatedCard.list_id) {
     await Promise.all([
-      dispatchEvent({ type: 'card.moved', boardId: board.id, entityId: cardId, actorId, payload: { card: updatedCard, fromListId, toListId: updatedCard.list_id } }),
+      dispatchEvent({
+        type: 'card.moved',
+        boardId: board.id,
+        entityId: cardId,
+        actorId,
+        payload: { card: updatedCard, fromListId, toListId: updatedCard.list_id },
+      }),
       emitCardMoved({
         actorId,
         cardId,
@@ -328,24 +346,29 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
         toListName: targetList.title ?? null,
         boardId: board.id,
         workspaceId: board.workspace_id,
-        ipAddress: req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? null,
+        ipAddress:
+          req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? null,
         userAgent: req.headers.get('user-agent') ?? null,
       }),
     ]);
   }
 
   // Broadcast to the source board so its kanban view removes/moves the card in real time.
-  publisher.publish(
-    board.id,
-    JSON.stringify({ type: 'card_moved', payload: { card: updatedCard, fromListId } }),
-  ).catch(() => {});
+  publisher
+    .publish(
+      board.id,
+      JSON.stringify({ type: 'card_moved', payload: { card: updatedCard, fromListId } })
+    )
+    .catch(() => {});
 
   // For cross-board moves also notify the target board's subscribers.
   if (isCrossBoard) {
-    publisher.publish(
-      targetList.board_id,
-      JSON.stringify({ type: 'card_moved', payload: { card: updatedCard, fromListId } }),
-    ).catch(() => {});
+    publisher
+      .publish(
+        targetList.board_id,
+        JSON.stringify({ type: 'card_moved', payload: { card: updatedCard, fromListId } })
+      )
+      .catch(() => {});
   }
 
   return Response.json({ data: updatedCard });

@@ -73,7 +73,7 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
         return next;
       });
     },
-    [setSearchParams],
+    [setSearchParams]
   );
 
   if (error) {
@@ -82,9 +82,13 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
 
   return (
     <div className="p-4 space-y-2">
-      <h3 className="text-xs font-semibold uppercase text-muted">{translations['BoardViews.archivedCardsHeading']}</h3>
+      <h3 className="text-xs font-semibold uppercase text-muted">
+        {translations['BoardViews.archivedCardsHeading']}
+      </h3>
 
-      {loading && <p className="text-sm text-subtle">{translations['BoardViews.loadingArchivedCards']}</p>}
+      {loading && (
+        <p className="text-sm text-subtle">{translations['BoardViews.loadingArchivedCards']}</p>
+      )}
 
       {!loading && visibleCards.length === 0 && (
         <p className="text-sm italic text-subtle">{translations['BoardViews.noArchivedCards']}</p>
@@ -121,7 +125,9 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
               >
                 {card.title}
               </button>
-              <p className="text-xs text-subtle">{translations['BoardViews.inList']} {card.list_title}</p>
+              <p className="text-xs text-subtle">
+                {translations['BoardViews.inList']} {card.list_title}
+              </p>
               {!!archivedAt && (
                 <p className="text-xs text-subtle">
                   {translations['BoardViews.archivedAt']} {archivedAt}
@@ -137,7 +143,9 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
               }}
               className="ml-4"
             >
-              {restoringId === card.id ? translations['BoardViews.restoringButton'] : translations['BoardViews.restoreButton']}
+              {restoringId === card.id
+                ? translations['BoardViews.restoringButton']
+                : translations['BoardViews.restoreButton']}
             </Button>
           </div>
         );

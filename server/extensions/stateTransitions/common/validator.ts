@@ -1,8 +1,16 @@
-import type { StateTransitionAction, StateTransitionDirection, StateTransitionGraph, StateTransitionStyle } from './types';
+import type {
+  StateTransitionAction,
+  StateTransitionDirection,
+  StateTransitionGraph,
+  StateTransitionStyle,
+  WorkflowPhase,
+} from './types';
+import { VALID_WORKFLOW_PHASES } from './config/workflowPhases';
 
 const VALID_ACTIONS: StateTransitionAction[] = ['allowed_move_to'];
 const VALID_DIRECTIONS: StateTransitionDirection[] = ['one_way', 'two_way'];
 const VALID_STYLES: StateTransitionStyle[] = ['straight', 'orthogonal', 'smooth', 'curved'];
+const VALID_PHASE_SET = new Set<string>(VALID_WORKFLOW_PHASES);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -22,7 +30,7 @@ function isFiniteNumber(value: unknown): value is number {
 }
 
 export function validateGraphShape(
-  value: unknown,
+  value: unknown
 ): { ok: true; graph: StateTransitionGraph } | { ok: false; message: string } {
   if (!hasGraphCollections(value)) {
     return { ok: false, message: 'graph must include nodes, edges, and notes arrays' };
@@ -51,6 +59,13 @@ export function validateGraphShape(
     if (nodeIds.has(node.id)) {
       return { ok: false, message: 'node.id must be unique' };
     }
+
+    // Sprint 172 — validate workflow phases if present
+    if (node.workflowPhases !== undefined) {
+      const phaseValidation = validateNodePhases(node);
+      if (!phaseValidation.ok) return phaseValidation;
+    }
+
     nodeIds.add(node.id);
   }
 
@@ -144,13 +159,13 @@ export function coerceLegacyGraphShape(value: unknown): StateTransitionGraph | n
   const normalizedNodes = nodes.filter((node): node is StateTransitionGraph['nodes'][number] => {
     if (!isRecord(node)) return false;
     return (
-      typeof node.id === 'string'
-      && node.id.trim() !== ''
-      && typeof node.listId === 'string'
-      && node.listId.trim() !== ''
-      && typeof node.label === 'string'
-      && isFiniteNumber(node.positionX)
-      && isFiniteNumber(node.positionY)
+      typeof node.id === 'string' &&
+      node.id.trim() !== '' &&
+      typeof node.listId === 'string' &&
+      node.listId.trim() !== '' &&
+      typeof node.label === 'string' &&
+      isFiniteNumber(node.positionX) &&
+      isFiniteNumber(node.positionY)
     );
   });
   if (normalizedNodes.length !== nodes.length) return null;
@@ -188,11 +203,11 @@ export function coerceLegacyGraphShape(value: unknown): StateTransitionGraph | n
   const normalizedNotes = notes.filter((note): note is StateTransitionGraph['notes'][number] => {
     if (!isRecord(note)) return false;
     return (
-      typeof note.id === 'string'
-      && note.id.trim() !== ''
-      && typeof note.content === 'string'
-      && isFiniteNumber(note.positionX)
-      && isFiniteNumber(note.positionY)
+      typeof note.id === 'string' &&
+      note.id.trim() !== '' &&
+      typeof note.content === 'string' &&
+      isFiniteNumber(note.positionX) &&
+      isFiniteNumber(note.positionY)
     );
   });
   if (normalizedNotes.length !== notes.length) return null;
@@ -204,7 +219,10 @@ export function coerceLegacyGraphShape(value: unknown): StateTransitionGraph | n
   };
 }
 
-export function findUnknownNodeListId(graph: StateTransitionGraph, knownListIds: Set<string>): string | null {
+export function findUnknownNodeListId(
+  graph: StateTransitionGraph,
+  knownListIds: Set<string>
+): string | null {
   for (const node of graph.nodes) {
     if (!knownListIds.has(node.listId)) {
       return node.id;
@@ -213,7 +231,10 @@ export function findUnknownNodeListId(graph: StateTransitionGraph, knownListIds:
   return null;
 }
 
-export function findMissingNodeForBoardList(graph: StateTransitionGraph, knownListIds: Set<string>): string | null {
+export function findMissingNodeForBoardList(
+  graph: StateTransitionGraph,
+  knownListIds: Set<string>
+): string | null {
   const graphListIds = new Set(graph.nodes.map((node) => node.listId));
   for (const listId of knownListIds) {
     if (!graphListIds.has(listId)) {
@@ -225,7 +246,7 @@ export function findMissingNodeForBoardList(graph: StateTransitionGraph, knownLi
 
 export function findOutOfSyncNodeLabel(
   graph: StateTransitionGraph,
-  listsById: Map<string, { id: string; title: string }>,
+  listsById: Map<string, { id: string; title: string }>
 ): { nodeId: string; listId: string; expectedLabel: string; receivedLabel: string } | null {
   for (const node of graph.nodes) {
     const list = listsById.get(node.listId);
@@ -240,4 +261,64 @@ export function findOutOfSyncNodeLabel(
     }
   }
   return null;
+}
+
+// ── Sprint 172 — Workflow Phase Validation ──
+
+/**
+ * Validate workflow phases on a single node.
+ * Returns ok: false with a descriptive message if any phase or config is invalid.
+ */
+export function validateNodePhases(node: {
+  workflowPhases?: unknown;
+  phaseConfig?: unknown;
+}): { ok: true } | { ok: false; message: string } {
+  const phases = node.workflowPhases;
+
+  // Absent phases = valid (backward-compatible)
+  if (phases === undefined || phases === null) return { ok: true };
+
+  if (!Array.isArray(phases)) {
+    return { ok: false, message: 'workflowPhases must be an array when provided' };
+  }
+
+  const seen = new Set<string>();
+  for (const phase of phases) {
+    if (typeof phase !== 'string') {
+      return { ok: false, message: 'each workflowPhases entry must be a string' };
+    }
+    if (!VALID_PHASE_SET.has(phase)) {
+      return { ok: false, message: `unknown workflow phase "${phase}"` };
+    }
+    if (seen.has(phase)) {
+      return { ok: false, message: `duplicate workflow phase "${phase}"` };
+    }
+    seen.add(phase);
+  }
+
+  // Validate phaseConfig if present
+  const config = node.phaseConfig;
+  if (config !== undefined && config !== null) {
+    if (!isRecord(config)) {
+      return { ok: false, message: 'phaseConfig must be an object when provided' };
+    }
+    if (
+      config.serviceTierOverride !== undefined &&
+      config.serviceTierOverride !== null &&
+      typeof config.serviceTierOverride !== 'string'
+    ) {
+      return { ok: false, message: 'phaseConfig.serviceTierOverride must be a string or null' };
+    }
+    if (config.autoRun !== undefined && typeof config.autoRun !== 'boolean') {
+      return { ok: false, message: 'phaseConfig.autoRun must be a boolean' };
+    }
+    if (
+      config.requiresHumanApproval !== undefined &&
+      typeof config.requiresHumanApproval !== 'boolean'
+    ) {
+      return { ok: false, message: 'phaseConfig.requiresHumanApproval must be a boolean' };
+    }
+  }
+
+  return { ok: true };
 }

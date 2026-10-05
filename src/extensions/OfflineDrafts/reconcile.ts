@@ -19,7 +19,9 @@ import type { ServerDraft } from './api';
 export type ReconcileSource = 'local' | 'server' | 'none';
 
 /** Returns true if the given intent represents a queued action that has not yet been applied. */
-function isPendingIntent(intent: string | null | undefined): intent is 'save_pending' | 'submit_pending' {
+function isPendingIntent(
+  intent: string | null | undefined
+): intent is 'save_pending' | 'submit_pending' {
   return intent === 'save_pending' || intent === 'submit_pending';
 }
 
@@ -46,10 +48,16 @@ export interface ReconcileResult {
  */
 export function reconcileDrafts(
   local: LocalDraft | null,
-  server: ServerDraft | null,
+  server: ServerDraft | null
 ): ReconcileResult {
   if (!local && !server) {
-    return { contentMarkdown: null, intent: null, updatedAt: null, source: 'none', loserPendingIntent: null };
+    return {
+      contentMarkdown: null,
+      intent: null,
+      updatedAt: null,
+      source: 'none',
+      loserPendingIntent: null,
+    };
   }
 
   if (local && !server) {

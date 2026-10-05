@@ -46,4 +46,3 @@ describe('useGraphEditor action helpers', () => {
     expect(history[UNDO_STACK_LIMIT - 1]?.selectedEdgeId).toBe('edge-25');
   });
 });
-

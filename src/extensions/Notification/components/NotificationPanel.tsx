@@ -5,7 +5,7 @@ import { useAppSelector } from '~/hooks/useAppSelector';
 import {
   selectNotifications,
   selectNotificationHasMore,
-  selectNotificationStatus,
+  selectNotificationLoadMoreStatus,
   markAllReadThunk,
   fetchMoreNotificationsThunk,
   clearAllNotificationsThunk,
@@ -29,7 +29,9 @@ function resolveContinuousStackKey(notification: Notification): string | null {
   return resolveBoardCardTagKey(notification);
 }
 
-function groupContinuousCardDiscussionNotifications(notifications: Notification[]): Notification[][] {
+function groupContinuousCardDiscussionNotifications(
+  notifications: Notification[]
+): Notification[][] {
   const groups: Notification[][] = [];
 
   for (const notification of notifications) {
@@ -43,9 +45,8 @@ function groupContinuousCardDiscussionNotifications(notifications: Notification[
 
       const notificationKey = resolveContinuousStackKey(notification);
       const lastGroupKey = resolveContinuousStackKey(lastGroupFirst);
-      const canJoinLastGroup = notificationKey != null
-        && lastGroupKey != null
-        && notificationKey === lastGroupKey;
+      const canJoinLastGroup =
+        notificationKey != null && lastGroupKey != null && notificationKey === lastGroupKey;
 
       if (canJoinLastGroup) {
         lastGroup.push(notification);
@@ -63,10 +64,10 @@ const NotificationPanel: FC<Props> = ({ onClose, onNavigate }) => {
   const dispatch = useAppDispatch();
   const notifications = useAppSelector(selectNotifications);
   const hasMore = useAppSelector(selectNotificationHasMore);
-  const status = useAppSelector(selectNotificationStatus);
+  const loadMoreStatus = useAppSelector(selectNotificationLoadMoreStatus);
   const groupedNotifications = useMemo(
     () => groupContinuousCardDiscussionNotifications(notifications),
-    [notifications],
+    [notifications]
   );
 
   const handleMarkAllRead = () => {
@@ -96,10 +97,20 @@ const NotificationPanel: FC<Props> = ({ onClose, onNavigate }) => {
       <div className="flex items-center justify-between px-4 py-3 border-b border-border sticky top-0 bg-bg-base">
         <h2 className="text-sm font-semibold text-base">{translations['Notifications.title']}</h2>
         <div className="flex items-center gap-3">
-          <Button variant="link" size="sm" onClick={handleClearAll} className="text-subtle hover:text-base">
+          <Button
+            variant="link"
+            size="sm"
+            onClick={handleClearAll}
+            className="text-subtle hover:text-base"
+          >
             {translations['Notifications.clearAll']}
           </Button>
-          <Button variant="link" size="sm" onClick={handleMarkAllRead} className="text-indigo-400 hover:text-indigo-300">
+          <Button
+            variant="link"
+            size="sm"
+            onClick={handleMarkAllRead}
+            className="text-indigo-400 hover:text-indigo-300"
+          >
             {translations['Notifications.markAllRead']}
           </Button>
         </div>
@@ -128,17 +139,35 @@ const NotificationPanel: FC<Props> = ({ onClose, onNavigate }) => {
             })}
           </div>
 
-          {hasMore && (
+          {(hasMore || loadMoreStatus === 'error') && (
             <div className="px-4 py-3 text-center">
-              <Button
-                variant="link"
-                size="sm"
-                onClick={handleLoadMore}
-                disabled={status === 'loading'}
-                className="text-indigo-400 hover:text-indigo-300"
-              >
-                {status === 'loading' ? translations['Notifications.loading'] : translations['Notifications.loadMore']}
-              </Button>
+              {loadMoreStatus === 'error' ? (
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-sm text-danger">
+                    {translations['Notifications.loadMoreError']}
+                  </p>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={handleLoadMore}
+                    className="text-indigo-400 hover:text-indigo-300"
+                  >
+                    {translations['Notifications.loadMore']}
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={handleLoadMore}
+                  disabled={loadMoreStatus === 'loading'}
+                  className="text-indigo-400 hover:text-indigo-300"
+                >
+                  {loadMoreStatus === 'loading'
+                    ? translations['Notifications.loading']
+                    : translations['Notifications.loadMore']}
+                </Button>
+              )}
             </div>
           )}
         </>

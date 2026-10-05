@@ -23,8 +23,8 @@ export async function moveCard({
   targetListId: string;
   afterCardId?: string | null;
 }): Promise<{ data: import('../../Card/api').Card }> {
-  return api.patch<{ data: import('../../Card/api').Card }>(
-    `/cards/${cardId}/move`,
-    { targetListId, afterCardId },
-  );
+  return api.patch<{ data: import('../../Card/api').Card }>(`/cards/${cardId}/move`, {
+    targetListId,
+    afterCardId,
+  });
 }

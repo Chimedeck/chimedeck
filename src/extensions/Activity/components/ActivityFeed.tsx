@@ -13,10 +13,19 @@ interface Props {
   boardId?: string;
 }
 
-const ActivityFeed = ({ activities, actorNames = {}, hasMore = false, onLoadMore, loading = false, boardId }: Props) => {
+const ActivityFeed = ({
+  activities,
+  actorNames = {},
+  hasMore = false,
+  onLoadMore,
+  loading = false,
+  boardId,
+}: Props) => {
   return (
     <div className="flex flex-col">
-      <h3 className="mb-2 text-xs font-semibold uppercase text-muted">{translations['activity.section.title']}</h3>
+      <h3 className="mb-2 text-xs font-semibold uppercase text-muted">
+        {translations['activity.section.title']}
+      </h3>
 
       {activities.length === 0 && !loading && (
         <p className="text-sm italic text-muted">{translations['activity.empty']}</p>
@@ -33,9 +42,7 @@ const ActivityFeed = ({ activities, actorNames = {}, hasMore = false, onLoadMore
         ))}
       </div>
 
-      {loading && (
-        <p className="mt-2 text-xs text-muted">{translations['activity.loading']}</p>
-      )}
+      {loading && <p className="mt-2 text-xs text-muted">{translations['activity.loading']}</p>}
 
       {hasMore && !loading && onLoadMore && (
         <Button variant="link" size="sm" onClick={onLoadMore} className="mt-2">

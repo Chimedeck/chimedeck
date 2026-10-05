@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { Squares2X2Icon } from '@heroicons/react/24/outline';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -24,37 +23,42 @@ export default function VerifyEmailPage() {
 
   useEffect(() => {
     if (token) {
-      void dispatch(verifyEmailThunk({ token }));
+      dispatch(verifyEmailThunk({ token }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (status === 'success') {
       // Slight delay so user sees the success message before redirect
-      const timer = setTimeout(() => { navigate('/workspaces', { replace: true }); }, 1500);
-      return () => { clearTimeout(timer); };
+      const timer = setTimeout(() => {
+        navigate('/workspaces', { replace: true });
+      }, 1500);
+      return () => {
+        clearTimeout(timer);
+      };
     }
   }, [status, navigate]);
 
   const handleResend = () => {
-    void dispatch(resendVerificationThunk());
+    dispatch(resendVerificationThunk());
   };
 
   return (
     <main className="min-h-screen bg-bg-base flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-bg-surface border border-border rounded-2xl shadow-2xl p-8 text-center">
         <div className="flex items-center justify-center gap-2 mb-8">
-          <Squares2X2Icon className="h-7 w-7 text-indigo-400" aria-hidden="true" />
-          <span className="text-xl font-bold text-base">Kanban</span>
+          <img
+            src="/apple-touch-icon.png"
+            alt={translations.appName}
+            className="h-7 w-7 rounded-sm object-contain"
+          />
+          <span className="text-xl font-bold text-base">{translations.appName}</span>
         </div>
 
-        <h1 className="text-2xl font-bold text-base mb-4">
-          {translations.verifyEmail.title}
-        </h1>
+        <h1 className="text-2xl font-bold text-base mb-4">{translations.verifyEmail.title}</h1>
 
-        {status === 'loading' && (
-          <p className="text-subtle">Verifying your email…</p>
-        )}
+        {status === 'loading' && <p className="text-subtle">Verifying your email…</p>}
 
         {status === 'success' && (
           <p className="text-success font-medium">{translations.verifyEmail.success}</p>
@@ -79,9 +83,7 @@ export default function VerifyEmailPage() {
             {resendStatus === 'error' && (
               <p className="text-danger text-sm mt-2">Failed to resend. Please try again later.</p>
             )}
-            {!token && (
-              <p className="text-muted text-sm mt-4">{error}</p>
-            )}
+            {!token && <p className="text-muted text-sm mt-4">{error}</p>}
           </div>
         )}
 

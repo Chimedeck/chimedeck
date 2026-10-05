@@ -10,7 +10,8 @@ export const notificationPreferencesApi = createApi({
     baseUrl: '/api/v1',
     // [why] Attach Bearer token from Redux auth state so the API request is authenticated.
     prepareHeaders(headers, { getState }) {
-      const token = (getState() as { auth: { accessToken: string | null } }).auth?.accessToken ?? null;
+      const token =
+        (getState() as { auth: { accessToken: string | null } }).auth?.accessToken ?? null;
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }
@@ -25,7 +26,10 @@ export const notificationPreferencesApi = createApi({
       transformResponse: (response: { data: NotificationPreference[] }) => response.data,
       providesTags: ['NotificationPreferences'],
     }),
-    updateNotificationPreferences: builder.mutation<NotificationPreference[], UpdatePreferencesBody>({
+    updateNotificationPreferences: builder.mutation<
+      NotificationPreference[],
+      UpdatePreferencesBody
+    >({
       query: (body) => ({ url: '/notifications/preferences', method: 'PATCH', body }),
       transformResponse: (response: { data: NotificationPreference[] }) => response.data,
       invalidatesTags: ['NotificationPreferences'],
@@ -33,7 +37,5 @@ export const notificationPreferencesApi = createApi({
   }),
 });
 
-export const {
-  useGetNotificationPreferencesQuery,
-  useUpdateNotificationPreferencesMutation,
-} = notificationPreferencesApi;
+export const { useGetNotificationPreferencesQuery, useUpdateNotificationPreferencesMutation } =
+  notificationPreferencesApi;

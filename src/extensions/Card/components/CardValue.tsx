@@ -1,6 +1,7 @@
 // CardValue — editable amount + currency sidebar section for the card modal.
 import { useState, useEffect } from 'react';
 import Button from '../../../common/components/Button';
+import translations from '../translations/en.json';
 
 const CURRENCY_REGEX = /^[A-Z]{3}$/;
 
@@ -63,7 +64,9 @@ const CardValue = ({ amount, currency, onSave, disabled }: Props) => {
           placeholder="0.00"
           className="flex-1 min-w-0 bg-bg-overlay border border-border rounded-lg px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
           value={amountInput}
-          onChange={(e) => { setAmountInput(e.target.value); }}
+          onChange={(e) => {
+            setAmountInput(e.target.value);
+          }}
           disabled={disabled || saving}
           aria-label="Amount"
         />
@@ -73,9 +76,11 @@ const CardValue = ({ amount, currency, onSave, disabled }: Props) => {
           placeholder="USD"
           className="w-14 bg-bg-overlay border border-border rounded-lg px-2 py-1.5 text-sm text-base uppercase focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
           value={currencyInput}
-          onChange={(e) => { setCurrencyInput(e.target.value.toUpperCase()); }}
+          onChange={(e) => {
+            setCurrencyInput(e.target.value.toUpperCase());
+          }}
           disabled={disabled || saving}
-          aria-label="Currency"
+          aria-label={translations['card.value.currencyAria']}
         />
       </div>
       {error && <p className="text-xs text-danger">{error}</p>}
@@ -84,7 +89,7 @@ const CardValue = ({ amount, currency, onSave, disabled }: Props) => {
           type="button"
           variant="primary"
           className="w-full text-xs"
-          onClick={() => { void handleSave(); }}
+          onClick={handleSave}
           disabled={saving}
         >
           {saving ? 'Saving…' : 'Save'}

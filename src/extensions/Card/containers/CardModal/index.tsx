@@ -47,18 +47,29 @@ import {
 } from '../../api/cardDetail';
 import { addReaction, removeReaction, postReply } from '~/extensions/Comment/api';
 import type { Label, Checklist, ChecklistItem, CardMember } from '../../api';
-import { boardSliceActions, selectBoard, selectCards, selectLists } from '../../../Board/slices/boardSlice';
+import {
+  boardSliceActions,
+  selectBoard,
+  selectCards,
+  selectLists,
+} from '../../../Board/slices/boardSlice';
 import { cardSliceActions } from '../../cardSlice';
 import { selectCurrentUser } from '~/slices/authSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
+import { selectInnerCardChatEnabled } from '~/slices/featureFlagsSlice';
+import { HIGH_SENTINEL, betweenPositions } from '../../utils/position';
+import {
+  startCardChatSession,
+  type CardChatSession,
+} from '../../../CardChat/api';
 import { canBoardGuestWrite } from '../../../Board/mods/guestPermissions';
 import apiClient from '~/common/api/client';
 import { printCard } from '../../utils/printCard';
 import { listAttachments } from '~/extensions/Attachments/api';
 
 let _mutationCounter = 0;
-const nextMutationId = () => `m${String(++_mutationCounter)}`;
+const nextMutationId = () => `m${++_mutationCounter}`;
 
 interface CardModalContainerProps {
   forcedCardId?: string;
@@ -96,6 +107,12 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
   const boardMembersRef = useRef<CardMember[]>([]);
   const [copyModalOpen, setCopyModalOpen] = useState(false);
   const [moveModalOpen, setMoveModalOpen] = useState(false);
+  const innerCardChatEnabled = useAppSelector(selectInnerCardChatEnabled);
+
+  // Card-chat drawer state
+  const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
+  const [chatSession, setChatSession] = useState<CardChatSession | null>(null);
+  const [chatStarting, setChatStarting] = useState(false);
 
   const api = apiClient;
 
@@ -106,7 +123,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       return;
     }
     dispatch(cardDetailSliceActions.openModal({ cardId }));
-    void dispatch(fetchCardDetailThunk({ cardId }));
+    dispatch(fetchCardDetailThunk({ cardId }));
     // Fetch comments separately
     getCardComments({ api, cardId })
       .then((comments) => dispatch(cardDetailSliceActions.setComments(comments)))
@@ -117,17 +134,19 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
   useEffect(() => {
     if (!boardId) return;
     getBoardLabels({ api, boardId })
-      .then((labels) => { allLabelsRef.current = labels; setAllLabels(labels); })
+      .then((labels) => {
+        allLabelsRef.current = labels;
+        setAllLabels(labels);
+      })
       .catch(() => {});
-    Promise.allSettled([
-      getBoardMembers({ api, boardId }),
-      getBoardGuests({ api, boardId }),
-    ])
+    Promise.allSettled([getBoardMembers({ api, boardId }), getBoardGuests({ api, boardId })])
       .then(([membersResult, guestsResult]) => {
         const members = membersResult.status === 'fulfilled' ? membersResult.value : [];
         const guests = guestsResult.status === 'fulfilled' ? guestsResult.value : [];
         const merged = [...members, ...guests];
-        const uniqueParticipants = Array.from(new Map(merged.map((participant) => [participant.id, participant])).values());
+        const uniqueParticipants = Array.from(
+          new Map(merged.map((participant) => [participant.id, participant])).values()
+        );
         boardMembersRef.current = uniqueParticipants;
         setBoardMembers(uniqueParticipants);
       })
@@ -160,28 +179,34 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         })
         .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
     },
-    [api, card, dispatch],
+    [api, card, dispatch]
   );
 
   const handleDescriptionSave = useCallback(
     (description: string) => {
       if (!card) return;
       const mutationId = nextMutationId();
-      dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { description } }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { description } })
+      );
       patchCard({ api, cardId: card.id, fields: { description } })
-        .then((updatedCard) =>
-          dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard })),
-        )
+        .then((updatedCard) => {
+          dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard }));
+          // [why] Keep board-level card state in sync with description updates from AI Assist.
+          dispatch(boardSliceActions.updateCard({ card: updatedCard }));
+        })
         .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
     },
-    [api, card, dispatch],
+    [api, card, dispatch]
   );
 
   const handleStartDateChange = useCallback(
     (start_date: string | null) => {
       if (!card) return;
       const mutationId = nextMutationId();
-      dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { start_date } }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { start_date } })
+      );
       patchCard({ api, cardId: card.id, fields: { start_date } })
         .then((updatedCard) => {
           dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard }));
@@ -189,14 +214,16 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         })
         .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
     },
-    [api, card, dispatch],
+    [api, card, dispatch]
   );
 
   const handleDueDateChange = useCallback(
     (due_date: string | null) => {
       if (!card) return;
       const mutationId = nextMutationId();
-      dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { due_date } }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { due_date } })
+      );
       patchCard({ api, cardId: card.id, fields: { due_date } })
         .then((updatedCard) => {
           dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard }));
@@ -204,14 +231,16 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         })
         .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
     },
-    [api, card, dispatch],
+    [api, card, dispatch]
   );
 
   const handleDueCompleteChange = useCallback(
     (due_complete: boolean) => {
       if (!card) return;
       const mutationId = nextMutationId();
-      dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { due_complete } }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { due_complete } })
+      );
       patchCard({ api, cardId: card.id, fields: { due_complete } })
         .then((updatedCard) => {
           dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard }));
@@ -219,14 +248,14 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         })
         .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
     },
-    [api, card, dispatch],
+    [api, card, dispatch]
   );
 
   // ── Archive / Delete ────────────────────────────────────────────────────
   const handleArchive = useCallback(async () => {
     if (!card) return;
     await archiveCardToggle({ api, cardId: card.id });
-    void dispatch(fetchCardDetailThunk({ cardId: card.id }));
+    dispatch(fetchCardDetailThunk({ cardId: card.id }));
     if (card.archived) {
       // Unarchiving: put the card back in the board view
       dispatch(boardSliceActions.updateCard({ card: { ...card, archived: false } }));
@@ -256,9 +285,99 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
     setMoveModalOpen(true);
   }, []);
 
+  // ── Card Chat / AI Assist ──────────────────────────────────────────────
+  // [why] Always create a fresh session when the user opens the chat so each
+  // conversation starts clean with no stale context from previous sessions.
+  const handleChatStart = useCallback(async () => {
+    if (!cardId || chatStarting) return;
+    setChatStarting(true);
+    try {
+      const { data: session } = await startCardChatSession({
+        api: apiClient as { post: <T>(url: string, data?: unknown) => Promise<T> },
+        cardId,
+      });
+      setChatSession(session);
+      setChatDrawerOpen(true);
+    } catch {
+      // [why] Silently fail — the button is gated by feature flag so server
+      // issues are the only expected errors (e.g. disabled at runtime).
+    } finally {
+      setChatStarting(false);
+    }
+  }, [cardId, chatStarting]);
+
+  const handleChatClose = useCallback(() => {
+    setChatDrawerOpen(false);
+    // Session stays alive — pause happens inside CardChatDrawer on unmount
+  }, []);
+
+  // Sprint 176 — rich event renderer callbacks for ActivityFeed.
+  // [why] These wire approve/re-run/edit actions on sprint-gen and as-built
+  // activity events to the real API endpoints. Approve triggers the AI edit
+  // orchestrator's human-in-the-loop approval; re-run re-triggers sprint
+  // generation; edit opens the card's diff viewer for generated files.
+  const handleFileClick = useCallback((path: string) => {
+    // [why] Navigate to a file diff viewer showing the generated/updated file.
+    // For now, open in a new tab at the specs repo URL path.
+    window.open(`/files/${path}`, '_blank');
+  }, []);
+
+  const handleEditRunApprove = useCallback(
+    async (runId: string) => {
+      // [why] Human-in-the-loop approval of AI-generated edits before commit.
+      // POST /api/v1/cards/:cardId/ai/edit/:runId/approve
+      if (!cardId) return;
+      try {
+        await apiClient.post(`/cards/${cardId}/ai/edit/${runId}/approve`, {});
+      } catch (err) {
+        // [why] Silently handle — the approval may fail if the run doesn't
+        // exist or is not in COMMITTED state. Activity feed will show the
+        // next event when the status changes.
+        console.debug(
+          '[CardModal] approve failed for run %s:',
+          runId,
+          err instanceof Error ? err.message : String(err)
+        );
+      }
+    },
+    [cardId]
+  );
+
+  const handleEditRunRerun = useCallback(
+    async (runId: string) => {
+      // [why] Re-trigger sprint generation for the card. Falls back to calling
+      // POST /api/v1/cards/:cardId/sprint/generate. As-built re-runs are
+      // handled via POST /api/v1/cards/:cardId/as-built/sync.
+      // TODO: distinguish run type and call the appropriate endpoint.
+      if (!cardId) return;
+      try {
+        await apiClient.post(`/cards/${cardId}/sprint/generate`, { runId });
+      } catch (err) {
+        console.debug(
+          '[CardModal] re-run failed for run %s:',
+          runId,
+          err instanceof Error ? err.message : String(err)
+        );
+      }
+    },
+    [cardId]
+  );
+
+  const handleEditRunEdit = useCallback(
+    async (runId: string) => {
+      // [why] Open the card's diff viewer at the run-specific file page.
+      // Navigates to a diff view showing the generated file changes for this run.
+      if (!cardId) return;
+      window.open(`/cards/${cardId}/diff/${runId}`, '_blank');
+    },
+    [cardId]
+  );
+
   const handlePrint = useCallback(async () => {
     if (!card) return;
-    const { data: attachments } = await listAttachments({ cardId: card.id }).catch(() => ({ data: [] }));
+    const { data: attachments } = await listAttachments({ cardId: card.id }).catch(() => ({
+      data: [],
+    }));
     printCard({
       card,
       listTitle: meta.listTitle,
@@ -284,7 +403,12 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         created_at: new Date().toISOString(),
         items: [],
       };
-      dispatch(cardDetailSliceActions.applyOptimisticChecklistAdd({ mutationId: tempId, checklist: tempChecklist }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticChecklistAdd({
+          mutationId: tempId,
+          checklist: tempChecklist,
+        })
+      );
       try {
         const checklist = await createChecklist({
           api,
@@ -296,13 +420,15 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId: tempId }));
       }
     },
-    [api, card, dispatch],
+    [api, card, dispatch]
   );
 
   const handleRenameChecklist = useCallback(
     async (checklistId: string, title: string) => {
       const mutationId = nextMutationId();
-      dispatch(cardDetailSliceActions.applyOptimisticChecklistRename({ mutationId, checklistId, title }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticChecklistRename({ mutationId, checklistId, title })
+      );
       try {
         await patchChecklist({ api, checklistId, title });
         dispatch(cardDetailSliceActions.confirmChecklist({ mutationId }));
@@ -310,13 +436,19 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
       }
     },
-    [api, dispatch],
+    [api, dispatch]
   );
 
   const handleChecklistReorder = useCallback(
     async (checklistId: string, position: string) => {
       const mutationId = nextMutationId();
-      dispatch(cardDetailSliceActions.applyOptimisticChecklistReorder({ mutationId, checklistId, position }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticChecklistReorder({
+          mutationId,
+          checklistId,
+          position,
+        })
+      );
       try {
         await patchChecklist({ api, checklistId, position });
         dispatch(cardDetailSliceActions.confirmChecklist({ mutationId }));
@@ -324,7 +456,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
       }
     },
-    [api, dispatch],
+    [api, dispatch]
   );
 
   const handleDeleteChecklist = useCallback(
@@ -333,23 +465,31 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       const checklistToDelete = checklists.find((checklist) => checklist.id === checklistId);
       const removedTotal = checklistToDelete?.items.length ?? 0;
       const removedDone = checklistToDelete?.items.filter((item) => item.checked).length ?? 0;
-      const prevChecklistTotal = checklists.reduce((sum, checklist) => sum + checklist.items.length, 0);
+      const prevChecklistTotal = checklists.reduce(
+        (sum, checklist) => sum + checklist.items.length,
+        0
+      );
       const prevChecklistDone = checklists.reduce(
-        (sum, checklist) => sum + checklist.items.reduce((itemSum, item) => itemSum + (item.checked ? 1 : 0), 0),
-        0,
+        (sum, checklist) =>
+          sum + checklist.items.reduce((itemSum, item) => itemSum + (item.checked ? 1 : 0), 0),
+        0
       );
       dispatch(cardDetailSliceActions.applyOptimisticChecklistDelete({ mutationId, checklistId }));
       if (card?.id) {
-        dispatch(boardSliceActions.optimisticUpdateCardField({
-          cardId: card.id,
-          field: 'checklist_total',
-          value: Math.max(0, prevChecklistTotal - removedTotal),
-        }));
-        dispatch(boardSliceActions.optimisticUpdateCardField({
-          cardId: card.id,
-          field: 'checklist_done',
-          value: Math.max(0, prevChecklistDone - removedDone),
-        }));
+        dispatch(
+          boardSliceActions.optimisticUpdateCardField({
+            cardId: card.id,
+            field: 'checklist_total',
+            value: Math.max(0, prevChecklistTotal - removedTotal),
+          })
+        );
+        dispatch(
+          boardSliceActions.optimisticUpdateCardField({
+            cardId: card.id,
+            field: 'checklist_done',
+            value: Math.max(0, prevChecklistDone - removedDone),
+          })
+        );
       }
       try {
         await deleteChecklistById({ api, checklistId });
@@ -357,109 +497,159 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
         if (card?.id) {
-          dispatch(boardSliceActions.optimisticUpdateCardField({
-            cardId: card.id,
-            field: 'checklist_total',
-            value: prevChecklistTotal,
-          }));
-          dispatch(boardSliceActions.optimisticUpdateCardField({
-            cardId: card.id,
-            field: 'checklist_done',
-            value: prevChecklistDone,
-          }));
+          dispatch(
+            boardSliceActions.optimisticUpdateCardField({
+              cardId: card.id,
+              field: 'checklist_total',
+              value: prevChecklistTotal,
+            })
+          );
+          dispatch(
+            boardSliceActions.optimisticUpdateCardField({
+              cardId: card.id,
+              field: 'checklist_done',
+              value: prevChecklistDone,
+            })
+          );
         }
       }
     },
-    [api, card, checklists, dispatch],
+    [api, card, checklists, dispatch]
   );
 
   // ── Checklist item CRUD ─────────────────────────────────────────────────
   const handleItemAdd = useCallback(
     async (checklistId: string, title: string) => {
-      const prevChecklistTotal = checklists.reduce((sum, checklist) => sum + checklist.items.length, 0);
+      const prevChecklistTotal = checklists.reduce(
+        (sum, checklist) => sum + checklist.items.length,
+        0
+      );
       const tempId = `temp-item-${nextMutationId()}`;
+      // Compute the correct bottom position so the optimistic item sorts
+      // at the end of the list — avoids a flash where items appear to re-order
+      // before the server confirms the real position.
+      const targetChecklist = checklists.find((c) => c.id === checklistId);
+      const lastItem = targetChecklist?.items
+        .slice()
+        .sort((a, b) => (a.position < b.position ? -1 : 1))
+        .at(-1);
+      const optimisticPosition = betweenPositions(lastItem?.position ?? '', HIGH_SENTINEL);
       const tempItem: ChecklistItem = {
         id: tempId,
         card_id: card?.id ?? '',
         checklist_id: checklistId,
         title,
         checked: false,
-        position: String(Date.now()),
+        position: optimisticPosition,
         assigned_member_id: null,
         due_date: null,
         linked_card_id: null,
       };
-      dispatch(cardDetailSliceActions.applyOptimisticChecklistItemAdd({ mutationId: tempId, checklistId, item: tempItem }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticChecklistItemAdd({
+          mutationId: tempId,
+          checklistId,
+          item: tempItem,
+        })
+      );
       if (card?.id) {
-        dispatch(boardSliceActions.optimisticUpdateCardField({
-          cardId: card.id,
-          field: 'checklist_total',
-          value: prevChecklistTotal + 1,
-        }));
+        dispatch(
+          boardSliceActions.optimisticUpdateCardField({
+            cardId: card.id,
+            field: 'checklist_total',
+            value: prevChecklistTotal + 1,
+          })
+        );
       }
       try {
         const item = await postChecklistItemInGroup({ api, checklistId, title });
-        dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId: tempId, checklistId, item }));
+        dispatch(
+          cardDetailSliceActions.confirmChecklistItem({ mutationId: tempId, checklistId, item })
+        );
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId: tempId }));
         if (card?.id) {
-          dispatch(boardSliceActions.optimisticUpdateCardField({
-            cardId: card.id,
-            field: 'checklist_total',
-            value: prevChecklistTotal,
-          }));
+          dispatch(
+            boardSliceActions.optimisticUpdateCardField({
+              cardId: card.id,
+              field: 'checklist_total',
+              value: prevChecklistTotal,
+            })
+          );
         }
       }
     },
-    [api, card, checklists, dispatch],
+    [api, card, checklists, dispatch]
   );
 
   const handleItemToggle = useCallback(
     async (checklistId: string, itemId: string, checked: boolean) => {
       const mutationId = nextMutationId();
       const prevChecklistDone = checklists.reduce(
-        (sum, checklist) => sum + checklist.items.reduce((itemSum, item) => itemSum + (item.checked ? 1 : 0), 0),
-        0,
+        (sum, checklist) =>
+          sum + checklist.items.reduce((itemSum, item) => itemSum + (item.checked ? 1 : 0), 0),
+        0
       );
       const nextChecklistDone = checklists.reduce((sum, checklist) => {
-        return sum + checklist.items.reduce((itemSum, item) => {
-          const isChecked = item.id === itemId ? checked : item.checked;
-          return itemSum + (isChecked ? 1 : 0);
-        }, 0);
+        return (
+          sum +
+          checklist.items.reduce((itemSum, item) => {
+            const isChecked = item.id === itemId ? checked : item.checked;
+            return itemSum + (isChecked ? 1 : 0);
+          }, 0)
+        );
       }, 0);
 
-      dispatch(cardDetailSliceActions.applyOptimisticChecklistToggle({ mutationId, checklistId, itemId, checked }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticChecklistToggle({
+          mutationId,
+          checklistId,
+          itemId,
+          checked,
+        })
+      );
       if (card?.id) {
-        dispatch(boardSliceActions.optimisticUpdateCardField({
-          cardId: card.id,
-          field: 'checklist_done',
-          value: nextChecklistDone,
-        }));
+        dispatch(
+          boardSliceActions.optimisticUpdateCardField({
+            cardId: card.id,
+            field: 'checklist_done',
+            value: nextChecklistDone,
+          })
+        );
       }
       try {
         const item = await patchChecklistItem({ api, itemId, fields: { checked } });
         dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, checklistId, item }));
         // [why] Checklist toggles generate an activity event server-side; re-fetch to keep the feed in sync
         // since the WebSocket may not be available in all environments.
-        if (card?.id) void dispatch(fetchCardActivitiesThunk({ cardId: card.id }));
+        if (card?.id) dispatch(fetchCardActivitiesThunk({ cardId: card.id }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
         if (card?.id) {
-          dispatch(boardSliceActions.optimisticUpdateCardField({
-            cardId: card.id,
-            field: 'checklist_done',
-            value: prevChecklistDone,
-          }));
+          dispatch(
+            boardSliceActions.optimisticUpdateCardField({
+              cardId: card.id,
+              field: 'checklist_done',
+              value: prevChecklistDone,
+            })
+          );
         }
       }
     },
-    [api, card, checklists, dispatch],
+    [api, card, checklists, dispatch]
   );
 
   const handleItemRename = useCallback(
     async (checklistId: string, itemId: string, title: string) => {
       const mutationId = nextMutationId();
-      dispatch(cardDetailSliceActions.applyOptimisticChecklistItemRename({ mutationId, checklistId, itemId, title }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticChecklistItemRename({
+          mutationId,
+          checklistId,
+          itemId,
+          title,
+        })
+      );
       try {
         const item = await patchChecklistItem({ api, itemId, fields: { title } });
         dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, checklistId, item }));
@@ -467,7 +657,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
       }
     },
-    [api, dispatch],
+    [api, dispatch]
   );
 
   const handleItemDelete = useCallback(
@@ -477,22 +667,33 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       const targetItem = checklist?.items.find((item) => item.id === itemId);
       const prevChecklistTotal = checklists.reduce((sum, value) => sum + value.items.length, 0);
       const prevChecklistDone = checklists.reduce(
-        (sum, value) => sum + value.items.reduce((itemSum, item) => itemSum + (item.checked ? 1 : 0), 0),
-        0,
+        (sum, value) =>
+          sum + value.items.reduce((itemSum, item) => itemSum + (item.checked ? 1 : 0), 0),
+        0
       );
-      dispatch(cardDetailSliceActions.applyOptimisticChecklistItemDelete({ mutationId, checklistId, itemId }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticChecklistItemDelete({
+          mutationId,
+          checklistId,
+          itemId,
+        })
+      );
       if (card?.id) {
-        dispatch(boardSliceActions.optimisticUpdateCardField({
-          cardId: card.id,
-          field: 'checklist_total',
-          value: Math.max(0, prevChecklistTotal - 1),
-        }));
-        if (targetItem?.checked) {
-          dispatch(boardSliceActions.optimisticUpdateCardField({
+        dispatch(
+          boardSliceActions.optimisticUpdateCardField({
             cardId: card.id,
-            field: 'checklist_done',
-            value: Math.max(0, prevChecklistDone - 1),
-          }));
+            field: 'checklist_total',
+            value: Math.max(0, prevChecklistTotal - 1),
+          })
+        );
+        if (targetItem?.checked) {
+          dispatch(
+            boardSliceActions.optimisticUpdateCardField({
+              cardId: card.id,
+              field: 'checklist_done',
+              value: Math.max(0, prevChecklistDone - 1),
+            })
+          );
         }
       }
       try {
@@ -501,33 +702,39 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
         if (card?.id) {
-          dispatch(boardSliceActions.optimisticUpdateCardField({
-            cardId: card.id,
-            field: 'checklist_total',
-            value: prevChecklistTotal,
-          }));
-          if (targetItem?.checked) {
-            dispatch(boardSliceActions.optimisticUpdateCardField({
+          dispatch(
+            boardSliceActions.optimisticUpdateCardField({
               cardId: card.id,
-              field: 'checklist_done',
-              value: prevChecklistDone,
-            }));
+              field: 'checklist_total',
+              value: prevChecklistTotal,
+            })
+          );
+          if (targetItem?.checked) {
+            dispatch(
+              boardSliceActions.optimisticUpdateCardField({
+                cardId: card.id,
+                field: 'checklist_done',
+                value: prevChecklistDone,
+              })
+            );
           }
         }
       }
     },
-    [api, card, checklists, dispatch],
+    [api, card, checklists, dispatch]
   );
 
   const handleItemAssign = useCallback(
     async (checklistId: string, itemId: string, assigned_member_id: string | null) => {
       const mutationId = nextMutationId();
-      dispatch(cardDetailSliceActions.applyOptimisticChecklistItemPatch({
-        mutationId,
-        checklistId,
-        itemId,
-        fields: { assigned_member_id },
-      }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticChecklistItemPatch({
+          mutationId,
+          checklistId,
+          itemId,
+          fields: { assigned_member_id },
+        })
+      );
       try {
         const item = await patchChecklistItem({ api, itemId, fields: { assigned_member_id } });
         dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, checklistId, item }));
@@ -535,18 +742,20 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
       }
     },
-    [api, dispatch],
+    [api, dispatch]
   );
 
   const handleItemDueDateChange = useCallback(
     async (checklistId: string, itemId: string, due_date: string | null) => {
       const mutationId = nextMutationId();
-      dispatch(cardDetailSliceActions.applyOptimisticChecklistItemPatch({
-        mutationId,
-        checklistId,
-        itemId,
-        fields: { due_date },
-      }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticChecklistItemPatch({
+          mutationId,
+          checklistId,
+          itemId,
+          fields: { due_date },
+        })
+      );
       try {
         const item = await patchChecklistItem({ api, itemId, fields: { due_date } });
         dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, checklistId, item }));
@@ -554,29 +763,38 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
       }
     },
-    [api, dispatch],
+    [api, dispatch]
   );
 
   const handleItemReorder = useCallback(
-    async (sourceChecklistId: string, itemId: string, position: string, targetChecklistId?: string) => {
+    async (
+      sourceChecklistId: string,
+      itemId: string,
+      position: string,
+      targetChecklistId?: string
+    ) => {
       const mutationId = nextMutationId();
       const destinationChecklistId = targetChecklistId ?? sourceChecklistId;
 
       if (destinationChecklistId === sourceChecklistId) {
-        dispatch(cardDetailSliceActions.applyOptimisticChecklistItemPatch({
-          mutationId,
-          checklistId: sourceChecklistId,
-          itemId,
-          fields: { position },
-        }));
+        dispatch(
+          cardDetailSliceActions.applyOptimisticChecklistItemPatch({
+            mutationId,
+            checklistId: sourceChecklistId,
+            itemId,
+            fields: { position },
+          })
+        );
       } else {
-        dispatch(cardDetailSliceActions.applyOptimisticChecklistItemMove({
-          mutationId,
-          sourceChecklistId,
-          targetChecklistId: destinationChecklistId,
-          itemId,
-          position,
-        }));
+        dispatch(
+          cardDetailSliceActions.applyOptimisticChecklistItemMove({
+            mutationId,
+            sourceChecklistId,
+            targetChecklistId: destinationChecklistId,
+            itemId,
+            position,
+          })
+        );
       }
 
       try {
@@ -589,16 +807,18 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
             ...(movingAcrossChecklists ? { checklist_id: destinationChecklistId } : {}),
           },
         });
-        dispatch(cardDetailSliceActions.confirmChecklistItem({
-          mutationId,
-          checklistId: item.checklist_id ?? destinationChecklistId,
-          item,
-        }));
+        dispatch(
+          cardDetailSliceActions.confirmChecklistItem({
+            mutationId,
+            checklistId: item.checklist_id ?? destinationChecklistId,
+            item,
+          })
+        );
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
       }
     },
-    [api, dispatch],
+    [api, dispatch]
   );
 
   const handleConvertChecklistItemToCard = useCallback(
@@ -608,22 +828,33 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       const targetItem = checklist?.items.find((item) => item.id === itemId);
       const prevChecklistTotal = checklists.reduce((sum, value) => sum + value.items.length, 0);
       const prevChecklistDone = checklists.reduce(
-        (sum, value) => sum + value.items.reduce((itemSum, item) => itemSum + (item.checked ? 1 : 0), 0),
-        0,
+        (sum, value) =>
+          sum + value.items.reduce((itemSum, item) => itemSum + (item.checked ? 1 : 0), 0),
+        0
       );
-      dispatch(cardDetailSliceActions.applyOptimisticChecklistItemDelete({ mutationId, checklistId, itemId }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticChecklistItemDelete({
+          mutationId,
+          checklistId,
+          itemId,
+        })
+      );
       if (card?.id) {
-        dispatch(boardSliceActions.optimisticUpdateCardField({
-          cardId: card.id,
-          field: 'checklist_total',
-          value: Math.max(0, prevChecklistTotal - 1),
-        }));
-        if (targetItem?.checked) {
-          dispatch(boardSliceActions.optimisticUpdateCardField({
+        dispatch(
+          boardSliceActions.optimisticUpdateCardField({
             cardId: card.id,
-            field: 'checklist_done',
-            value: Math.max(0, prevChecklistDone - 1),
-          }));
+            field: 'checklist_total',
+            value: Math.max(0, prevChecklistTotal - 1),
+          })
+        );
+        if (targetItem?.checked) {
+          dispatch(
+            boardSliceActions.optimisticUpdateCardField({
+              cardId: card.id,
+              field: 'checklist_done',
+              value: Math.max(0, prevChecklistDone - 1),
+            })
+          );
         }
       }
       try {
@@ -633,22 +864,26 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
         if (card?.id) {
-          dispatch(boardSliceActions.optimisticUpdateCardField({
-            cardId: card.id,
-            field: 'checklist_total',
-            value: prevChecklistTotal,
-          }));
-          if (targetItem?.checked) {
-            dispatch(boardSliceActions.optimisticUpdateCardField({
+          dispatch(
+            boardSliceActions.optimisticUpdateCardField({
               cardId: card.id,
-              field: 'checklist_done',
-              value: prevChecklistDone,
-            }));
+              field: 'checklist_total',
+              value: prevChecklistTotal,
+            })
+          );
+          if (targetItem?.checked) {
+            dispatch(
+              boardSliceActions.optimisticUpdateCardField({
+                cardId: card.id,
+                field: 'checklist_done',
+                value: prevChecklistDone,
+              })
+            );
           }
         }
       }
     },
-    [api, card, checklists, dispatch],
+    [api, card, checklists, dispatch]
   );
 
   // ── Labels ──────────────────────────────────────────────────────────────
@@ -670,7 +905,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         dispatch(boardSliceActions.updateCard({ card: { ...card, labels } }));
       }
     },
-    [api, card, dispatch, labels],
+    [api, card, dispatch, labels]
   );
 
   const handleLabelDetach = useCallback(
@@ -689,7 +924,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         dispatch(boardSliceActions.updateCard({ card: { ...card, labels } }));
       }
     },
-    [api, card, dispatch, labels],
+    [api, card, dispatch, labels]
   );
 
   const handleLabelCreate = useCallback(
@@ -701,7 +936,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       setAllLabels(updated);
       await handleLabelAttach(newLabel.id);
     },
-    [api, card, boardId, handleLabelAttach],
+    [api, card, boardId, handleLabelAttach]
   );
 
   const handleLabelUpdate = useCallback(
@@ -713,7 +948,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       dispatch(cardDetailSliceActions.updateLabelInCard({ label: updated }));
       dispatch(boardSliceActions.updateLabelInCards({ label: updated }));
     },
-    [api, dispatch],
+    [api, dispatch]
   );
 
   // ── Member assign / remove ──────────────────────────────────────────────
@@ -739,7 +974,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         cardDetailSliceActions.applyOptimisticMemberAssign({
           mutationId,
           member: boardMember,
-        }),
+        })
       );
       try {
         await postMemberAssign({ api, cardId: card.id, userId });
@@ -754,7 +989,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         }
       }
     },
-    [api, card, dispatch, members, boardCards],
+    [api, card, dispatch, members, boardCards]
   );
 
   const handleMemberRemove = useCallback(
@@ -771,7 +1006,9 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         dispatch(cardSliceActions.remoteUpdate({ card: nextBoardCard }));
       }
 
-      dispatch(cardDetailSliceActions.applyOptimisticMemberRemove({ mutationId, memberId: userId }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticMemberRemove({ mutationId, memberId: userId })
+      );
       try {
         await deleteMemberAssign({ api, cardId: card.id, userId });
         dispatch(cardDetailSliceActions.confirmMember({ mutationId }));
@@ -785,35 +1022,41 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         }
       }
     },
-    [api, card, dispatch, members, boardCards],
+    [api, card, dispatch, members, boardCards]
   );
 
   const handleMoneySave = useCallback(
-    (amount: string | null, currency: string) => {
-      if (!card) return Promise.resolve();
+    async (amount: string | null, currency: string) => {
+      if (!card) return;
       const mutationId = nextMutationId();
       // Convert string amount to number before sending — server enforces numeric type
       const numericAmount = amount === null ? null : Number.parseFloat(amount);
-      dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { amount: amount ?? null, currency } }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticCardUpdate({
+          mutationId,
+          fields: { amount: amount ?? null, currency },
+        })
+      );
       patchCard({ api, cardId: card.id, fields: { amount: numericAmount, currency } })
         .then((updatedCard) => {
           dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard }));
           dispatch(boardSliceActions.updateCard({ card: updatedCard }));
         })
         .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
-      return Promise.resolve();
     },
-    [api, card, dispatch],
+    [api, card, dispatch]
   );
 
   const handleCoverColorChange = useCallback(
     (cover_color: string | null) => {
       if (!card) return;
       const mutationId = nextMutationId();
-      dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({
-        mutationId,
-        fields: { cover_color, cover_attachment_id: null, cover_image_url: null },
-      }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticCardUpdate({
+          mutationId,
+          fields: { cover_color, cover_attachment_id: null, cover_image_url: null },
+        })
+      );
       patchCard({ api, cardId: card.id, fields: { cover_color, cover_attachment_id: null } })
         .then((updatedCard) => {
           dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard }));
@@ -821,14 +1064,16 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         })
         .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
     },
-    [api, card, dispatch],
+    [api, card, dispatch]
   );
 
   const handleCoverSizeChange = useCallback(
     (cover_size: 'SMALL' | 'FULL') => {
       if (!card) return;
       const mutationId = nextMutationId();
-      dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { cover_size } }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { cover_size } })
+      );
       patchCard({ api, cardId: card.id, fields: { cover_size } })
         .then((updatedCard) => {
           dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard }));
@@ -836,7 +1081,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         })
         .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
     },
-    [api, card, dispatch],
+    [api, card, dispatch]
   );
 
   const handleCoverAttachmentChange = useCallback(
@@ -850,7 +1095,9 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         ? { cover_attachment_id, cover_color: null }
         : { cover_attachment_id: null };
 
-      dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: optimisticFields }));
+      dispatch(
+        cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: optimisticFields })
+      );
       patchCard({ api, cardId: card.id, fields: apiFields })
         .then((updatedCard) => {
           dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard }));
@@ -858,7 +1105,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         })
         .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
     },
-    [api, card, dispatch],
+    [api, card, dispatch]
   );
 
   // ── Comments ───────────────────────────────────────────────────────────
@@ -875,10 +1122,10 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
             ...boardCard,
             comment_count: (boardCard.comment_count ?? 0) + 1,
           },
-        }),
+        })
       );
     },
-    [api, boardCards, card, dispatch],
+    [api, boardCards, card, dispatch]
   );
 
   const handleEditComment = useCallback(
@@ -886,7 +1133,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       const comment = await patchComment({ api, commentId, content });
       dispatch(cardDetailSliceActions.updateComment(comment));
     },
-    [api, dispatch],
+    [api, dispatch]
   );
 
   const handleDeleteComment = useCallback(
@@ -902,11 +1149,11 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
               ...boardCard,
               comment_count: Math.max(0, (boardCard.comment_count ?? 0) - 1),
             },
-          }),
+          })
         );
       }
     },
-    [api, boardCards, card, dispatch],
+    [api, boardCards, card, dispatch]
   );
 
   const handleAddReply = useCallback(
@@ -914,39 +1161,75 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       if (!card) return;
       await postReply({ api, cardId: card.id, parentId, content });
     },
-    [api, card],
+    [api, card]
   );
 
   const handleAddReaction = useCallback(
     async (commentId: string, emoji: string) => {
       if (!currentUser) return;
       // Optimistic update — include actor name for the hover tooltip
-      const actorName = (currentUser as { name?: string | null }).name ?? (currentUser as { email?: string | null }).email ?? null;
-      dispatch(cardDetailSliceActions.addReaction({ commentId, emoji, userId: currentUser.id, reactedByMe: true, actorName }));
+      const actorName =
+        (currentUser as { name?: string | null }).name ??
+        (currentUser as { email?: string | null }).email ??
+        null;
+      dispatch(
+        cardDetailSliceActions.addReaction({
+          commentId,
+          emoji,
+          userId: currentUser.id,
+          reactedByMe: true,
+          actorName,
+        })
+      );
       try {
         await addReaction({ api, commentId, emoji });
       } catch {
         // Rollback on failure
-        dispatch(cardDetailSliceActions.removeReaction({ commentId, emoji, userId: currentUser.id, reactedByMe: true }));
+        dispatch(
+          cardDetailSliceActions.removeReaction({
+            commentId,
+            emoji,
+            userId: currentUser.id,
+            reactedByMe: true,
+          })
+        );
       }
     },
-    [api, currentUser, dispatch],
+    [api, currentUser, dispatch]
   );
 
   const handleRemoveReaction = useCallback(
     async (commentId: string, emoji: string) => {
       if (!currentUser) return;
       // Optimistic update
-      dispatch(cardDetailSliceActions.removeReaction({ commentId, emoji, userId: currentUser.id, reactedByMe: true }));
+      dispatch(
+        cardDetailSliceActions.removeReaction({
+          commentId,
+          emoji,
+          userId: currentUser.id,
+          reactedByMe: true,
+        })
+      );
       try {
         await removeReaction({ api, commentId, emoji });
       } catch {
         // Rollback on failure
-        const actorName = (currentUser as { name?: string | null }).name ?? (currentUser as { email?: string | null }).email ?? null;
-        dispatch(cardDetailSliceActions.addReaction({ commentId, emoji, userId: currentUser.id, reactedByMe: true, actorName }));
+        const actorName =
+          (currentUser as { name?: string | null }).name ??
+          (currentUser as { email?: string | null }).email ??
+          null;
+        dispatch(
+          cardDetailSliceActions.addReaction({
+            commentId,
+            emoji,
+            userId: currentUser.id,
+            reactedByMe: true,
+            actorName,
+          })
+        );
       }
     },
-    [api, currentUser, dispatch],
+    [api, currentUser, dispatch]
   );
 
   // [why] When the attachment list changes inside AttachmentPanel (add, delete, initial load),
@@ -959,9 +1242,13 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       if (currentFileCount === fileCount && currentLinkedCount === linkedCardCount) {
         return;
       }
-      dispatch(boardSliceActions.updateCard({ card: { ...card, attachment_count: fileCount, linked_card_count: linkedCardCount } }));
+      dispatch(
+        boardSliceActions.updateCard({
+          card: { ...card, attachment_count: fileCount, linked_card_count: linkedCardCount },
+        })
+      );
     },
-    [card, dispatch],
+    [card, dispatch]
   );
 
   // ── Render ─────────────────────────────────────────────────────────────
@@ -993,69 +1280,77 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
   return (
     <>
       <CardModal
-      open={!!cardId}
-      boardId={boardId}
-      card={card}
-      listTitle={meta.listTitle}
-      boardTitle={meta.boardTitle}
-      labels={labels}
-      allLabels={allLabels}
-      members={members}
-      boardMembers={boardMembers}
-      checklists={checklists}
-      comments={comments}
-      activities={activities}
-      currentUserId={currentUser?.id ?? ''}
-      onClose={handleClose}
-      onTitleSave={handleTitleSave}
-      onDescriptionSave={handleDescriptionSave}
-      onDueDateChange={handleDueDateChange}
-      onDueCompleteChange={handleDueCompleteChange}
-      onStartDateChange={handleStartDateChange}
-      onArchive={handleArchive}
-      onDelete={handleDelete}
-      onCopyLink={handleCopyLink}
-      onCopyCard={handleCopyCard}
-      onMoveCard={handleMoveCard}
-      onPrint={() => {
-        void handlePrint();
-      }}
-      onCreateChecklist={handleCreateChecklist}
-      onRenameChecklist={handleRenameChecklist}
-      onDeleteChecklist={handleDeleteChecklist}
-      onChecklistReorder={handleChecklistReorder}
-      onItemAdd={handleItemAdd}
-      onItemToggle={handleItemToggle}
-      onItemRename={handleItemRename}
-      onItemDelete={handleItemDelete}
-      onItemAssign={handleItemAssign}
-      onItemDueDateChange={handleItemDueDateChange}
-      onItemConvertToCard={handleConvertChecklistItemToCard}
-      onItemReorder={handleItemReorder}
-      onLabelAttach={handleLabelAttach}
-      onLabelDetach={handleLabelDetach}
-      onLabelCreate={handleLabelCreate}
-      onLabelUpdate={handleLabelUpdate}
-      onMemberAssign={handleMemberAssign}
-      onMemberRemove={handleMemberRemove}
-      onAddComment={handleAddComment}
-      onEditComment={handleEditComment}
-      onDeleteComment={handleDeleteComment}
-      onAddReaction={handleAddReaction}
-      onRemoveReaction={handleRemoveReaction}
-      onAddReply={handleAddReply}
-      onEditReply={handleEditComment}
-      onDeleteReply={handleDeleteComment}
-      focusedCommentId={focusedCommentId}
-      focusedReplyId={focusedReplyId}
-      onMoneySave={handleMoneySave}
-      onCoverColorChange={handleCoverColorChange}
-      onCoverSizeChange={handleCoverSizeChange}
-      onCoverAttachmentChange={handleCoverAttachmentChange}
-      onAttachmentCountChange={handleAttachmentCountChange}
-      isViewerGuest={isViewerGuest}
+        open={!!cardId}
+        boardId={boardId ?? ''}
+        card={card}
+        listTitle={meta.listTitle}
+        boardTitle={meta.boardTitle}
+        labels={labels}
+        allLabels={allLabels}
+        members={members}
+        boardMembers={boardMembers}
+        checklists={checklists}
+        comments={comments}
+        activities={activities}
+        currentUserId={currentUser?.id ?? ''}
+        onClose={handleClose}
+        onTitleSave={handleTitleSave}
+        onDescriptionSave={handleDescriptionSave}
+        onDueDateChange={handleDueDateChange}
+        onDueCompleteChange={handleDueCompleteChange}
+        onStartDateChange={handleStartDateChange}
+        onArchive={handleArchive}
+        onDelete={handleDelete}
+        onCopyLink={handleCopyLink}
+        onCopyCard={handleCopyCard}
+        onMoveCard={handleMoveCard}
+        onPrint={handlePrint}
+        onCreateChecklist={handleCreateChecklist}
+        onRenameChecklist={handleRenameChecklist}
+        onDeleteChecklist={handleDeleteChecklist}
+        onChecklistReorder={handleChecklistReorder}
+        onItemAdd={handleItemAdd}
+        onItemToggle={handleItemToggle}
+        onItemRename={handleItemRename}
+        onItemDelete={handleItemDelete}
+        onItemAssign={handleItemAssign}
+        onItemDueDateChange={handleItemDueDateChange}
+        onItemConvertToCard={handleConvertChecklistItemToCard}
+        onItemReorder={handleItemReorder}
+        onLabelAttach={handleLabelAttach}
+        onLabelDetach={handleLabelDetach}
+        onLabelCreate={handleLabelCreate}
+        onLabelUpdate={handleLabelUpdate}
+        onMemberAssign={handleMemberAssign}
+        onMemberRemove={handleMemberRemove}
+        onAddComment={handleAddComment}
+        onEditComment={handleEditComment}
+        onDeleteComment={handleDeleteComment}
+        onAddReaction={handleAddReaction}
+        onRemoveReaction={handleRemoveReaction}
+        onAddReply={handleAddReply}
+        onEditReply={handleEditComment}
+        onDeleteReply={handleDeleteComment}
+        focusedCommentId={focusedCommentId}
+        focusedReplyId={focusedReplyId}
+        onMoneySave={handleMoneySave}
+        onCoverColorChange={handleCoverColorChange}
+        onCoverSizeChange={handleCoverSizeChange}
+        onCoverAttachmentChange={handleCoverAttachmentChange}
+        onAttachmentCountChange={handleAttachmentCountChange}
+        isViewerGuest={isViewerGuest}
+        innerCardChatEnabled={innerCardChatEnabled}
+        chatDrawerOpen={chatDrawerOpen}
+        chatSession={chatSession}
+        onChatStart={handleChatStart}
+        onChatClose={handleChatClose}
+        // Sprint 176 — activity event rich renderer callbacks
+        onFileClick={handleFileClick}
+        onApprove={handleEditRunApprove}
+        onRerun={handleEditRunRerun}
+        onEdit={handleEditRunEdit}
       />
-      {copyModalOpen && activeWorkspaceId && (
+      {copyModalOpen && card && activeWorkspaceId && (
         <CopyCardModal
           cardId={card.id}
           cardTitle={card.title}
@@ -1074,7 +1369,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
           }}
         />
       )}
-      {moveModalOpen && activeWorkspaceId && (
+      {moveModalOpen && card && activeWorkspaceId && (
         <MoveCardModal
           cardId={card.id}
           currentBoardId={boardId}
@@ -1091,7 +1386,9 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
               // Mirror exactly what the WS card_moved handler does so the kanban
               // reflects the correct sorted position immediately.
               dispatch(cardSliceActions.remoteMove({ card: movedCard, fromListId: card.list_id }));
-              dispatch(boardSliceActions.remoteCardMove({ card: movedCard, fromListId: card.list_id }));
+              dispatch(
+                boardSliceActions.remoteCardMove({ card: movedCard, fromListId: card.list_id })
+              );
             } else {
               // Cross-board: remove from this board's kanban and close the card modal
               dispatch(boardSliceActions.removeCard({ cardId: card.id, listId: card.list_id }));

@@ -23,6 +23,7 @@ import Knex from 'knex';
 import { resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { unlink } from 'node:fs/promises';
+import { randomBytes } from 'node:crypto';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 // ---------------------------------------------------------------------------
@@ -80,6 +81,7 @@ const s3 = new S3Client({
 const BATCH_SIZE = 500; // rows per INSERT batch
 // 2026-04-21 08:00 GMT+7 (last migration run) converted to UTC.
 const LAST_MIGRATION_CUTOFF = new Date('2026-04-21T01:00:00.000Z');
+const NO_BOARD_UPDATE_NAMES = new Set(['Mobi Board', 'Yang 2026', 'YIN Team Task']);
 
 // ---------------------------------------------------------------------------
 // Member ID → email mapper (from trello-import-member-ids-mapper.json)
@@ -166,6 +168,16 @@ function memberEmail(trelloMemberId: string, username?: string): string {
   if (mapped?.email) return mapped.email;
   const slug = username ?? mapped?.username ?? trelloMemberId;
   return `developer+${slug}@journeyh.io`;
+}
+
+function makeShortId(length = 8): string {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const bytes = randomBytes(length);
+  let out = '';
+  for (let i = 0; i < length; i += 1) {
+    out += alphabet[bytes[i] % alphabet.length];
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -306,6 +318,7 @@ interface TrelloBoard {
   id: string;
   name: string;
   manager?: string;
+  shortLink?: string;
   customFields?: TrelloCustomField[];
 }
 
@@ -412,7 +425,13 @@ async function main() {
   // workspaces — single org; boards are keyed by their Trello board ID
   const workspaceSet = new Map<string, { id: string; name: string }>();
   workspaceSet.set(JOURNEYHORIZON_WORKSPACE_ID, { id: JOURNEYHORIZON_WORKSPACE_ID, name: JOURNEYHORIZON_WORKSPACE_NAME });
-  const boardSet = new Map<string, { id: string; workspace_id: string; title: string }>();
+  const boardSet = new Map<string, {
+    id: string;
+    workspace_id: string;
+    title: string;
+    state: 'ACTIVE';
+    short_id?: string | null;
+  }>();
   const listSet = new Map<string, object>();
   const labelSet = new Map<string, object>();
   const customFieldSet = new Map<string, object>(); // fieldId → row
@@ -424,11 +443,16 @@ async function main() {
     // Board — prefer the name from card.board if present; all boards belong to the single workspace
     if (!boardSet.has(card.idBoard)) {
       const boardName = card.board?.name ?? card.idBoard;
+      const candidateShortId =
+        typeof card.board?.shortLink === 'string' && /^[A-Za-z0-9]{8}$/.test(card.board.shortLink)
+          ? card.board.shortLink
+          : null;
       boardSet.set(card.idBoard, {
         id: card.idBoard,
         workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
         title: boardName,
         state: 'ACTIVE',
+        short_id: candidateShortId,
       });
     }
 
@@ -665,8 +689,25 @@ async function main() {
     (r: any) => r.avatar_url != null,
   );
   if (avatarUpdateRows.length > 0) {
-    await batchUpsert('users', avatarUpdateRows, 'id', ['avatar_url']);
-    console.log(`    updated avatar_url for ${avatarUpdateRows.length} users`);
+    const avatarUpdateIds = avatarUpdateRows.map((r: any) => r.id as string);
+    const existingAvatars = await db('users')
+      .select('id', 'avatar_url')
+      .whereIn('id', avatarUpdateIds);
+
+    const canUpdateAvatar = new Set<string>();
+    for (const row of existingAvatars as Array<{ id: string; avatar_url: string | null }>) {
+      const hasExistingAvatar =
+        typeof row.avatar_url === 'string' ? row.avatar_url.trim().length > 0 : false;
+      if (!hasExistingAvatar) {
+        canUpdateAvatar.add(row.id);
+      }
+    }
+
+    const avatarFillRows = avatarUpdateRows.filter((r: any) => canUpdateAvatar.has(r.id));
+    if (avatarFillRows.length > 0) {
+      await batchUpsert('users', avatarFillRows, 'id', ['avatar_url']);
+    }
+    console.log(`    updated avatar_url for ${avatarFillRows.length} users (missing only)`);
   }
 
   // -------------------------------------------------------------------------
@@ -690,7 +731,69 @@ async function main() {
   // -------------------------------------------------------------------------
 
   console.log(`📋  Creating/updating ${boardSet.size} boards…`);
-  await batchUpsert('boards', [...boardSet.values()], 'id', ['title', 'state']);
+  const existingBoardRows = await db('boards')
+    .select('id', 'short_id')
+    .whereNotNull('short_id');
+
+  const existingBoardShortIdById = new Map<string, string>();
+  const usedBoardShortIds = new Set<string>();
+  for (const row of existingBoardRows as Array<{ id: string; short_id: string }>) {
+    existingBoardShortIdById.set(row.id, row.short_id);
+    usedBoardShortIds.add(row.short_id);
+  }
+
+  const boardRows = [...boardSet.values()].map((board) => {
+    const existingShortId = existingBoardShortIdById.get(board.id);
+    if (existingShortId) {
+      return {
+        ...board,
+        short_id: existingShortId,
+      };
+    }
+
+    const preferred = board.short_id && /^[A-Za-z0-9]{8}$/.test(board.short_id)
+      ? board.short_id
+      : null;
+
+    if (preferred && !usedBoardShortIds.has(preferred)) {
+      usedBoardShortIds.add(preferred);
+      return {
+        ...board,
+        short_id: preferred,
+      };
+    }
+
+    let generated = '';
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const candidate = makeShortId();
+      if (usedBoardShortIds.has(candidate)) continue;
+      usedBoardShortIds.add(candidate);
+      generated = candidate;
+      break;
+    }
+
+    if (!generated) {
+      throw new Error(`failed-to-generate-short-id:boards:${board.id}`);
+    }
+
+    return {
+      ...board,
+      short_id: generated,
+    };
+  });
+  const noUpdateBoardRows = boardRows.filter((row) => NO_BOARD_UPDATE_NAMES.has(row.title));
+  const updatableBoardRows = boardRows.filter((row) => !NO_BOARD_UPDATE_NAMES.has(row.title));
+
+  if (noUpdateBoardRows.length > 0) {
+    // [why] For protected boards, insert once if missing and never mutate existing rows.
+    await batchInsert('boards', noUpdateBoardRows, 'id');
+  }
+  if (updatableBoardRows.length > 0) {
+    await batchUpsert('boards', updatableBoardRows, 'id', ['title', 'state']);
+  }
+  if (noUpdateBoardRows.length > 0) {
+    console.log(`    board updates skipped  : ${noUpdateBoardRows.length.toLocaleString()} (protected names)`);
+  }
 
   // -------------------------------------------------------------------------
   // 6. Lists
@@ -732,21 +835,73 @@ async function main() {
   }
   const candidateCardIds = [...candidateCardIdSet];
 
+  const usedCardShortIds = new Set<string>();
+  const existingCardShortIdRows = await db('cards')
+    .select('short_id')
+    .whereNotNull('short_id');
+  for (const row of existingCardShortIdRows as Array<{ short_id: string }>) {
+    usedCardShortIds.add(row.short_id);
+  }
+
   const existingCardUpdatedAt = new Map<string, Date | null>();
+  const cardsWithPostCutoffRelatedActivity = new Set<string>();
   for (let i = 0; i < candidateCardIds.length; i += BATCH_SIZE) {
     const chunk = candidateCardIds.slice(i, i + BATCH_SIZE);
-    const rows = await db('cards').select('id', 'updated_at').whereIn('id', chunk);
+    const [
+      cardRows,
+      recentCardActivityRows,
+      recentCommentRows,
+      recentChecklistRows,
+      recentCardMoveEventRows,
+    ] = await Promise.all([
+      db('cards').select('id', 'updated_at').whereIn('id', chunk),
+      db('activities')
+        .distinct('entity_id')
+        .where({ entity_type: 'card' })
+        .whereIn('entity_id', chunk)
+        .andWhere('created_at', '>=', LAST_MIGRATION_CUTOFF),
+      db('comments')
+        .distinct('card_id')
+        .whereIn('card_id', chunk)
+        .andWhere('updated_at', '>=', LAST_MIGRATION_CUTOFF),
+      db('checklists')
+        .distinct('card_id')
+        .whereIn('card_id', chunk)
+        .andWhere('updated_at', '>=', LAST_MIGRATION_CUTOFF),
+      db('events')
+        .distinct('entity_id')
+        .where({ type: 'card.moved' })
+        .whereIn('entity_id', chunk)
+        .andWhere('created_at', '>=', LAST_MIGRATION_CUTOFF),
+    ]);
+
+    const rows = cardRows;
     for (const row of rows as Array<{ id: string; updated_at: Date | string | null }>) {
       existingCardUpdatedAt.set(
         row.id,
         row.updated_at ? new Date(row.updated_at) : null,
       );
     }
+
+    for (const row of recentCardActivityRows as Array<{ entity_id: string }>) {
+      cardsWithPostCutoffRelatedActivity.add(row.entity_id);
+    }
+    for (const row of recentCommentRows as Array<{ card_id: string }>) {
+      cardsWithPostCutoffRelatedActivity.add(row.card_id);
+    }
+    for (const row of recentChecklistRows as Array<{ card_id: string }>) {
+      cardsWithPostCutoffRelatedActivity.add(row.card_id);
+    }
+    for (const row of recentCardMoveEventRows as Array<{ entity_id: string }>) {
+      cardsWithPostCutoffRelatedActivity.add(row.entity_id);
+    }
   }
 
   const writableCardIdSet = new Set<string>();
   let newCardCount = 0;
   let preCutoffUpdatableCount = 0;
+  let protectedByRelatedActivityCount = 0;
+  let protectedByCardUpdatedAtCount = 0;
   let protectedCardCount = 0;
 
   for (const cardId of candidateCardIds) {
@@ -756,11 +911,18 @@ async function main() {
       continue;
     }
 
+    if (cardsWithPostCutoffRelatedActivity.has(cardId)) {
+      protectedByRelatedActivityCount += 1;
+      protectedCardCount += 1;
+      continue;
+    }
+
     const dbUpdatedAt = existingCardUpdatedAt.get(cardId);
-    if (!dbUpdatedAt || dbUpdatedAt <= LAST_MIGRATION_CUTOFF) {
+    if (!dbUpdatedAt || dbUpdatedAt < LAST_MIGRATION_CUTOFF) {
       writableCardIdSet.add(cardId);
       preCutoffUpdatableCount += 1;
     } else {
+      protectedByCardUpdatedAtCount += 1;
       protectedCardCount += 1;
     }
   }
@@ -769,6 +931,8 @@ async function main() {
   console.log(`    Candidate cards      : ${candidateCardIds.length.toLocaleString()}`);
   console.log(`    New cards            : ${newCardCount.toLocaleString()}`);
   console.log(`    Pre-cutoff updates   : ${preCutoffUpdatableCount.toLocaleString()}`);
+  console.log(`    Protected by activity: ${protectedByRelatedActivityCount.toLocaleString()}`);
+  console.log(`    Protected by card ts : ${protectedByCardUpdatedAtCount.toLocaleString()}`);
   console.log(`    Protected cards      : ${protectedCardCount.toLocaleString()}`);
   console.log(`🃏  Inserting/updating ${writableCardIdSet.size.toLocaleString()} safe cards…`);
 
@@ -807,6 +971,22 @@ async function main() {
 
     cardRows.push({
       id: card.id,
+      short_id: (() => {
+        const preferred = typeof card.shortLink === 'string' && /^[A-Za-z0-9]{8}$/.test(card.shortLink)
+          ? card.shortLink
+          : null;
+        if (preferred && !usedCardShortIds.has(preferred)) {
+          usedCardShortIds.add(preferred);
+          return preferred;
+        }
+        for (let attempt = 0; attempt < 20; attempt += 1) {
+          const candidate = makeShortId();
+          if (usedCardShortIds.has(candidate)) continue;
+          usedCardShortIds.add(candidate);
+          return candidate;
+        }
+        throw new Error(`failed-to-generate-short-id:cards:${card.id}`);
+      })(),
       list_id: card.idList,
       title: card.name.slice(0, 512),
       description: card.desc ?? null,

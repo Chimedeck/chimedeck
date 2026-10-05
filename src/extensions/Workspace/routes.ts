@@ -7,9 +7,7 @@ export const routes: RouteConfig[] = [
   {
     path: '/workspaces',
     component: () =>
-      import('./containers/WorkspaceListPage/WorkspaceListPage').then(
-        (m) => m.default
-      ),
+      import('./containers/WorkspaceListPage/WorkspaceListPage').then((m) => m.default),
     name: 'WorkspaceListPage',
     auth: true,
   },
@@ -18,37 +16,26 @@ export const routes: RouteConfig[] = [
   // (hiding Create Board, showing guest badges) lives alongside other workspace UI.
   {
     path: '/workspaces/:workspaceId/boards',
-    component: () =>
-      import('./containers/WorkspaceDashboard').then(
-        (m) => m.default
-      ),
+    component: () => import('./containers/WorkspaceDashboard').then((m) => m.default),
     name: 'WorkspaceDashboard',
     auth: true,
   },
   {
     path: '/workspace',
-    component: () =>
-      import('./containers/WorkspacePage/WorkspacePage').then(
-        (m) => m.default
-      ),
+    component: () => import('./containers/WorkspacePage/WorkspacePage').then((m) => m.default),
     name: 'WorkspacePage',
     auth: true,
   },
   {
     path: '/workspace/:workspaceId',
-    component: () =>
-      import('./containers/WorkspacePage/WorkspacePage').then(
-        (m) => m.default
-      ),
+    component: () => import('./containers/WorkspacePage/WorkspacePage').then((m) => m.default),
     name: 'WorkspaceDetailPage',
     auth: true,
   },
   {
     path: '/invites/:token/accept',
     component: () =>
-      import('./containers/AcceptInvitePage/AcceptInvitePage').then(
-        (m) => m.default
-      ),
+      import('./containers/AcceptInvitePage/AcceptInvitePage').then((m) => m.default),
     name: 'AcceptInvitePage',
     // Accept-invite route is accessible without auth so the user can see
     // invite details before being prompted to log in.

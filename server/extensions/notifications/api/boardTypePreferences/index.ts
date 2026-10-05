@@ -5,7 +5,7 @@ import { handleResetBoardTypePreferences } from './reset';
 
 export async function boardTypePreferencesRouter(
   req: Request,
-  pathname: string,
+  pathname: string
 ): Promise<Response | null> {
   const match = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/notification-preferences\/types$/);
   if (!match) return null;

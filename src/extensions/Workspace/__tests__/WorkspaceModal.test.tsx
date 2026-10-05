@@ -49,9 +49,7 @@ describe('createWorkspaceThunk', () => {
 
   it('appends workspace and sets active on fulfilled', () => {
     const store = makeStore();
-    store.dispatch(
-      createWorkspaceThunk.fulfilled(NEW_WORKSPACE, 'req-1', { name: 'New Corp' })
-    );
+    store.dispatch(createWorkspaceThunk.fulfilled(NEW_WORKSPACE, 'req-1', { name: 'New Corp' }));
     const state = store.getState();
     expect(selectWorkspaces(state)).toHaveLength(1);
     expect(selectWorkspaces(state)[0].name).toBe('New Corp');
@@ -62,12 +60,13 @@ describe('createWorkspaceThunk', () => {
   it('appends new workspace to existing list', () => {
     const store = makeStore();
     const existing: Workspace = {
-      id: 'ws-1', name: 'Existing', ownerId: 'u1', createdAt: '2024-01-01T00:00:00Z',
+      id: 'ws-1',
+      name: 'Existing',
+      ownerId: 'u1',
+      createdAt: '2024-01-01T00:00:00Z',
     };
     store.dispatch(fetchWorkspacesThunk.fulfilled([existing], 'req-0', undefined));
-    store.dispatch(
-      createWorkspaceThunk.fulfilled(NEW_WORKSPACE, 'req-1', { name: 'New Corp' })
-    );
+    store.dispatch(createWorkspaceThunk.fulfilled(NEW_WORKSPACE, 'req-1', { name: 'New Corp' }));
     expect(selectWorkspaces(store.getState())).toHaveLength(2);
     expect(selectActiveWorkspaceId(store.getState())).toBe('ws-new');
   });

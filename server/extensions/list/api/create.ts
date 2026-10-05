@@ -9,24 +9,15 @@ import {
   requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
+import {
+  requireBoardWritable,
+  type BoardScopedRequest,
+} from '../../board/middlewares/requireBoardWritable';
 import { between, HIGH_SENTINEL } from '../mods/fractional';
 import { sanitizeText } from '../../../common/sanitize';
 import { generateUniqueShortId } from '../../../common/ids/shortId';
-
-type ListRow = {
-  id: string;
-  short_id: string;
-  board_id: string;
-  title: string;
-  position: string;
-  archived: boolean;
-};
-
-type AuthenticatedBoardRequest = AuthenticatedRequest & BoardScopedRequest & {
-  board: NonNullable<BoardScopedRequest['board']>;
-  currentUser: { id: string };
-};
+import { applyLimitGuard } from '../../../middlewares/limitGuard';
+import { getColumnCountForBoard } from '../../subscription/common/usage';
 
 export async function handleCreateList(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -36,7 +27,7 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
   const writableError = await requireBoardWritable(boardReq, boardId);
   if (writableError) return writableError;
 
-  const board = boardReq.board as NonNullable<BoardScopedRequest['board']>;
+  const board = boardReq.board!;
   const canonicalBoardId = board.id;
 
   const scopedReq = req as WorkspaceScopedRequest;
@@ -52,19 +43,28 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
     return Response.json(
       { error: { code: 'bad-request', message: 'title is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
+  // Enforce column-per-board cap before persisting.
+  const columnCount = await getColumnCountForBoard(canonicalBoardId);
+  const limitError = await applyLimitGuard({
+    workspaceId: board.workspace_id,
+    limitKey: 'maxColumnsPerBoard',
+    currentUsage: columnCount,
+  });
+  if (limitError) return limitError;
+
   // Resolve position: insert after the specified list (or at the end)
-  const activeLists = await db<ListRow>('lists')
+  const activeLists = await db('lists')
     .where({ board_id: canonicalBoardId, archived: false })
     .orderBy('position', 'asc');
 
@@ -78,10 +78,10 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
     if (afterIndex === -1) {
       return Response.json(
         { error: { code: 'list-not-found', message: 'afterId list not found' } },
-        { status: 404 },
+        { status: 404 }
       );
     }
-    const after = activeLists[afterIndex] as ListRow;
+    const after = activeLists[afterIndex]!;
     const next = activeLists[afterIndex + 1];
     position = between(after.position, next ? next.position : HIGH_SENTINEL);
   }
@@ -97,11 +97,16 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
     archived: false,
   });
 
-  const list = await db<ListRow>('lists').where({ id }).first();
+  const list = await db('lists').where({ id }).first();
 
   // Broadcast full list object so clients can update their local state
-  const authenticatedRequest = req as AuthenticatedBoardRequest;
-  await writeEvent({ type: 'list_created', boardId: canonicalBoardId, entityId: id, actorId: authenticatedRequest.currentUser.id, payload: { list } });
+  await writeEvent({
+    type: 'list_created',
+    boardId: canonicalBoardId,
+    entityId: id,
+    actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system',
+    payload: { list },
+  });
 
   return Response.json({ data: list }, { status: 201 });
 }

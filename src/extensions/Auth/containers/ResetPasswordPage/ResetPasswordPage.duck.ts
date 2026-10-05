@@ -26,7 +26,9 @@ export const resetPasswordThunk = createAppAsyncThunk(
       const response = await authApi.resetPassword({ token, password });
       return (response as unknown as { data: { reset: boolean } }).data;
     } catch (err: unknown) {
-      const msg = isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : 'reset-password-failed';
+      const msg = isApiError(err)
+        ? (err.response.data.error?.code ?? 'unknown-error')
+        : 'reset-password-failed';
       return rejectWithValue(msg);
     }
   }

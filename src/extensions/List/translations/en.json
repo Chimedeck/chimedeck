@@ -12,6 +12,19 @@
     "listArchivedNotice": "This list is archived.",
     "loadingLists": "Loading lists…",
     "errorLoadingLists": "Failed to load lists.",
-    "noLists": "No lists yet. Add your first list."
+    "noLists": "No lists yet. Add your first list.",
+    "addListFormAria": "Add a list",
+    "addListTitlePlaceholder": "List title…",
+    "addListTitleAria": "New list title",
+    "addListCancelAria": "Cancel",
+    "addListButtonAria": "Add a list",
+    "listOptionsAria": "List options",
+    "moveList": "Move list",
+    "moveAllCards": "Move all cards in this list",
+    "sortBy": "Sort by",
+    "closeSortMenuAria": "Close sort menu",
+    "closeMoveCardsMenuAria": "Close move cards menu",
+    "closeMoveListMenuAria": "Close move list menu",
+    "deleteDialogCloseAria": "Close"
   }
 }

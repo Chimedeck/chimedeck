@@ -58,7 +58,9 @@ const ActionConfig = ({ actionType, config, onChange, boardId }: Props) => {
   useEffect(() => {
     apiClient
       .get(`/boards/${boardId}/lists`)
-      .then((res: any) => { setBoardLists(res.data ?? []); })
+      .then((res: any) => {
+        setBoardLists(res.data ?? []);
+      })
       .catch(() => {});
   }, [boardId]);
 
@@ -66,7 +68,9 @@ const ActionConfig = ({ actionType, config, onChange, boardId }: Props) => {
   useEffect(() => {
     apiClient
       .get(`/boards/${boardId}/workspace/boards`)
-      .then((res: any) => { setWorkspaceBoards(res.data ?? []); })
+      .then((res: any) => {
+        setWorkspaceBoards(res.data ?? []);
+      })
       .catch(() => {});
   }, [boardId]);
 
@@ -77,7 +81,12 @@ const ActionConfig = ({ actionType, config, onChange, boardId }: Props) => {
         const rows = (res?.data ?? []) as Array<Record<string, unknown>>;
         setCustomFields(
           rows
-            .filter((row) => typeof row.id === 'string' && typeof row.name === 'string' && typeof row.field_type === 'string')
+            .filter(
+              (row) =>
+                typeof row.id === 'string' &&
+                typeof row.name === 'string' &&
+                typeof row.field_type === 'string'
+            )
             .map((row) => ({
               id: row.id as string,
               name: row.name as string,
@@ -86,11 +95,14 @@ const ActionConfig = ({ actionType, config, onChange, boardId }: Props) => {
             }))
         );
       })
-      .catch(() => { setCustomFields([]); });
+      .catch(() => {
+        setCustomFields([]);
+      });
   }, [boardId]);
 
   // Whenever the user picks a target board, fetch its lists for the target-list-select field.
-  const selectedTargetBoardId = typeof config.targetBoardId === 'string' ? config.targetBoardId : null;
+  const selectedTargetBoardId =
+    typeof config.targetBoardId === 'string' ? config.targetBoardId : null;
   useEffect(() => {
     if (!selectedTargetBoardId) {
       setTargetBoardLists([]);
@@ -98,8 +110,12 @@ const ActionConfig = ({ actionType, config, onChange, boardId }: Props) => {
     }
     apiClient
       .get(`/boards/${selectedTargetBoardId}/lists`)
-      .then((res: any) => { setTargetBoardLists(res.data ?? []); })
-      .catch(() => { setTargetBoardLists([]); });
+      .then((res: any) => {
+        setTargetBoardLists(res.data ?? []);
+      })
+      .catch(() => {
+        setTargetBoardLists([]);
+      });
   }, [selectedTargetBoardId]);
 
   if (actionType.type === UPDATE_CUSTOM_FIELD_ACTION) {
@@ -152,9 +168,13 @@ const ActionConfig = ({ actionType, config, onChange, boardId }: Props) => {
             id="cfg-action-fieldId"
             className="w-full rounded-md border border-border bg-bg-overlay px-3 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
             value={selectedFieldId}
-            onChange={(e) => { setField(e.target.value); }}
+            onChange={(e) => {
+              setField(e.target.value);
+            }}
           >
-            <option value="">{translations['automation.actionConfig.customField.selectFieldPlaceholder']}</option>
+            <option value="">
+              {translations['automation.actionConfig.customField.selectFieldPlaceholder']}
+            </option>
             {customFields.map((field) => (
               <option key={field.id} value={field.id}>
                 {field.name}
@@ -164,7 +184,9 @@ const ActionConfig = ({ actionType, config, onChange, boardId }: Props) => {
         </div>
 
         {customFields.length === 0 && (
-          <p className="text-xs text-muted italic">{translations['automation.actionConfig.customField.noFields']}</p>
+          <p className="text-xs text-muted italic">
+            {translations['automation.actionConfig.customField.noFields']}
+          </p>
         )}
 
         {selectedField && (
@@ -179,7 +201,9 @@ const ActionConfig = ({ actionType, config, onChange, boardId }: Props) => {
                 className="w-full rounded-md border border-border bg-bg-overlay px-3 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder={translations['automation.actionConfig.customField.textPlaceholder']}
                 value={typeof config.valueText === 'string' ? config.valueText : ''}
-                onChange={(e) => { setValue({ valueText: e.target.value }); }}
+                onChange={(e) => {
+                  setValue({ valueText: e.target.value });
+                }}
               />
             )}
 
@@ -201,18 +225,28 @@ const ActionConfig = ({ actionType, config, onChange, boardId }: Props) => {
                 type="date"
                 className="w-full rounded-md border border-border bg-bg-overlay px-3 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                 value={typeof config.valueDate === 'string' ? config.valueDate.slice(0, 10) : ''}
-                onChange={(e) => { setValue({ valueDate: e.target.value }); }}
+                onChange={(e) => {
+                  setValue({ valueDate: e.target.value });
+                }}
               />
             )}
 
             {selectedField.field_type === 'CHECKBOX' && (
               <select
                 className="w-full rounded-md border border-border bg-bg-overlay px-3 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
-                value={typeof config.valueCheckbox === 'boolean' ? String(config.valueCheckbox) : ''}
-                onChange={(e) => { setValue({ valueCheckbox: e.target.value === 'true' }); }}
+                value={
+                  typeof config.valueCheckbox === 'boolean' ? String(config.valueCheckbox) : ''
+                }
+                onChange={(e) => {
+                  setValue({ valueCheckbox: e.target.value === 'true' });
+                }}
               >
-                <option value="false">{translations['automation.actionConfig.customField.checkboxFalse']}</option>
-                <option value="true">{translations['automation.actionConfig.customField.checkboxTrue']}</option>
+                <option value="false">
+                  {translations['automation.actionConfig.customField.checkboxFalse']}
+                </option>
+                <option value="true">
+                  {translations['automation.actionConfig.customField.checkboxTrue']}
+                </option>
               </select>
             )}
 
@@ -220,9 +254,13 @@ const ActionConfig = ({ actionType, config, onChange, boardId }: Props) => {
               <select
                 className="w-full rounded-md border border-border bg-bg-overlay px-3 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                 value={typeof config.valueOptionId === 'string' ? config.valueOptionId : ''}
-                onChange={(e) => { setValue({ valueOptionId: e.target.value }); }}
+                onChange={(e) => {
+                  setValue({ valueOptionId: e.target.value });
+                }}
               >
-                <option value="">{translations['automation.actionConfig.customField.selectOptionPlaceholder']}</option>
+                <option value="">
+                  {translations['automation.actionConfig.customField.selectOptionPlaceholder']}
+                </option>
                 {(selectedField.options ?? []).map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.label}

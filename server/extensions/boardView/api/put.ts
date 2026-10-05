@@ -24,7 +24,7 @@ export async function handlePutViewPreference(req: Request, boardId: string): Pr
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -34,7 +34,7 @@ export async function handlePutViewPreference(req: Request, boardId: string): Pr
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -42,8 +42,13 @@ export async function handlePutViewPreference(req: Request, boardId: string): Pr
 
   if (!viewType || !VALID_VIEW_TYPES.includes(viewType as ViewType)) {
     return Response.json(
-      { error: { code: 'invalid-view-type', message: `viewType must be one of: ${VALID_VIEW_TYPES.join(', ')}` } },
-      { status: 400 },
+      {
+        error: {
+          code: 'invalid-view-type',
+          message: `viewType must be one of: ${VALID_VIEW_TYPES.join(', ')}`,
+        },
+      },
+      { status: 400 }
     );
   }
 

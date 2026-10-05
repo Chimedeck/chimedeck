@@ -14,21 +14,15 @@ export function useOptimisticAutomations(
   const [automations, setAutomations] = useState<Automation[]>(initial);
 
   // Keep the list in sync with fresh data from the server (e.g., after reload).
-  const setAll = useCallback((list: Automation[]) => { setAutomations(list); }, []);
+  const setAll = useCallback((list: Automation[]) => {
+    setAutomations(list);
+  }, []);
 
   const toggleEnabled = useCallback(
-    async ({
-      boardId,
-      automationId,
-    }: {
-      boardId: string;
-      automationId: string;
-    }) => {
+    async ({ boardId, automationId }: { boardId: string; automationId: string }) => {
       // Optimistic update.
       setAutomations((prev) =>
-        prev.map((a) =>
-          a.id === automationId ? { ...a, isEnabled: !a.isEnabled } : a
-        )
+        prev.map((a) => (a.id === automationId ? { ...a, isEnabled: !a.isEnabled } : a))
       );
 
       try {
@@ -42,9 +36,7 @@ export function useOptimisticAutomations(
       } catch {
         // Rollback: flip back.
         setAutomations((prev) =>
-          prev.map((a) =>
-            a.id === automationId ? { ...a, isEnabled: !a.isEnabled } : a
-          )
+          prev.map((a) => (a.id === automationId ? { ...a, isEnabled: !a.isEnabled } : a))
         );
         onError?.('Failed to toggle automation. Please try again.');
       }
@@ -53,13 +45,7 @@ export function useOptimisticAutomations(
   );
 
   const remove = useCallback(
-    async ({
-      boardId,
-      automationId,
-    }: {
-      boardId: string;
-      automationId: string;
-    }) => {
+    async ({ boardId, automationId }: { boardId: string; automationId: string }) => {
       const snapshot = automations.find((a) => a.id === automationId);
 
       // Optimistic removal.

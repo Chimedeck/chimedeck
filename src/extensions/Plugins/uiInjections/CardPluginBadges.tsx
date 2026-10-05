@@ -2,7 +2,6 @@
 // Resolves the 'card-badges' capability via the plugin bridge and shows
 // colour-coded badge chips below the card's existing metadata.
 import { memo, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import { usePluginBridgeContext } from '../iframeHost/usePluginBridge';
 
 interface PluginBadge {
@@ -13,6 +12,7 @@ interface PluginBadge {
 }
 
 interface Props {
+  boardId?: string;
   cardId: string;
   listId: string;
   cardTitle?: string;
@@ -69,6 +69,13 @@ function normalizeBadgeResults(results: unknown[]): PluginBadge[] {
 }
 
 function cacheBadgeResult(key: string, badges: PluginBadge[]): void {
+  // WHY: empty badge results can happen before plugin iframes are ready.
+  // Caching empties makes later plugin-load re-renders stick to [] forever.
+  if (badges.length === 0) {
+    badgeResultCache.delete(key);
+    return;
+  }
+
   badgeResultCache.set(key, badges);
   if (badgeResultCache.size > 3000) {
     const firstKey = badgeResultCache.keys().next().value;
@@ -84,10 +91,10 @@ function hasSameBadges(prev: PluginBadge[], next: PluginBadge[]): boolean {
     const nextBadge = next[i];
     if (!prevBadge || !nextBadge) return false;
     if (
-      prevBadge.text !== nextBadge.text
-      || prevBadge.color !== nextBadge.color
-      || prevBadge.icon !== nextBadge.icon
-      || prevBadge.title !== nextBadge.title
+      prevBadge.text !== nextBadge.text ||
+      prevBadge.color !== nextBadge.color ||
+      prevBadge.icon !== nextBadge.icon ||
+      prevBadge.title !== nextBadge.title
     ) {
       return false;
     }
@@ -96,13 +103,13 @@ function hasSameBadges(prev: PluginBadge[], next: PluginBadge[]): boolean {
 }
 
 function CardPluginBadgesComponent({
+  boardId,
   cardId,
   listId,
   cardTitle,
   listTitle,
   boardTitle,
 }: Readonly<Props>) {
-  const { boardId } = useParams<{ boardId: string }>();
   const bridge = usePluginBridgeContext();
   const [badges, setBadges] = useState<PluginBadge[]>([]);
 
@@ -120,7 +127,7 @@ function CardPluginBadgesComponent({
     });
 
     const cachedBadges = badgeResultCache.get(cacheKey);
-    if (cachedBadges) {
+    if (cachedBadges && cachedBadges.length > 0) {
       setBadges((prev) => (hasSameBadges(prev, cachedBadges) ? prev : cachedBadges));
       return;
     }
@@ -132,8 +139,9 @@ function CardPluginBadgesComponent({
     };
 
     const inFlight = badgeInFlightCache.get(cacheKey);
-    const request = inFlight
-      ?? bridge
+    const request =
+      inFlight ??
+      bridge
         .resolve('card-badges', payload)
         .then((results) => normalizeBadgeResults(results))
         .catch(() => [])
@@ -158,15 +166,14 @@ function CardPluginBadgesComponent({
     return () => {
       cancelled = true;
     };
-  }, [bridge, boardId, cardId, listId]);
+  }, [bridge, boardId, cardId, listId, cardTitle, listTitle, boardTitle]);
 
   if (badges.length === 0) return null;
 
   return (
     <div className="mt-1 flex flex-wrap gap-1">
       {badges.map((badge) => {
-        const cls =
-          (badge.color && COLOR_MAP[badge.color]) ?? 'bg-bg-overlay/30 text-subtle';
+        const cls = (badge.color && COLOR_MAP[badge.color]) ?? 'bg-bg-overlay/30 text-subtle';
         const badgeKey = `${badge.title ?? ''}-${badge.text ?? ''}-${badge.icon ?? ''}-${badge.color ?? ''}`;
         return (
           <span
@@ -175,11 +182,7 @@ function CardPluginBadgesComponent({
             title={badge.title}
           >
             {badge.icon && (
-              <img
-                src={badge.icon}
-                alt=""
-                className="mr-0.5 h-3 w-3 shrink-0 object-contain"
-              />
+              <img src={badge.icon} alt="" className="mr-0.5 h-3 w-3 shrink-0 object-contain" />
             )}
             {badge.text}
           </span>
@@ -191,8 +194,13 @@ function CardPluginBadgesComponent({
 
 const CardPluginBadges = memo(
   CardPluginBadgesComponent,
-  (prev, next) => prev.cardId === next.cardId
-    && prev.listId === next.listId,
+  (prev, next) =>
+    prev.cardId === next.cardId &&
+    prev.listId === next.listId &&
+    prev.boardId === next.boardId &&
+    prev.cardTitle === next.cardTitle &&
+    prev.listTitle === next.listTitle &&
+    prev.boardTitle === next.boardTitle
 );
 
 export default CardPluginBadges;

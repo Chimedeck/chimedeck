@@ -27,14 +27,16 @@ const CardTile = ({
   const badgeFields = customFields.filter(
     (f) =>
       f.show_on_card &&
-      customFieldValues.some((v) => v.custom_field_id === f.id && hasNonNullValue(v)),
+      customFieldValues.some((v) => v.custom_field_id === f.id && hasNonNullValue(v))
   );
 
   return (
     <div
       className={`group rounded bg-bg-surface px-3 py-2 shadow-sm cursor-pointer hover:bg-blue-50 transition-colors${card.archived ? ' opacity-60' : ''}`}
       style={style}
-      onClick={() => { onClick(card.id); }}
+      onClick={() => {
+        onClick(card.id);
+      }}
       role="button"
       tabIndex={0}
       aria-label={`Card: ${card.title}`}
@@ -62,7 +64,7 @@ const CardTile = ({
             const displayValue = resolveDisplayValue(field, val);
             const dropdownOption =
               field.field_type === 'DROPDOWN' && field.options
-                ? field.options.find((o) => o.id === val.value_option_id) ?? null
+                ? (field.options.find((o) => o.id === val.value_option_id) ?? null)
                 : null;
             return (
               <CustomFieldBadge
@@ -92,7 +94,7 @@ function hasNonNullValue(v: CustomFieldValue): boolean {
 
 function resolveDisplayValue(
   field: CustomField,
-  v: CustomFieldValue,
+  v: CustomFieldValue
 ): string | number | boolean | null {
   switch (field.field_type) {
     case 'TEXT':

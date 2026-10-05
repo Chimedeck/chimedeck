@@ -26,7 +26,9 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
     <button
       ref={buttonRef}
       className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-bg-surface focus:bg-bg-surface focus:outline-none"
-      onClick={() => { onSelect(result); }}
+      onClick={() => {
+        onSelect(result);
+      }}
       onKeyDown={onKeyDown}
     >
       {isBoard && result.background ? (
@@ -35,22 +37,21 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
           className="relative flex h-5 w-8 flex-shrink-0 overflow-hidden rounded"
           aria-hidden="true"
         >
-          <img
-            src={result.background}
-            alt=""
-            className="h-full w-full object-cover"
-          />
+          <img src={result.background} alt="" className="h-full w-full object-cover" />
         </span>
       ) : (
         <span
-          className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-white ${ // [theme-exception] text-white on colored avatar
+          className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-white ${
+            // [theme-exception] text-white on colored avatar
             isBoard ? 'bg-indigo-500' : 'bg-emerald-500'
           }`}
           aria-hidden="true"
         >
-          {isBoard
-            ? <RectangleStackIcon className="h-4 w-4" />
-            : <DocumentTextIcon className="h-4 w-4" />}
+          {isBoard ? (
+            <RectangleStackIcon className="h-4 w-4" />
+          ) : (
+            <DocumentTextIcon className="h-4 w-4" />
+          )}
         </span>
       )}
       <span className="truncate font-medium text-base">{result.title}</span>

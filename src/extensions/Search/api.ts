@@ -61,7 +61,7 @@ export async function searchWorkspace({
     throw err;
   }
 
-  const json = await res.json() as {
+  const json = (await res.json()) as {
     data: Array<Record<string, unknown>>;
     metadata: { cursor: string | null; hasMore: boolean };
   };

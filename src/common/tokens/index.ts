@@ -8,8 +8,7 @@ export const inputClasses =
   'w-full bg-bg-overlay text-base placeholder:text-subtle border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent';
 
 /** Popover / dropdown panel container */
-export const overlayPanelClasses =
-  'bg-bg-surface border border-border rounded-xl shadow-xl';
+export const overlayPanelClasses = 'bg-bg-surface border border-border rounded-xl shadow-xl';
 
 /** Inline status badge — neutral */
 export const neutralBadgeClasses =

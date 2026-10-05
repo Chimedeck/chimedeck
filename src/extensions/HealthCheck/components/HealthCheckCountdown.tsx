@@ -38,7 +38,10 @@ export function HealthCheckCountdown({
       title={paused ? 'Auto-refresh paused' : `Next refresh in ${display}`}
     >
       {/* Thin progress bar */}
-      <span className="relative h-1 w-16 rounded-full bg-bg-overlay overflow-hidden" aria-hidden="true">
+      <span
+        className="relative h-1 w-16 rounded-full bg-bg-overlay overflow-hidden"
+        aria-hidden="true"
+      >
         <span
           className={`absolute inset-y-0 left-0 rounded-full transition-all duration-1000 ${
             paused ? 'bg-bg-sunken' : 'bg-blue-500'

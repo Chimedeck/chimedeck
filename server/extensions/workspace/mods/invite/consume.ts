@@ -12,9 +12,7 @@ interface ConsumeInviteParams {
 export async function consumeInvite({ invite, userId }: ConsumeInviteParams): Promise<void> {
   await db.transaction(async (trx) => {
     // Mark invite as used.
-    await trx('invites')
-      .where({ id: invite.id })
-      .update({ accepted_at: new Date() });
+    await trx('invites').where({ id: invite.id }).update({ accepted_at: new Date() });
 
     // Upsert membership — idempotent if user somehow already a member.
     const existing = await trx('memberships')

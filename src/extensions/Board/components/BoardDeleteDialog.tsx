@@ -47,8 +47,12 @@ const BoardDeleteDialog = ({ boardTitle, listCount, cardCount, onConfirm, onCanc
           <span className="font-medium text-base">"{boardTitle}"</span> contains:
         </p>
         <ul className="text-sm text-muted mb-4 list-disc list-inside space-y-1">
-          <li>{listCount} list{listCount !== 1 ? 's' : ''}</li>
-          <li>{cardCount} card{cardCount !== 1 ? 's' : ''}</li>
+          <li>
+            {listCount} list{listCount !== 1 ? 's' : ''}
+          </li>
+          <li>
+            {cardCount} card{cardCount !== 1 ? 's' : ''}
+          </li>
         </ul>
         <p className="text-sm text-danger mb-6">
           All of this content will be permanently deleted. This cannot be undone.

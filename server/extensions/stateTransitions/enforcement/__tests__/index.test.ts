@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
-import type { db as database } from '../../../../common/db';
 import { StateTransitionForbiddenError } from '../../common/errors';
 
 type Row = Record<string, unknown>;
@@ -14,10 +13,15 @@ class QueryBuilder {
   private orderedBy: string | null = null;
   private orderDirection: 'asc' | 'desc' = 'asc';
 
-  constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
+  constructor(
+    private readonly store: DataStore,
+    private readonly tableName: keyof DataStore
+  ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -44,29 +48,29 @@ class QueryBuilder {
       this.store[this.tableName].push(row);
     }
     return {
-      returning: () => Promise.resolve(inserted.map((row) => ({ ...row }))),
+      returning: async () => inserted.map((row) => ({ ...row })),
     };
   }
 
-  update(patch: Row, returning?: string[]): Promise<Row[] | number> {
+  async update(patch: Row, returning?: string[]): Promise<Row[] | number> {
     const rows = this.executeSync(false);
     for (const row of rows) Object.assign(row, patch);
     if (returning && returning.length > 0) {
-      return Promise.resolve(rows.map((row) => ({ ...row })));
+      return rows.map((row) => ({ ...row }));
     }
-    return Promise.resolve(rows.length);
+    return rows.length;
   }
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     return this.execute().then(onfulfilled, onrejected);
   }
 
   private executeSync(clone = true): Row[] {
     let rows = this.store[this.tableName].filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+      this.filters.every((predicate) => predicate(row))
     );
 
     if (this.orderedBy) {
@@ -83,7 +87,7 @@ class QueryBuilder {
     if (this.selectedColumns) {
       rows = rows.map((row) => {
         const next: Row = {};
-        for (const key of this.selectedColumns ?? []) next[key] = row[key];
+        for (const key of this.selectedColumns!) next[key] = row[key];
         return next;
       });
     }
@@ -91,14 +95,14 @@ class QueryBuilder {
     return clone ? rows.map((row) => ({ ...row })) : rows;
   }
 
-  private execute(): Promise<Row[]> {
-    return Promise.resolve(this.executeSync());
+  private async execute(): Promise<Row[]> {
+    return this.executeSync();
   }
 }
 
 let stateTransitionsEnabled = true;
 let dataStore: DataStore;
-const emitCardMoveBlockedActivityMock = mock(() => null);
+const emitCardMoveBlockedActivityMock = mock(async () => null);
 
 function makeGraph({
   edges,
@@ -153,7 +157,7 @@ function resetStore(): DataStore {
   };
 }
 
-void mock.module('../../../../config/featureFlags', () => ({
+mock.module('../../../../config/featureFlags', () => ({
   featureFlags: {
     get STATE_TRANSITIONS_ENABLED() {
       return stateTransitionsEnabled;
@@ -161,28 +165,17 @@ void mock.module('../../../../config/featureFlags', () => ({
   },
 }));
 
-void mock.module('../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof database,
+mock.module('../../../../common/db', () => ({
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
 }));
 
-void mock.module('../../common/activityLog', () => ({
+mock.module('../../common/activityLog', () => ({
   emitCardMoveBlockedActivity: emitCardMoveBlockedActivityMock,
 }));
 
 const { validateCardMove } = await import('..');
 const { clearRulesCache, invalidateRulesCacheForBoard } = await import('../rules');
-
-async function getForbiddenMoveError(
-  input: Parameters<typeof validateCardMove>[0],
-): Promise<StateTransitionForbiddenError> {
-  try {
-    await validateCardMove(input);
-  } catch (error) {
-    if (error instanceof StateTransitionForbiddenError) return error;
-    throw error;
-  }
-  throw new Error('Expected move to be forbidden');
-}
 
 beforeEach(() => {
   stateTransitionsEnabled = true;
@@ -193,11 +186,13 @@ beforeEach(() => {
 
 describe('state transition card-move enforcement', () => {
   it('allows move when destination is listed in allowed transitions', async () => {
-    await validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' });
+    await expect(
+      validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' })
+    ).resolves.toBeUndefined();
   });
 
   it('blocks move to forbidden list and returns allowedNextStates', async () => {
-    const error = await getForbiddenMoveError({
+    const promise = validateCardMove({
       boardId: 'board-1',
       fromListId: 'list-1',
       toListId: 'list-3',
@@ -205,7 +200,8 @@ describe('state transition card-move enforcement', () => {
       actorId: 'user-1',
     });
 
-    expect(error).toMatchObject({
+    await expect(promise).rejects.toBeInstanceOf(StateTransitionForbiddenError);
+    await expect(promise).rejects.toMatchObject({
       boardId: 'board-1',
       fromListId: 'list-1',
       toListId: 'list-3',
@@ -232,7 +228,9 @@ describe('state transition card-move enforcement', () => {
     };
     clearRulesCache();
 
-    await validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-1' });
+    await expect(
+      validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-1' })
+    ).resolves.toBeUndefined();
   });
 
   it('blocks all outgoing moves from node with no outgoing edges', async () => {
@@ -242,12 +240,13 @@ describe('state transition card-move enforcement', () => {
     };
     clearRulesCache();
 
-    const error = await getForbiddenMoveError({
+    const promise = validateCardMove({
       boardId: 'board-1',
       fromListId: 'list-1',
       toListId: 'list-2',
     });
-    expect(error).toMatchObject({ allowedNextStates: [] });
+    await expect(promise).rejects.toBeInstanceOf(StateTransitionForbiddenError);
+    await expect(promise).rejects.toMatchObject({ allowedNextStates: [] });
   });
 
   it('is a no-op when board-level enforcement is disabled', async () => {
@@ -258,16 +257,22 @@ describe('state transition card-move enforcement', () => {
     };
     clearRulesCache();
 
-    await validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' });
+    await expect(
+      validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' })
+    ).resolves.toBeUndefined();
   });
 
   it('is a no-op when feature flag is disabled', async () => {
     stateTransitionsEnabled = false;
-    await validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-3' });
+    await expect(
+      validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-3' })
+    ).resolves.toBeUndefined();
   });
 
   it('uses fresh rules after cache invalidation', async () => {
-    await validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' });
+    await expect(
+      validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' })
+    ).resolves.toBeUndefined();
 
     dataStore.board_state_transitions[0] = {
       ...(dataStore.board_state_transitions[0] as Row),
@@ -286,12 +291,18 @@ describe('state transition card-move enforcement', () => {
     };
 
     // Still allowed while cached snapshot is active.
-    await validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' });
+    await expect(
+      validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' })
+    ).resolves.toBeUndefined();
 
     invalidateRulesCacheForBoard('board-1');
 
-    await getForbiddenMoveError({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' });
+    await expect(
+      validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' })
+    ).rejects.toBeInstanceOf(StateTransitionForbiddenError);
 
-    await validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-3' });
+    await expect(
+      validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-3' })
+    ).resolves.toBeUndefined();
   });
 });

@@ -16,7 +16,7 @@ interface Props {
 function formatResponseTime(
   status: string | null | undefined,
   responseTimeMs: number | null | undefined,
-  errorMessage: string | null | undefined,
+  errorMessage: string | null | undefined
 ): string {
   if (!status || status === 'unknown') return '—';
   if (status === 'red') {
@@ -24,7 +24,7 @@ function formatResponseTime(
     if (errorMessage) return 'Error';
     return 'Error';
   }
-  if (responseTimeMs != null) return `${String(responseTimeMs)} ms`;
+  if (responseTimeMs != null) return `${responseTimeMs} ms`;
   return '—';
 }
 
@@ -33,11 +33,11 @@ function relativeTime(isoString: string): string {
   const diffMs = Date.now() - new Date(isoString).getTime();
   const diffSec = Math.floor(diffMs / 1000);
   if (diffSec < 10) return 'just now';
-  if (diffSec < 60) return `${String(diffSec)}s ago`;
+  if (diffSec < 60) return `${diffSec}s ago`;
   const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${String(diffMin)} min ago`;
+  if (diffMin < 60) return `${diffMin} min ago`;
   const diffHr = Math.floor(diffMin / 60);
-  return `${String(diffHr)}h ago`;
+  return `${diffHr}h ago`;
 }
 
 export function HealthCheckRow({ entry, isProbing, onRemove }: Props) {
@@ -45,7 +45,7 @@ export function HealthCheckRow({ entry, isProbing, onRemove }: Props) {
   const responseTime = formatResponseTime(
     result?.status,
     result?.responseTimeMs,
-    result?.errorMessage,
+    result?.errorMessage
   );
 
   return (
@@ -100,7 +100,9 @@ export function HealthCheckRow({ entry, isProbing, onRemove }: Props) {
       <IconButton
         type="button"
         variant="ghost"
-        onClick={() => { onRemove(entry.id); }}
+        onClick={() => {
+          onRemove(entry.id);
+        }}
         disabled={isProbing}
         aria-label={`Remove ${entry.name}`}
         title={`Remove ${entry.name}`}

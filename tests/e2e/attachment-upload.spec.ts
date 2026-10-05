@@ -292,10 +292,18 @@ test.describe('Attachment Upload', () => {
     expect(partUrlRes.status()).toBe(200);
     const partUrl = await partUrlRes.json() as { data: { url: string } };
 
-    // Parts other than the last must be >= 5 MiB.
+    // Parts other than the last must be >= 5 MiB. Payload must be a VALID
+    // PNG (1x1 image + zero-padding to reach the 5 MiB floor) so the preview
+    // <img> can actually decode — an arbitrary-bytes "PNG" renders broken and
+    // the visibility assertion below would pass vacuously.
+    const png1x1 = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64',
+    );
+    const partPayload = Buffer.concat([png1x1, Buffer.alloc(5 * 1024 * 1024, 0x00)]);
     const putRes = await request.put(partUrl.data.url, {
       headers: { 'Content-Type': 'image/png' },
-      data: Buffer.alloc(5 * 1024 * 1024, 0x61),
+      data: partPayload,
     });
     expect(putRes.status()).toBe(200);
     const eTag = putRes.headers()['etag'];
@@ -326,8 +334,15 @@ test.describe('Attachment Upload', () => {
     // the content preview (src is the attachment view proxy), not a generated
     // thumbnail — thumbnail_key is not populated for this fixture, so the app
     // falls back to view_url. The element is rendered thumbnail-sized.
-    await expect(modal.locator('img[src*="/attachments/"][src*="/view"]').first())
-      .toBeVisible({ timeout: 8000 });
+    const preview = modal.locator('img[src*="/attachments/"][src*="/view"]').first();
+    await expect(preview).toBeVisible({ timeout: 8000 });
+    // Visible is not enough — assert the browser actually DECODES the image
+    // (catches a broken render inside a fixed-size element).
+    await expect
+      .poll(async () =>
+        preview.evaluate((img) => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0),
+      )
+      .toBe(true, { timeout: 8000 });
   });
 
   test('Test 8 — UI shows download link for URL attachment', async ({ request, page }) => {

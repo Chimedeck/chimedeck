@@ -9,17 +9,15 @@ import {
 } from '../../../middlewares/permissionManager';
 import { guestGuard } from '../../../middlewares/guestGuard';
 
-type BoardRow = { id: string; workspace_id: string; state: string };
-
 export async function handleArchiveBoard(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const board = await db<BoardRow>('boards').where({ id: boardId }).first<BoardRow | undefined>();
+  const board = await db('boards').where({ id: boardId }).first();
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -34,12 +32,16 @@ export async function handleArchiveBoard(req: Request, boardId: string): Promise
   if (roleError) return roleError;
 
   const newState = board.state === 'ARCHIVED' ? 'ACTIVE' : 'ARCHIVED';
-  const updated = await db<BoardRow>('boards')
-    .where({ id: boardId })
-    .update({ state: newState }, ['*']) as BoardRow[];
+  const updated = await db('boards').where({ id: boardId }).update({ state: newState }, ['*']);
 
   // Stub event emission.
-  await writeEvent({ type: 'board_archived', boardId, entityId: boardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { state: newState } });
+  await writeEvent({
+    type: 'board_archived',
+    boardId,
+    entityId: boardId,
+    actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system',
+    payload: { state: newState },
+  });
 
   return Response.json({ data: updated[0] });
 }

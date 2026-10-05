@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { generateId } from '../../../common/uuid';
 import { db } from '../../../common/db';
 import { verifyPassword } from '../mods/password/verify';
-import { issueAccessToken } from '../mods/token/issue';
+import { issueAccessToken, AccessTokenKeyError } from '../mods/token/issue';
 import { jwtConfig } from '../common/config/jwt';
 import { memCache } from '../../../mods/cache';
 import { flags } from '../../../mods/flags';
@@ -18,22 +18,16 @@ const RATE_LIMIT_WINDOW_SECONDS = 60;
 const VERIFICATION_RESEND_RATE_LIMIT = 3;
 const VERIFICATION_RESEND_WINDOW_SECONDS = 3600;
 
-type LoginUserRow = {
-  id: string;
-  email: string;
-  password_hash: string | null;
-  email_verified: boolean;
-  name: string | null;
-  avatar_url: string | null;
-};
-
 function checkRateLimit(ip: string): boolean {
   const key = `rl:login:${ip}`;
   const count = memCache.incr(key, RATE_LIMIT_WINDOW_SECONDS);
   return count <= RATE_LIMIT_MAX;
 }
 
-async function resendVerificationEmailForUser(user: { id: string; email: string }): Promise<boolean> {
+async function resendVerificationEmailForUser(user: {
+  id: string;
+  email: string;
+}): Promise<boolean> {
   const rlKey = `rl:login-resend-verification:${user.id}`;
   const count = memCache.incr(rlKey, VERIFICATION_RESEND_WINDOW_SECONDS);
   if (count > VERIFICATION_RESEND_RATE_LIMIT) return false;
@@ -59,7 +53,7 @@ export async function handleLogin(req: Request): Promise<Response> {
   if (!checkRateLimit(ip)) {
     return Response.json(
       { error: { code: 'rate-limit-exceeded', message: 'Too many login attempts' } },
-      { status: 429 },
+      { status: 429 }
     );
   }
 
@@ -69,23 +63,23 @@ export async function handleLogin(req: Request): Promise<Response> {
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.email || !body.password) {
     return Response.json(
       { error: { code: 'credentials-invalid', message: 'Email and password are required' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
-  const user = (await db('users').where({ email: body.email }).first()) as LoginUserRow | undefined;
+  const user = await db('users').where({ email: body.email }).first();
 
   if (!user?.password_hash) {
     return Response.json(
       { error: { code: 'credentials-invalid', message: 'Invalid email or password' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -93,7 +87,7 @@ export async function handleLogin(req: Request): Promise<Response> {
   if (!valid) {
     return Response.json(
       { error: { code: 'credentials-invalid', message: 'Invalid email or password' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -103,7 +97,10 @@ export async function handleLogin(req: Request): Promise<Response> {
   if (verificationEnabled && !user.email_verified) {
     let verificationEmailSent = false;
     try {
-      verificationEmailSent = await resendVerificationEmailForUser({ id: user.id, email: user.email });
+      verificationEmailSent = await resendVerificationEmailForUser({
+        id: user.id,
+        email: user.email,
+      });
     } catch {
       verificationEmailSent = false;
     }
@@ -116,11 +113,31 @@ export async function handleLogin(req: Request): Promise<Response> {
           data: { verificationEmailSent },
         },
       },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
-  const accessToken = await issueAccessToken({ sub: user.id, email: user.email });
+  let accessToken: string;
+  try {
+    accessToken = await issueAccessToken({ sub: user.id, email: user.email });
+  } catch (error) {
+    // [why] When the JWT signing key is misconfigured the deep jose/Bun
+    // base64 decoder throws an opaque error. Surface a structured 500 that
+    // names the env var so the operator can fix it from the server logs.
+    if (error instanceof AccessTokenKeyError) {
+      console.error('[auth/token] JWT key error:', error.message);
+      return Response.json(
+        {
+          error: {
+            code: 'auth-server-misconfigured',
+            message: 'Authentication server is misconfigured — see server logs.',
+          },
+        },
+        { status: 500 }
+      );
+    }
+    throw error;
+  }
 
   // Issue opaque refresh token (32 random bytes).
   const refreshToken = randomBytes(32).toString('hex');
@@ -139,14 +156,14 @@ export async function handleLogin(req: Request): Promise<Response> {
   // httpOnly Secure cookie for refresh token.
   responseHeaders.append(
     'Set-Cookie',
-    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${String(jwtConfig.refreshTokenTtlDays * 86400)}`,
+    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`
   );
   // [why] access_token cookie lets <img> tags and other browser resource
   // requests authenticate without an Authorization header. HttpOnly prevents
   // JS from reading it; Path=/ ensures it is sent with all API calls.
   responseHeaders.append(
     'Set-Cookie',
-    `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${String(jwtConfig.accessTokenTtlSeconds)}`,
+    `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${jwtConfig.accessTokenTtlSeconds}`
   );
 
   const avatarUrl = buildAvatarProxyUrl({ userId: user.id, avatarUrl: user.avatar_url ?? null });
@@ -158,6 +175,6 @@ export async function handleLogin(req: Request): Promise<Response> {
         user: { id: user.id, email: user.email, name: user.name, avatarUrl },
       },
     }),
-    { status: 200, headers: responseHeaders },
+    { status: 200, headers: responseHeaders }
   );
 }

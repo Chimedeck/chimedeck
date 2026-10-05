@@ -24,7 +24,10 @@ export function getPresenceBadgeLabel(activeEditorCount: number): string | null 
   if (activeEditorCount > 10) {
     return translations['StateTransitions.presenceBadgeOverflow'];
   }
-  return translations['StateTransitions.presenceBadge'].replace('{count}', String(activeEditorCount));
+  return translations['StateTransitions.presenceBadge'].replace(
+    '{count}',
+    String(activeEditorCount)
+  );
 }
 
 const GraphEditorHeader = ({
@@ -45,7 +48,10 @@ const GraphEditorHeader = ({
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <ArrowsRightLeftIcon className="h-6 w-6 shrink-0 text-muted" aria-hidden="true" />
-            <h2 id="state-transitions-editor-title" className="truncate text-base font-semibold text-base">
+            <h2
+              id="state-transitions-editor-title"
+              className="truncate text-base font-semibold text-base"
+            >
               {translations['StateTransitions.editorTitle']} — {boardTitle}
             </h2>
           </div>
@@ -102,7 +108,10 @@ const GraphEditorHeader = ({
               />
             </button>
             {toggleLoading && (
-              <ArrowPathIcon className="h-4 w-4 animate-spin text-muted" aria-label={translations['StateTransitions.saving']} />
+              <ArrowPathIcon
+                className="h-4 w-4 animate-spin text-muted"
+                aria-label={translations['StateTransitions.saving']}
+              />
             )}
           </label>
 

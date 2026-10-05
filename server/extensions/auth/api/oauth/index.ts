@@ -10,11 +10,14 @@ const FLAG_MAP: Record<OAuthProvider, string> = {
   github: 'OAUTH_GITHUB_ENABLED',
 };
 
-export async function handleOAuthRedirect(req: Request, provider: OAuthProvider): Promise<Response> {
+export async function handleOAuthRedirect(
+  req: Request,
+  provider: OAuthProvider
+): Promise<Response> {
   if (!SUPPORTED_PROVIDERS.includes(provider)) {
     return Response.json(
       { error: { code: 'not-found', message: `Unknown OAuth provider: ${provider}` } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -22,7 +25,7 @@ export async function handleOAuthRedirect(req: Request, provider: OAuthProvider)
   if (!isEnabled) {
     return Response.json(
       { error: { code: 'oauth-provider-disabled', message: `${provider} OAuth is disabled` } },
-      { status: 403 },
+      { status: 403 }
     );
   }
 

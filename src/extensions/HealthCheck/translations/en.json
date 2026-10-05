@@ -24,5 +24,11 @@
   "AddServiceModal.errorNameRequired": "Name is required.",
   "AddServiceModal.errorUrlRequired": "URL is required.",
   "AddServiceModal.errorUrlScheme": "URL must start with https:// or http://",
-  "AddServiceModal.errorExpectedStatusInvalid": "Expected status must be a number between 100 and 599."
+  "AddServiceModal.errorExpectedStatusInvalid": "Expected status must be a number between 100 and 599.",
+  "HealthCheckTab.title": "Health Check",
+  "HealthCheckTab.refreshAria": "Refresh health checks",
+  "HealthCheckTab.refreshTitle": "Refresh all services now",
+  "HealthCheckTab.addServiceAria": "Add service to monitor",
+  "HealthCheckTab.servicesTableAria": "Health check services",
+  "HealthCheckTab.serviceTypeAria": "Service type"
 }

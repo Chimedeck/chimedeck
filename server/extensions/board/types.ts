@@ -23,6 +23,7 @@ export interface Board {
   title: string;
   state: 'ACTIVE' | 'ARCHIVED';
   monetization_type: MonetizationType | null;
+  github_project_url: string | null;
   visibility: BoardVisibility;
   description: string | null;
   background: string | null;
@@ -43,4 +44,236 @@ export interface BoardFollower {
 
 export interface BoardWithIsStarred extends Board {
   isStarred: boolean;
+}
+
+// Chat permissions scoped to a board.
+// org_member_can_view and org_member_can_use are always true and not stored in DB.
+export interface BoardChatPermissions {
+  board_id: string;
+  guest_can_view: boolean;
+  guest_can_use: boolean;
+  updated_at: string;
+}
+
+export interface PatchBoardChatPermissionsBody {
+  guest_can_view?: boolean;
+  guest_can_use?: boolean;
+}
+
+export interface BoardChatThread {
+  id: string;
+  board_id: string;
+  name: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  last_message_at: string | null;
+}
+
+export interface BoardChatMessage {
+  id: string;
+  thread_id: string;
+  board_id: string;
+  author_id: string | null;
+  content: string;
+  is_assistant: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BoardChatMessageVector {
+  id: string;
+  message_id: string;
+  board_id: string;
+  provider: string;
+  model: string;
+  dimensions: number;
+  embedding: number[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BoardChatEmbedding {
+  provider: string;
+  model: string;
+  dimensions: number;
+  values: number[];
+}
+
+export interface WriteBoardChatMessageInput {
+  boardId: string;
+  sessionId: string;
+  authorId?: string | null;
+  content: string;
+  isAssistant?: boolean;
+}
+
+export interface WriteBoardChatMessageResult {
+  status: 201;
+  data: {
+    thread: BoardChatThread;
+    message: BoardChatMessage;
+    vector: BoardChatMessageVector | null;
+    queuedForEmbeddingRetry: boolean;
+  };
+}
+
+export interface BoardChatSearchHit {
+  id: string;
+  thread_id: string;
+  board_id: string;
+  author_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  userName: string | null;
+  avatar: string | null;
+  score: number;
+}
+
+export interface SearchBoardChatMessagesInput {
+  boardId: string;
+  query: string;
+  limit?: number;
+}
+
+export interface SearchBoardChatMessagesOutput {
+  status: number;
+  data?: BoardChatSearchHit[];
+  name?: string;
+  message?: string;
+}
+
+export type BoardChatAssistRole = 'system' | 'user' | 'assistant' | 'tool';
+
+export interface BoardChatAssistToolParameters {
+  type: 'object';
+  properties: Record<string, unknown>;
+  required?: string[];
+  additionalProperties?: boolean;
+}
+
+export interface BoardChatAssistToolDefinition {
+  type: 'function';
+  function: {
+    name: string;
+    description: string;
+    parameters: BoardChatAssistToolParameters;
+  };
+}
+
+export interface BoardChatAssistToolCall {
+  id: string;
+  type: 'function';
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
+export interface BoardChatAssistActionCard {
+  state: 'suggested' | 'confirmed' | 'dismissed';
+  toolName: string;
+  toolCallId: string;
+  idempotencyKey: string;
+  source: 'board-chat-assist';
+  boardId: string;
+  workspaceId: string;
+  cardId?: string;
+  cardTitle?: string;
+  listId?: string;
+  listName?: string | null;
+  // [why] Document proposal fields — populated when the AI proposes GitHub documents.
+  // content is only present for suggested proposals; once committed it is dropped
+  // from the payload to keep websocket messages small.
+  documentPath?: string;
+  documentContent?: string;
+  commitMessage?: string;
+}
+
+export interface BoardChatAssistMessage {
+  role: BoardChatAssistRole;
+  // [why] Nullable because assistant messages that contain only tool calls
+  // may have null content from some providers (OpenAI, Ollama).
+  // [why] ContentParts array enables multimodal messages (images, text files)
+  // for vision-capable providers like Ollama and OpenAI-compatible APIs.
+  content: string | null | BoardChatAssistContentPart[];
+  toolCallId?: string;
+  name?: string;
+  // [why] Carried on assistant messages so the loop can feed tool calls
+  // back as tool-result messages on the next turn.
+  toolCalls?: BoardChatAssistToolCall[];
+}
+
+// [why] OpenAI-compatible multimodal content parts. image_url uses data: URIs
+// with base64-encoded image data so no external URL fetching is needed.
+// text parts carry file contents for txt/csv/md attachments.
+export type BoardChatAssistContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string; detail?: 'auto' | 'low' | 'high' } };
+
+export interface BoardChatAssistInput {
+  boardId: string;
+  sessionId: string;
+  prompt: string;
+  contextLimit?: number;
+}
+
+export interface BoardChatAssistOutput {
+  status: number;
+  data?: {
+    message?: string;
+    model: string;
+    usage?: {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      total_tokens?: number;
+    };
+    toolCalls?: BoardChatAssistToolCall[];
+    actionCard?: BoardChatAssistActionCard;
+    // [why] Multi-proposal support: when the AI proposes several documents
+    // in one turn, each gets its own action card returned here.
+    actionCards?: BoardChatAssistActionCard[];
+    // [why] Multimodal content parts (images, text files) from card attachments.
+    // Carried alongside the message so the tool-result message can include
+    // base64-encoded images for vision-capable providers.
+    contentParts?: BoardChatAssistContentPart[];
+  };
+  name?: string;
+  message?: string;
+}
+
+// [why] Document commit request — client sends back confirmed proposals
+// to persist to GitHub. Each proposal carries the same idempotency key
+// that the server originally generated so duplicate commits are safe.
+export interface BoardChatAssistCommitProposal {
+  toolCallId: string;
+  idempotencyKey: string;
+  path: string;
+  content: string;
+  commitMessage: string;
+}
+
+export interface BoardChatAssistCommitInput {
+  boardId: string;
+  actorId: string;
+  proposals: BoardChatAssistCommitProposal[];
+}
+
+export interface BoardChatAssistCommitOutput {
+  status: number;
+  data?: {
+    committed: Array<{
+      path: string;
+      commitHash: string;
+      actionCard: BoardChatAssistActionCard;
+    }>;
+    errors: Array<{
+      path: string;
+      name: string;
+      message: string;
+    }>;
+  };
+  name?: string;
+  message?: string;
 }

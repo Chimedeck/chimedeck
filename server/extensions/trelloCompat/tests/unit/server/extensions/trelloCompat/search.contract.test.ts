@@ -28,9 +28,15 @@ describe('trelloCompat search adapter contract', () => {
     });
 
     expect(Object.keys(payload).sort()).toEqual(['boards', 'cards', 'members', 'organizations']);
-    expect(() => { assertTrelloShape('board', payload.boards[0]); }).not.toThrow();
-    expect(() => { assertTrelloShape('card', payload.cards[0]); }).not.toThrow();
-    expect(() => { assertTrelloShape('member', payload.members[0]); }).not.toThrow();
+    expect(() => {
+      assertTrelloShape('board', payload.boards[0]);
+    }).not.toThrow();
+    expect(() => {
+      assertTrelloShape('card', payload.cards[0]);
+    }).not.toThrow();
+    expect(() => {
+      assertTrelloShape('member', payload.members[0]);
+    }).not.toThrow();
     expect(payload.organizations[0]).toMatchObject({
       id: organization.id,
       name: organization.name,
@@ -51,9 +57,15 @@ describe('trelloCompat search adapter contract', () => {
   });
 
   it('accepts singular and plural modelType/modelTypes values for search filtering', () => {
-    const singular = parseSearchModelTypes(new URLSearchParams('modelType=board,member,organization,card'));
-    const plural = parseSearchModelTypes(new URLSearchParams('modelType=boards,members,organizations,cards'));
-    const mixed = parseSearchModelTypes(new URLSearchParams('modelType=board&modelTypes=cards,members'));
+    const singular = parseSearchModelTypes(
+      new URLSearchParams('modelType=board,member,organization,card')
+    );
+    const plural = parseSearchModelTypes(
+      new URLSearchParams('modelType=boards,members,organizations,cards')
+    );
+    const mixed = parseSearchModelTypes(
+      new URLSearchParams('modelType=board&modelTypes=cards,members')
+    );
 
     expect(singular).toEqual(new Set(['boards', 'members', 'organizations', 'cards']));
     expect(plural).toEqual(new Set(['boards', 'members', 'organizations', 'cards']));
@@ -70,11 +82,19 @@ describe('trelloCompat search adapter contract', () => {
 
   it('serializes GET /search/members as normalized member objects', () => {
     const members = serializeSearchMembers([
-      serializeMember(createMemberFixture({ id: 'member-2', email: 'search-user@example.com', name: 'Search User' })),
+      serializeMember(
+        createMemberFixture({
+          id: 'member-2',
+          email: 'search-user@example.com',
+          name: 'Search User',
+        })
+      ),
     ]);
 
     expect(members).toHaveLength(1);
-    expect(() => { assertTrelloShape('member', members[0]); }).not.toThrow();
+    expect(() => {
+      assertTrelloShape('member', members[0]);
+    }).not.toThrow();
     expect(members[0]).toMatchObject({
       id: 'member-2',
       fullName: 'Search User',

@@ -59,7 +59,7 @@ export const fetchHealthChecksThunk = createAppAsyncThunk(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const api = (extra as any).api;
     return fetchHealthChecks({ api, boardId });
-  },
+  }
 );
 
 export const fetchPresetsThunk = createAppAsyncThunk(
@@ -68,7 +68,7 @@ export const fetchPresetsThunk = createAppAsyncThunk(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const api = (extra as any).api;
     return fetchPresets({ api });
-  },
+  }
 );
 
 export const addHealthCheckThunk = createAppAsyncThunk(
@@ -81,38 +81,39 @@ export const addHealthCheckThunk = createAppAsyncThunk(
       type,
       presetKey,
       expectedStatus,
-    }: { boardId: string; name: string; url: string; type: HealthCheckType; presetKey?: string; expectedStatus?: number | null },
-    { extra },
+    }: {
+      boardId: string;
+      name: string;
+      url: string;
+      type: HealthCheckType;
+      presetKey?: string;
+      expectedStatus?: number | null;
+    },
+    { extra }
   ) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const api = (extra as any).api;
     return addHealthCheck({ api, boardId, name, url, type, presetKey, expectedStatus });
-  },
+  }
 );
 
 export const removeHealthCheckThunk = createAppAsyncThunk(
   'healthCheckTab/remove',
-  async (
-    { boardId, healthCheckId }: { boardId: string; healthCheckId: string },
-    { extra },
-  ) => {
+  async ({ boardId, healthCheckId }: { boardId: string; healthCheckId: string }, { extra }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const api = (extra as any).api;
     await removeHealthCheck({ api, boardId, healthCheckId });
     return healthCheckId;
-  },
+  }
 );
 
 export const probeSingleThunk = createAppAsyncThunk(
   'healthCheckTab/probeSingle',
-  async (
-    { boardId, healthCheckId }: { boardId: string; healthCheckId: string },
-    { extra },
-  ) => {
+  async ({ boardId, healthCheckId }: { boardId: string; healthCheckId: string }, { extra }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const api = (extra as any).api;
     return probeHealthCheck({ api, boardId, healthCheckId });
-  },
+  }
 );
 
 export const probeAllThunk = createAppAsyncThunk(
@@ -121,7 +122,7 @@ export const probeAllThunk = createAppAsyncThunk(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const api = (extra as any).api;
     return probeAllHealthChecks({ api, boardId });
-  },
+  }
 );
 
 // ---------- Helpers ----------
@@ -164,7 +165,7 @@ const healthCheckTabSlice = createSlice({
         state.status = 'succeeded';
         state.entries = action.payload.data;
         state.lastCheckedAt = new Date().toISOString();
-      },
+      }
     );
     builder.addCase(fetchHealthChecksThunk.rejected, (state, action) => {
       state.status = 'failed';
@@ -180,7 +181,7 @@ const healthCheckTabSlice = createSlice({
       (state, action: PayloadAction<{ data: HealthCheckPreset[] }>) => {
         state.presetsStatus = 'succeeded';
         state.presets = action.payload.data;
-      },
+      }
     );
     builder.addCase(fetchPresetsThunk.rejected, (state) => {
       state.presetsStatus = 'failed';
@@ -191,16 +192,13 @@ const healthCheckTabSlice = createSlice({
       addHealthCheckThunk.fulfilled,
       (state, action: PayloadAction<{ data: HealthCheck }>) => {
         state.entries.push(action.payload.data);
-      },
+      }
     );
 
     // --- removeHealthCheck ---
-    builder.addCase(
-      removeHealthCheckThunk.fulfilled,
-      (state, action: PayloadAction<string>) => {
-        state.entries = state.entries.filter((e) => e.id !== action.payload);
-      },
-    );
+    builder.addCase(removeHealthCheckThunk.fulfilled, (state, action: PayloadAction<string>) => {
+      state.entries = state.entries.filter((e) => e.id !== action.payload);
+    });
 
     // --- probeSingle ---
     builder.addCase(probeSingleThunk.pending, (state, action) => {
@@ -215,7 +213,7 @@ const healthCheckTabSlice = createSlice({
         const result = action.payload.data;
         state.probingIds = state.probingIds.filter((id) => id !== result.healthCheckId);
         state.entries = applyProbeResult(state.entries, result);
-      },
+      }
     );
     builder.addCase(probeSingleThunk.rejected, (state, action) => {
       const id = action.meta.arg.healthCheckId;
@@ -237,7 +235,7 @@ const healthCheckTabSlice = createSlice({
         state.entries = updated;
         state.probingIds = [];
         state.lastCheckedAt = new Date().toISOString();
-      },
+      }
     );
     builder.addCase(probeAllThunk.rejected, (state) => {
       state.probingIds = [];
@@ -253,39 +251,24 @@ export default healthCheckTabSlice.reducer;
 const selectHealthCheckTab = (state: RootState) =>
   (state as unknown as { healthCheckTab: HealthCheckTabState }).healthCheckTab;
 
-export const selectHealthCheckEntries = createSelector(
-  selectHealthCheckTab,
-  (s) => s.entries,
-);
+export const selectHealthCheckEntries = createSelector(selectHealthCheckTab, (s) => s.entries);
 
-export const selectHealthCheckStatus = createSelector(
-  selectHealthCheckTab,
-  (s) => s.status,
-);
+export const selectHealthCheckStatus = createSelector(selectHealthCheckTab, (s) => s.status);
 
-export const selectHealthCheckError = createSelector(
-  selectHealthCheckTab,
-  (s) => s.error,
-);
+export const selectHealthCheckError = createSelector(selectHealthCheckTab, (s) => s.error);
 
 export const selectHealthCheckLastCheckedAt = createSelector(
   selectHealthCheckTab,
-  (s) => s.lastCheckedAt,
+  (s) => s.lastCheckedAt
 );
 
-export const selectProbingIds = createSelector(
-  selectHealthCheckTab,
-  (s) => s.probingIds,
-);
+export const selectProbingIds = createSelector(selectHealthCheckTab, (s) => s.probingIds);
 
-export const selectHealthCheckPresets = createSelector(
-  selectHealthCheckTab,
-  (s) => s.presets,
-);
+export const selectHealthCheckPresets = createSelector(selectHealthCheckTab, (s) => s.presets);
 
 export const selectHealthCheckPresetsStatus = createSelector(
   selectHealthCheckTab,
-  (s) => s.presetsStatus,
+  (s) => s.presetsStatus
 );
 
 /** Returns true if a specific health check is currently being probed. */

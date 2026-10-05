@@ -48,11 +48,16 @@ export async function initMetrics(): Promise<void> {
   if (!env.OTEL_ENABLED) return;
 
   try {
-    const { MeterProvider, PeriodicExportingMetricReader } = await import('@opentelemetry/sdk-metrics');
-    const { OTLPMetricExporter } = await import('@opentelemetry/exporter-metrics-otlp-http');
+    const { MeterProvider, PeriodicExportingMetricReader } = await import(
+      '@opentelemetry/sdk-metrics' as any
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { OTLPMetricExporter } = await import('@opentelemetry/exporter-metrics-otlp-http' as any);
 
     const exporterConfig = getExporterConfig();
-    const exporter = new OTLPMetricExporter({ url: exporterConfig.url.replace('/v1/traces', '/v1/metrics') });
+    const exporter = new OTLPMetricExporter({
+      url: exporterConfig.url.replace('/v1/traces', '/v1/metrics'),
+    });
     const meterProvider = new MeterProvider({
       readers: [new PeriodicExportingMetricReader({ exporter, exportIntervalMillis: 10_000 })],
     });

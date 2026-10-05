@@ -27,7 +27,7 @@ export interface CustomFieldValue {
   custom_field_id: string;
   value_text: string | null;
   value_number: string | null; // decimal serialised as string
-  value_date: string | null;   // ISO 8601 timestamp
+  value_date: string | null; // ISO 8601 timestamp
   value_checkbox: boolean | null;
   value_option_id: string | null; // for DROPDOWN
 }

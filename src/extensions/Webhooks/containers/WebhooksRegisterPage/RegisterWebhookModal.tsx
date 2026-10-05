@@ -54,6 +54,9 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
   const { data: serverEventTypes } = useListEventTypesQuery();
   const [createWebhook, { isLoading }] = useCreateWebhookMutation();
 
+  // [why] Only show UI-canonical groups; filter out any server aliases not in our group list.
+  const allGroupedEvents = EVENT_GROUPS.flatMap((g) => g.events);
+
   function toggleEvent(event: string) {
     setSelectedEvents((prev) => {
       const next = new Set(prev);
@@ -128,7 +131,9 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
       role="dialog"
       aria-modal="true"
       aria-labelledby="register-webhook-title"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="relative w-full max-w-lg rounded-lg bg-bg-surface shadow-xl mx-4">
         {/* Header */}
@@ -137,7 +142,7 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
             {translations['RegisterWebhookModal.title']}
           </h3>
           <IconButton
-            aria-label="Close modal"
+            aria-label={translations['RegisterWebhookModal.closeAria']}
             icon={<XMarkIcon className="h-4 w-4" />}
             variant="ghost"
             onClick={onClose}
@@ -145,15 +150,17 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
         </div>
 
         {/* Body */}
-        <form onSubmit={(e) => { void handleSubmit(e); }}>
+        <form onSubmit={handleSubmit}>
           <div className="space-y-5 px-6 py-5">
             <Input
               label={translations['RegisterWebhookModal.labelField']}
               value={label}
-              onChange={(e) => { setLabel(e.target.value); }}
+              onChange={(e) => {
+                setLabel(e.target.value);
+              }}
               maxLength={100}
               required
-              placeholder="e.g. My production server"
+              placeholder={translations['RegisterWebhookModal.labelPlaceholder']}
               data-testid="webhook-label-input"
             />
 
@@ -166,7 +173,7 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
               }}
               error={urlError}
               required
-              placeholder="https://example.com/webhook"
+              placeholder={translations['RegisterWebhookModal.urlPlaceholder']}
               type="url"
               data-testid="webhook-url-input"
             />
@@ -194,22 +201,18 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
                         <span className="text-xs font-semibold uppercase tracking-wide text-subtle">
                           {group.label}
                         </span>
-                        <button
-                          type="button"
-                          className="text-xs text-primary hover:underline"
+                        <Button
+                          variant="link"
+                          size="sm"
                           onClick={() => {
-                            if (allSelected) {
-                              clearAllInGroup(available);
-                            } else {
-                              selectAllInGroup(available);
-                            }
+                            allSelected ? clearAllInGroup(available) : selectAllInGroup(available);
                           }}
                           data-testid={`group-toggle-${group.label.replace(/\s+/g, '-').toLowerCase()}`}
                         >
                           {allSelected
                             ? translations['RegisterWebhookModal.clearAll']
                             : translations['RegisterWebhookModal.selectAll']}
-                        </button>
+                        </Button>
                       </div>
                       <div className="space-y-1">
                         {available.map((event) => (
@@ -220,7 +223,9 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
                             <input
                               type="checkbox"
                               checked={selectedEvents.has(event)}
-                              onChange={() => { toggleEvent(event); }}
+                              onChange={() => {
+                                toggleEvent(event);
+                              }}
                               className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary"
                               data-testid={`event-checkbox-${event}`}
                             />

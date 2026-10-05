@@ -45,13 +45,12 @@ function hasCommentSource(row: Record<string, unknown>): boolean {
 }
 
 function resolveCommentContent(row: Record<string, unknown>): string | null {
-  const commentContentFromCommentSource = hasCommentSource(row) && typeof row.comment_content === 'string'
-    ? row.comment_content
-    : null;
+  const commentContentFromCommentSource =
+    hasCommentSource(row) && typeof row.comment_content === 'string' ? row.comment_content : null;
   const commentContentFromDescriptionMention =
-    row.type === 'mention'
-    && row.source_type === 'card_description'
-    && typeof row.card_description_content === 'string'
+    row.type === 'mention' &&
+    row.source_type === 'card_description' &&
+    typeof row.card_description_content === 'string'
       ? row.card_description_content
       : null;
 
@@ -86,7 +85,8 @@ function buildNotificationItem({
     target_user_id: targetUserId,
     target_user_name: targetUserName,
     comment_content: commentContent,
-    source_parent_id: typeof row.source_comment_parent_id === 'string' ? row.source_comment_parent_id : null,
+    source_parent_id:
+      typeof row.source_comment_parent_id === 'string' ? row.source_comment_parent_id : null,
     comment_reactions: hasCommentSource(row)
       ? (commentReactionMap.get(String(row.source_id)) ?? [])
       : [],
@@ -109,8 +109,10 @@ function collectCommentSourceIds(rows: Array<Record<string, unknown>>): string[]
       rows
         .filter((row) => row.source_type === 'comment')
         .map((row) => row.source_id)
-        .filter((sourceId): sourceId is string => typeof sourceId === 'string' && sourceId.length > 0),
-    ),
+        .filter(
+          (sourceId): sourceId is string => typeof sourceId === 'string' && sourceId.length > 0
+        )
+    )
   );
 }
 
@@ -152,11 +154,12 @@ export async function handleListNotifications(req: Request): Promise<Response> {
     .leftJoin('boards', 'notifications.board_id', 'boards.id')
     .leftJoin('comments as source_comment', 'notifications.source_id', 'source_comment.id')
     .leftJoin('activities as source_activity', function () {
-      this.on('notifications.source_id', '=', 'source_activity.id')
-        .andOn('notifications.source_type', '=', db.raw('?', ['board_activity']));
+      this.on('notifications.source_id', '=', 'source_activity.id').andOn(
+        'notifications.source_type',
+        '=',
+        db.raw('?', ['board_activity'])
+      );
     })
-    // Join to get the destination list name for card_moved notifications
-    .leftJoin('lists', 'cards.list_id', 'lists.id')
     .select(
       'notifications.id',
       'notifications.type',
@@ -169,15 +172,17 @@ export async function handleListNotifications(req: Request): Promise<Response> {
       'source_activity.payload as source_activity_payload',
       'notifications.board_id',
       'boards.title as board_title',
-      'lists.title as list_title',
+      // [why] list_title is persisted at insert time (not resolved from cards.list_id)
+      // so historical card_moved notifications show the correct destination list.
+      'notifications.list_title',
       'source_comment.content as comment_content',
       'source_comment.parent_id as source_comment_parent_id',
       'notifications.read',
       'notifications.created_at',
-      db.raw("actor.id as actor_id"),
-      db.raw("actor.nickname as actor_nickname"),
-      db.raw("COALESCE(actor.name, actor.email) as actor_name"),
-      db.raw("actor.avatar_url as actor_avatar_url"),
+      db.raw('actor.id as actor_id'),
+      db.raw('actor.nickname as actor_nickname'),
+      db.raw('COALESCE(actor.name, actor.email) as actor_name'),
+      db.raw('actor.avatar_url as actor_avatar_url')
     )
     .orderBy('notifications.created_at', 'desc')
     .limit(limit + 1);
@@ -207,15 +212,21 @@ export async function handleListNotifications(req: Request): Promise<Response> {
           'comment_reactions.comment_id',
           'comment_reactions.emoji',
           'comment_reactions.user_id',
-          db.raw('COALESCE(reactor.name, reactor.email) as reactor_name'),
+          db.raw('COALESCE(reactor.name, reactor.email) as reactor_name')
         )
     : [];
 
-  const reactionByComment = new Map<string, Map<string, {
-    count: number;
-    meReacted: boolean;
-    reactors: Array<{ userId: string; name: string | null }>;
-  }>>();
+  const reactionByComment = new Map<
+    string,
+    Map<
+      string,
+      {
+        count: number;
+        meReacted: boolean;
+        reactors: Array<{ userId: string; name: string | null }>;
+      }
+    >
+  >();
 
   for (const row of reactionRows as ReactionRow[]) {
     if (!reactionByComment.has(row.comment_id)) {
@@ -244,14 +255,16 @@ export async function handleListNotifications(req: Request): Promise<Response> {
           reactedByMe: value.meReacted,
           reactors: value.reactors,
         }))
-        .sort((a, b) => b.count - a.count),
+        .sort((a, b) => b.count - a.count)
     );
   }
 
-  const data = visibleRows.map((row) => buildNotificationItem({
-    row,
-    commentReactionMap,
-  }));
+  const data = visibleRows.map((row) =>
+    buildNotificationItem({
+      row,
+      commentReactionMap,
+    })
+  );
 
   const lastItem = data.at(-1);
   const nextCursor = hasMore && lastItem ? lastItem.created_at : null;

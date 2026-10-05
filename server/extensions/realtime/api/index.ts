@@ -9,11 +9,13 @@ import { unsubscribeFromBoard } from '../mods/rooms/unsubscribe';
 import { recordPong, initHeartbeat, startHeartbeatLoop } from '../mods/heartbeat';
 import { cache } from '../../../mods/cache/index';
 import { db } from '../../../common/db';
-import { registerUserSocket, deregisterUserSocket, subscribeUserChannel, unsubscribeUserChannel } from '../userChannel';
 import {
-  subscribeSessionRevocation,
-  unsubscribeSessionRevocation,
-} from '../sessionRevocation';
+  registerUserSocket,
+  deregisterUserSocket,
+  subscribeUserChannel,
+  unsubscribeUserChannel,
+} from '../userChannel';
+import { subscribeSessionRevocation, unsubscribeSessionRevocation } from '../sessionRevocation';
 
 const allSockets = new Set<ServerWebSocket<WsData>>();
 

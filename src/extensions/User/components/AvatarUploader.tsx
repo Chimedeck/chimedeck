@@ -3,6 +3,7 @@
 import { useRef, useState, type DragEvent, type ChangeEvent } from 'react';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
+import Button from '~/common/components/Button';
 import {
   uploadAvatarThunk,
   removeAvatarThunk,
@@ -41,7 +42,7 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
       setLocalError(translations['ProfilePage.invalidFile']);
       return;
     }
-    void dispatch(uploadAvatarThunk({ file }));
+    dispatch(uploadAvatarThunk({ file }));
   }
 
   function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
@@ -58,7 +59,7 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
   }
 
   function handleRemove() {
-    void dispatch(removeAvatarThunk());
+    dispatch(removeAvatarThunk());
   }
 
   return (
@@ -70,22 +71,25 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
         }`}
         style={{ width: 128, height: 128 }}
         onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-        onDragLeave={() => { setDragOver(false); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => {
+          setDragOver(false);
+        }}
         onDrop={handleDrop}
         role="button"
         tabIndex={0}
-        aria-label="Upload avatar"
+        aria-label={translations['avatarUploader.uploadAria']}
         onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
       >
         {avatarUrl ? (
-          <img
-            src={avatarUrl}
-            alt="Avatar"
-            className="h-full w-full rounded-full object-cover"
-          />
+          <img src={avatarUrl} alt="Avatar" className="h-full w-full rounded-full object-cover" />
         ) : (
-          <span className="flex h-full w-full items-center justify-center rounded-full bg-indigo-600 text-3xl font-bold text-white"> {/* [theme-exception]: avatar on colored bg */}
+          <span className="flex h-full w-full items-center justify-center rounded-full bg-indigo-600 text-3xl font-bold text-white">
+            {' '}
+            {/* [theme-exception]: avatar on colored bg */}
             {getInitials(name) || '?'}
           </span>
         )}
@@ -107,28 +111,32 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
       />
 
       <div className="flex gap-3">
-        <button
-          type="button"
+        <Button
+          variant="link"
+          size="sm"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="text-sm text-indigo-400 hover:text-indigo-300 disabled:opacity-50"
+          className="text-indigo-400 hover:text-indigo-300"
         >
           {translations['ProfilePage.changePhoto']}
-        </button>
+        </Button>
         {avatarUrl && (
-          <button
-            type="button"
+          <Button
+            variant="link"
+            size="sm"
             onClick={handleRemove}
             disabled={uploading}
-            className="text-sm text-muted hover:text-danger disabled:opacity-50"
+            className="hover:text-danger"
           >
             {translations['ProfilePage.removePhoto']}
-          </button>
+          </Button>
         )}
       </div>
 
       {localError && (
-        <p className="text-sm text-danger" role="alert">{localError}</p>
+        <p className="text-sm text-danger" role="alert">
+          {localError}
+        </p>
       )}
     </div>
   );

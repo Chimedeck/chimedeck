@@ -12,7 +12,7 @@ export async function handleDeletePlugin(req: Request, pluginId: string): Promis
   if (!plugin) {
     return Response.json(
       { error: { code: 'plugin-not-found', message: 'Plugin not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

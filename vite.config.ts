@@ -13,6 +13,9 @@ const sentryRelease = process.env['SENTRY_RELEASE'];
 const sentryUploadEnabled = Boolean(sentryAuthToken && sentryOrg && sentryProject);
 
 export default defineConfig({
+  // [why] Expose FLAG_* env vars alongside VITE_* so build-time feature-flag
+  // fallbacks use the same names as the server. Runtime truth is /api/v1/flags.
+  envPrefix: ['VITE_', 'FLAG_'],
   plugins: [
     react(),
     // Upload source maps to Sentry during deploy builds only.

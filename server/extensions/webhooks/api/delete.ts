@@ -24,7 +24,7 @@ export async function handleDeleteWebhook(req: Request, webhookId: string): Prom
   if (!webhook) {
     return Response.json(
       { name: 'webhook-not-found', data: { message: 'Webhook not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -51,8 +51,11 @@ export async function handleDeleteWebhook(req: Request, webhookId: string): Prom
 
   if (!isOwner && !isAdminOrAbove) {
     return Response.json(
-      { name: 'insufficient-permissions', data: { message: 'Only the webhook owner or an admin can delete this webhook' } },
-      { status: 403 },
+      {
+        name: 'insufficient-permissions',
+        data: { message: 'Only the webhook owner or an admin can delete this webhook' },
+      },
+      { status: 403 }
     );
   }
 

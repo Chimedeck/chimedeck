@@ -9,6 +9,7 @@
   "Notifications.empty": "You have no notifications.",
   "Notifications.mention": "{actor} mentioned you in \"{cardTitle}\"",
   "Notifications.loadMore": "Load more",
+  "Notifications.loadMoreError": "Failed to load more notifications. Please try again.",
   "Notifications.loading": "Loading…",
   "Notifications.today": "Today",
   "Notifications.earlier": "Earlier",

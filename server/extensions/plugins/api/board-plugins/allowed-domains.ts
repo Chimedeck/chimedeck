@@ -24,7 +24,7 @@ interface PluginRow {
 export async function handleSetBoardPluginAllowedDomains(
   req: Request,
   boardId: string,
-  pluginId: string,
+  pluginId: string
 ): Promise<Response> {
   const guardError = await boardAdminGuard(req as BoardAdminRequest, boardId);
   if (guardError) return guardError;
@@ -35,7 +35,7 @@ export async function handleSetBoardPluginAllowedDomains(
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -48,7 +48,7 @@ export async function handleSetBoardPluginAllowedDomains(
   if (!boardPlugin) {
     return Response.json(
       { error: { code: 'plugin-not-enabled', message: 'Plugin is not enabled on this board' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -57,7 +57,7 @@ export async function handleSetBoardPluginAllowedDomains(
   if (!plugin) {
     return Response.json(
       { error: { code: 'plugin-not-found', message: 'Plugin not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -66,8 +66,13 @@ export async function handleSetBoardPluginAllowedDomains(
   if (allowedDomains !== null) {
     if (!Array.isArray(allowedDomains)) {
       return Response.json(
-        { error: { code: 'invalid-allowed-domains', message: 'allowedDomains must be an array or null' } },
-        { status: 422 },
+        {
+          error: {
+            code: 'invalid-allowed-domains',
+            message: 'allowedDomains must be an array or null',
+          },
+        },
+        { status: 422 }
       );
     }
 
@@ -84,7 +89,7 @@ export async function handleSetBoardPluginAllowedDomains(
             name: 'domain-not-whitelisted-by-plugin',
             data: { message: `'${domainValue}' is not in the plugin's whitelistedDomains` },
           },
-          { status: 422 },
+          { status: 422 }
         );
       }
     }

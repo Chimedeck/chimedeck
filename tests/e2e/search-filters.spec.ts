@@ -141,8 +141,14 @@ test.describe('Search Filters', () => {
     const uiCreds = await registerAndGetCredentials(request, `search-ui6-${run}`);
     const uiToken = uiCreds.token;
     const uiWorkspaceId = await createWorkspace(request, uiToken);
+    // Seed a board whose TITLE also matches the query, so "All" must show both
+    // a board result and a card result — only then does the Cards tab prove it
+    // filters (a never-filtering palette would also pass a cards-only check).
+    // uiBoardId: navigation target only — its title must NOT match the query.
+    // matchBoard: title deliberately matches the query so "All" shows a board + a card.
     const uiBoardId = await createBoard(request, uiToken, uiWorkspaceId);
-    const uiListId = await createList(request, uiToken, uiBoardId);
+    const matchBoardId = await createBoard(request, uiToken, uiWorkspaceId, `Board ${run}`);
+    const uiListId = await createList(request, uiToken, matchBoardId);
     await createCard(request, uiToken, uiListId, `Alpha Card ${run}`);
 
     await loginViaCookie(page, UI_URL, uiCreds);
@@ -153,13 +159,19 @@ test.describe('Search Filters', () => {
     const paletteInput = page.getByPlaceholder('Search boards and cards…');
     await paletteInput.fill(run.toString());
 
+    const palette = page.locator('[role="dialog"]').last();
+
+    // On All: both the board-matching result and the card are offered.
+    await expect(palette.getByText(`Alpha Card ${run}`).first()).toBeVisible({ timeout: 8000 });
+    await expect(palette.getByText(`Board ${run}`)).toHaveCount(1);
+
     // The palette exposes All / Boards / Cards tabs (role=tab, not button).
     const cardsTab = page.getByRole('tab', { name: 'Cards', exact: true }).first();
     await expect(cardsTab).toBeVisible({ timeout: 8000 });
     await cardsTab.click();
 
-    // With the Cards filter chosen the seeded card is still listed.
-    const palette = page.locator('[role="dialog"]').last();
+    // With the Cards filter chosen the card remains; the board result drops off.
     await expect(palette.getByText(`Alpha Card ${run}`).first()).toBeVisible({ timeout: 8000 });
+    await expect(palette.getByText(`Board ${run}`)).toHaveCount(0);
   });
 });

@@ -10,7 +10,10 @@ import {
   useUpdateBoardTypePreferenceMutation,
   useResetBoardTypePreferencesMutation,
 } from '~/extensions/Notifications/NotificationPreferences/boardNotificationTypePreferences.slice';
-import { NOTIFICATION_TYPES, NOTIFICATION_TYPE_LABELS } from '~/extensions/Notifications/NotificationPreferences/types';
+import {
+  NOTIFICATION_TYPES,
+  NOTIFICATION_TYPE_LABELS,
+} from '~/extensions/Notifications/NotificationPreferences/types';
 import type { NotificationType } from '~/extensions/Notifications/NotificationPreferences/types';
 import translations from '../../translations/en.json';
 
@@ -48,7 +51,15 @@ const ToggleSwitch = ({
     : '';
 
   return (
-    <span title={disabled ? disabledTooltip : isBoardOverride ? translations['BoardSettings.notificationTypePreferencesSource.board'] : undefined}>
+    <span
+      title={
+        disabled
+          ? disabledTooltip
+          : isBoardOverride
+            ? translations['BoardSettings.notificationTypePreferencesSource.board']
+            : undefined
+      }
+    >
       <button
         role="switch"
         aria-checked={enabled}
@@ -83,8 +94,7 @@ const BoardNotificationTypePreferences = ({
   const [error, setError] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
 
-  const getPreference = (type: NotificationType) =>
-    preferences?.find((p) => p.type === type);
+  const getPreference = (type: NotificationType) => preferences?.find((p) => p.type === type);
 
   const handleToggle = useCallback(
     async (type: NotificationType, channel: 'in_app_enabled' | 'email_enabled', next: boolean) => {
@@ -95,7 +105,7 @@ const BoardNotificationTypePreferences = ({
         setError('Failed to save preference. Please try again.');
       }
     },
-    [boardId, updatePreference],
+    [boardId, updatePreference]
   );
 
   const handleReset = async () => {
@@ -113,11 +123,7 @@ const BoardNotificationTypePreferences = ({
   };
 
   if (isLoading) {
-    return (
-      <div className="py-2 text-xs text-muted animate-pulse">
-        Loading…
-      </div>
-    );
+    return <div className="py-2 text-xs text-muted animate-pulse">Loading…</div>;
   }
 
   return (
@@ -141,14 +147,14 @@ const BoardNotificationTypePreferences = ({
       </div>
 
       {/* Toggle matrix table */}
-      <table className={`w-full text-xs text-subtle ${disabledByBoardNotifications ? 'opacity-50' : ''}`}>
+      <table
+        className={`w-full text-xs text-subtle ${disabledByBoardNotifications ? 'opacity-50' : ''}`}
+      >
         <thead>
           <tr className="text-muted uppercase tracking-wide">
             <th className="pb-2 text-left font-medium">Notification</th>
             <th className="pb-2 text-center font-medium w-16">In-App</th>
-            {emailEnabled && (
-              <th className="pb-2 text-center font-medium w-16">Email</th>
-            )}
+            {emailEnabled && <th className="pb-2 text-center font-medium w-16">Email</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-border">

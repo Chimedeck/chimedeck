@@ -28,7 +28,7 @@ export async function handleCardActivity(req: Request, cardId: string): Promise<
   if (!resolvedCardId) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -36,7 +36,7 @@ export async function handleCardActivity(req: Request, cardId: string): Promise<
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -47,7 +47,7 @@ export async function handleCardActivity(req: Request, cardId: string): Promise<
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

@@ -43,7 +43,13 @@ function isPrivateIpv6(hostname: string): boolean {
   const lower = raw.toLowerCase();
   if (lower.startsWith('fc') || lower.startsWith('fd')) return true;
   // fe80::/10 — link-local
-  if (lower.startsWith('fe8') || lower.startsWith('fe9') || lower.startsWith('fea') || lower.startsWith('feb')) return true;
+  if (
+    lower.startsWith('fe8') ||
+    lower.startsWith('fe9') ||
+    lower.startsWith('fea') ||
+    lower.startsWith('feb')
+  )
+    return true;
   return false;
 }
 
@@ -65,7 +71,7 @@ export function validateUrl(raw: string): URL {
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
     throw new UrlValidationError(
       'health-check-url-invalid-scheme',
-      'Only http and https URLs are allowed',
+      'Only http and https URLs are allowed'
     );
   }
 
@@ -73,7 +79,7 @@ export function validateUrl(raw: string): URL {
   if (parsed.username || parsed.password) {
     throw new UrlValidationError(
       'health-check-url-credentials-not-allowed',
-      'Credentials in the URL are not permitted',
+      'Credentials in the URL are not permitted'
     );
   }
 
@@ -83,7 +89,7 @@ export function validateUrl(raw: string): URL {
   if (hostname === 'localhost' || hostname.endsWith('.local')) {
     throw new UrlValidationError(
       'health-check-url-ssrf-rejected',
-      'Private or local hostnames are not allowed',
+      'Private or local hostnames are not allowed'
     );
   }
 
@@ -91,7 +97,7 @@ export function validateUrl(raw: string): URL {
   if (isPrivateIpv4(hostname)) {
     throw new UrlValidationError(
       'health-check-url-ssrf-rejected',
-      'Private IP addresses are not allowed',
+      'Private IP addresses are not allowed'
     );
   }
 
@@ -99,7 +105,7 @@ export function validateUrl(raw: string): URL {
   if (isPrivateIpv6(hostname)) {
     throw new UrlValidationError(
       'health-check-url-ssrf-rejected',
-      'Private IP addresses are not allowed',
+      'Private IP addresses are not allowed'
     );
   }
 

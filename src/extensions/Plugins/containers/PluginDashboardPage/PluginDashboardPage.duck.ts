@@ -56,7 +56,7 @@ export const fetchBoardPluginsThunk = createAppAsyncThunk(
   'plugins/fetchBoardPlugins',
   async ({ boardId }: { boardId: string }) => {
     return fetchBoardPlugins({ boardId });
-  },
+  }
 );
 
 export const fetchAvailablePluginsThunk = createAppAsyncThunk(
@@ -81,36 +81,25 @@ export const fetchAvailablePluginsThunk = createAppAsyncThunk(
     if (perPage != null) params.perPage = perPage;
     const result = await fetchAvailablePlugins(params);
     return { ...result, boardId };
-  },
+  }
 );
 
 // [why] Uses the board-specific /available endpoint so results exclude already-enabled plugins
 // and do not require client-side filtering.
 export const fetchDiscoverablePluginsThunk = createAppAsyncThunk(
   'plugins/fetchDiscoverablePlugins',
-  async ({
-    boardId,
-    q,
-    category,
-  }: {
-    boardId: string;
-    q?: string;
-    category?: string | null;
-  }) => {
+  async ({ boardId, q, category }: { boardId: string; q?: string; category?: string | null }) => {
     const params: { boardId: string; q?: string; category?: string | null } = { boardId };
     if (q) params.q = q;
     if (category) params.category = category;
     const result = await fetchBoardAvailablePlugins(params);
     return { data: result.data, boardId };
-  },
+  }
 );
 
-export const fetchCategoriesThunk = createAppAsyncThunk(
-  'plugins/fetchCategories',
-  async () => {
-    return fetchCategories();
-  },
-);
+export const fetchCategoriesThunk = createAppAsyncThunk('plugins/fetchCategories', async () => {
+  return fetchCategories();
+});
 
 export const enablePluginThunk = createAppAsyncThunk(
   'plugins/enable',
@@ -119,17 +108,19 @@ export const enablePluginThunk = createAppAsyncThunk(
       return await enablePluginApi({ boardId, pluginId });
     } catch (err: unknown) {
       const e = err as { response?: { status?: number; data?: { error?: { code?: string } } } };
-      const name = e?.response?.data?.error?.code ?? (e?.response?.status === 403 ? 'not-board-admin' : 'enable-plugin-failed');
+      const name =
+        e?.response?.data?.error?.code ??
+        (e?.response?.status === 403 ? 'not-board-admin' : 'enable-plugin-failed');
       return rejectWithValue(name);
     }
-  },
+  }
 );
 
 export const disablePluginThunk = createAppAsyncThunk(
   'plugins/disable',
   async ({ boardId, pluginId }: { boardId: string; pluginId: string }) => {
     return disablePluginApi({ boardId, pluginId });
-  },
+  }
 );
 
 export const registerPluginThunk = createAppAsyncThunk(
@@ -142,7 +133,7 @@ export const registerPluginThunk = createAppAsyncThunk(
       const name = e?.response?.data?.error?.code ?? 'register-plugin-failed';
       return rejectWithValue(name);
     }
-  },
+  }
 );
 
 export const updatePluginThunk = createAppAsyncThunk(
@@ -155,7 +146,7 @@ export const updatePluginThunk = createAppAsyncThunk(
       const name = e?.response?.data?.error?.code ?? 'update-plugin-failed';
       return rejectWithValue(name);
     }
-  },
+  }
 );
 
 // ---------- Slice ----------
@@ -167,7 +158,7 @@ const pluginDashboardSlice = createSlice({
     // Optimistic enable: move plugin from available → active
     optimisticEnable(state, action: PayloadAction<{ plugin: Plugin; boardId: string }>) {
       state.availablePlugins = state.availablePlugins.filter(
-        (p) => p.id !== action.payload.plugin.id,
+        (p) => p.id !== action.payload.plugin.id
       );
       // Add a placeholder board plugin entry optimistically
       state.boardPlugins.push({
@@ -183,7 +174,7 @@ const pluginDashboardSlice = createSlice({
       const bp = state.boardPlugins.find((b) => b.plugin.id === action.payload.pluginId);
       if (bp) {
         state.boardPlugins = state.boardPlugins.filter(
-          (b) => b.plugin.id !== action.payload.pluginId,
+          (b) => b.plugin.id !== action.payload.pluginId
         );
         state.availablePlugins.push(bp.plugin);
       }
@@ -191,14 +182,14 @@ const pluginDashboardSlice = createSlice({
     // Rollback: restore board plugin if enable failed
     rollbackEnable(state, action: PayloadAction<{ plugin: Plugin }>) {
       state.boardPlugins = state.boardPlugins.filter(
-        (b) => b.plugin.id !== action.payload.plugin.id,
+        (b) => b.plugin.id !== action.payload.plugin.id
       );
       state.availablePlugins.push(action.payload.plugin);
     },
     // Rollback: restore active plugin if disable failed
     rollbackDisable(state, action: PayloadAction<{ boardPlugin: BoardPlugin }>) {
       state.availablePlugins = state.availablePlugins.filter(
-        (p) => p.id !== action.payload.boardPlugin.plugin.id,
+        (p) => p.id !== action.payload.boardPlugin.plugin.id
       );
       state.boardPlugins.push(action.payload.boardPlugin);
     },
@@ -235,7 +226,7 @@ const pluginDashboardSlice = createSlice({
         (state, action: PayloadAction<{ data: BoardPlugin[] }>) => {
           state.status = 'idle';
           state.boardPlugins = action.payload.data;
-        },
+        }
       )
       .addCase(fetchBoardPluginsThunk.rejected, (state, action) => {
         state.status = 'error';
@@ -243,21 +234,18 @@ const pluginDashboardSlice = createSlice({
       })
       .addCase(
         fetchAvailablePluginsThunk.fulfilled,
-        (
-          state,
-          action: PayloadAction<{ data: Plugin[]; boardId: string }>,
-        ) => {
+        (state, action: PayloadAction<{ data: Plugin[]; boardId: string }>) => {
           // Filter out plugins already active on this board
           const activeIds = new Set(state.boardPlugins.map((b) => b.plugin.id));
           state.availablePlugins = action.payload.data.filter((p) => !activeIds.has(p.id));
-        },
+        }
       )
       // fetchDiscoverablePluginsThunk uses the board-specific endpoint so results are pre-filtered
       .addCase(
         fetchDiscoverablePluginsThunk.fulfilled,
         (state, action: PayloadAction<{ data: Plugin[]; boardId: string }>) => {
           state.availablePlugins = action.payload.data;
-        },
+        }
       )
       .addCase(
         enablePluginThunk.fulfilled,
@@ -272,14 +260,11 @@ const pluginDashboardSlice = createSlice({
           } else {
             state.boardPlugins.push(action.payload.data);
           }
-        },
+        }
       )
-      .addCase(
-        disablePluginThunk.fulfilled,
-        (_state, _action) => {
-          // Optimistic update already handled; nothing extra needed
-        },
-      )
+      .addCase(disablePluginThunk.fulfilled, (_state, _action) => {
+        // Optimistic update already handled; nothing extra needed
+      })
       .addCase(registerPluginThunk.pending, (state) => {
         state.registerStatus = 'loading';
         state.registerError = null;
@@ -291,39 +276,38 @@ const pluginDashboardSlice = createSlice({
           state.registerStatus = 'success';
           state.newApiKey = action.payload.data.apiKey;
           // The new plugin will be loaded via a re-fetch of available plugins
-        },
+        }
       )
       .addCase(registerPluginThunk.rejected, (state, action) => {
         state.registerStatus = 'error';
-        state.registerError = (action.payload as string) ?? action.error.message ?? 'register-plugin-failed';
+        state.registerError =
+          (action.payload as string) ?? action.error.message ?? 'register-plugin-failed';
       })
       .addCase(
         fetchCategoriesThunk.fulfilled,
         (state, action: PayloadAction<{ data: string[] }>) => {
           state.categories = action.payload.data;
-        },
+        }
       )
       .addCase(updatePluginThunk.pending, (state) => {
         state.updateStatus = 'loading';
         state.updateError = null;
       })
-      .addCase(
-        updatePluginThunk.fulfilled,
-        (state, action: PayloadAction<{ data: Plugin }>) => {
-          state.updateStatus = 'success';
-          const updated = action.payload.data;
-          // Update in availablePlugins list
-          const avIdx = state.availablePlugins.findIndex((p) => p.id === updated.id);
-          if (avIdx !== -1) state.availablePlugins[avIdx] = updated;
-          // Update in boardPlugins list
-          state.boardPlugins = state.boardPlugins.map((bp) =>
-            bp.plugin.id === updated.id ? { ...bp, plugin: updated } : bp,
-          );
-        },
-      )
+      .addCase(updatePluginThunk.fulfilled, (state, action: PayloadAction<{ data: Plugin }>) => {
+        state.updateStatus = 'success';
+        const updated = action.payload.data;
+        // Update in availablePlugins list
+        const avIdx = state.availablePlugins.findIndex((p) => p.id === updated.id);
+        if (avIdx !== -1) state.availablePlugins[avIdx] = updated;
+        // Update in boardPlugins list
+        state.boardPlugins = state.boardPlugins.map((bp) =>
+          bp.plugin.id === updated.id ? { ...bp, plugin: updated } : bp
+        );
+      })
       .addCase(updatePluginThunk.rejected, (state, action) => {
         state.updateStatus = 'error';
-        state.updateError = (action.payload as string) ?? action.error.message ?? 'update-plugin-failed';
+        state.updateError =
+          (action.payload as string) ?? action.error.message ?? 'update-plugin-failed';
       });
   },
 });

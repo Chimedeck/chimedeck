@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import Button from '~/common/components/Button';
 import IconButton from '~/common/components/IconButton';
+import translations from '../translations/en.json';
 
 interface Props {
   onSubmit: (title: string) => Promise<void>;
@@ -29,8 +30,9 @@ const AddListForm = ({ onSubmit }: Props) => {
     try {
       await onSubmit(trimmed);
       setTitle('');
-      inputRef.current?.focus();
-    } finally {
+      setOpen(false);
+    } catch {
+      // [why] Parent handles the toast; we just reset form state.
       setSubmitting(false);
     }
   };
@@ -46,8 +48,10 @@ const AddListForm = ({ onSubmit }: Props) => {
     return (
       <button
         className="w-72 shrink-0 bg-bg-surface/40 border border-dashed border-border rounded-xl p-3 text-subtle hover:text-base hover:border-border-strong text-sm text-left transition-colors"
-        onClick={() => { setOpen(true); }}
-        aria-label="Add a list"
+        onClick={() => {
+          setOpen(true);
+        }}
+        aria-label={translations['List.addListFormAria']}
       >
         + Add a list
       </button>
@@ -56,19 +60,21 @@ const AddListForm = ({ onSubmit }: Props) => {
 
   return (
     <form
-      onSubmit={(e) => { void handleSubmit(e); }}
+      onSubmit={handleSubmit}
       className="w-72 shrink-0 bg-bg-surface border border-border rounded-xl p-3 flex flex-col gap-2"
     >
       <input
         ref={inputRef}
         type="text"
         value={title}
-        onChange={(e) => { setTitle(e.target.value); }}
+        onChange={(e) => {
+          setTitle(e.target.value);
+        }}
         onKeyDown={handleKeyDown}
-        placeholder="List title…"
+        placeholder={translations['List.addListTitlePlaceholder']}
         disabled={submitting}
         className="rounded-lg bg-bg-overlay border border-border text-base text-sm px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-subtle"
-        aria-label="New list title"
+        aria-label={translations['List.addListTitleAria']}
       />
       <div className="flex items-center gap-2">
         <Button type="submit" variant="primary" size="sm" disabled={!title.trim() || submitting}>
@@ -76,8 +82,11 @@ const AddListForm = ({ onSubmit }: Props) => {
         </Button>
         <IconButton
           type="button"
-          onClick={() => { setOpen(false); setTitle(''); }}
-          aria-label="Cancel"
+          onClick={() => {
+            setOpen(false);
+            setTitle('');
+          }}
+          aria-label={translations['List.addListCancelAria']}
           icon={<XMarkIcon className="h-4 w-4" aria-hidden="true" />}
           variant="ghost"
         />

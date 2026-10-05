@@ -30,7 +30,10 @@ const ScheduleList: FC<Props> = ({
       {/* Scheduled commands section */}
       <section aria-labelledby="scheduled-heading">
         <div className="mb-2 flex items-center justify-between">
-          <h3 id="scheduled-heading" className="text-xs font-semibold uppercase tracking-wider text-muted">
+          <h3
+            id="scheduled-heading"
+            className="text-xs font-semibold uppercase tracking-wider text-muted"
+          >
             {translations['automation.scheduleList.scheduledHeading']}
           </h3>
           <button
@@ -49,21 +52,28 @@ const ScheduleList: FC<Props> = ({
                 key={a.id}
                 boardId={boardId}
                 automation={a}
-                onEdit={() => { onEdit(a); }}
+                onEdit={() => {
+                  onEdit(a);
+                }}
                 onDeleted={onChanged}
                 onToggled={onChanged}
               />
             ))}
           </ul>
         ) : (
-          <p className="text-xs text-muted italic">{translations['automation.scheduleList.scheduledEmpty']}</p>
+          <p className="text-xs text-muted italic">
+            {translations['automation.scheduleList.scheduledEmpty']}
+          </p>
         )}
       </section>
 
       {/* Due date commands section */}
       <section aria-labelledby="duedate-heading">
         <div className="mb-2 flex items-center justify-between">
-          <h3 id="duedate-heading" className="text-xs font-semibold uppercase tracking-wider text-muted">
+          <h3
+            id="duedate-heading"
+            className="text-xs font-semibold uppercase tracking-wider text-muted"
+          >
             {translations['automation.scheduleList.dueDateHeading']}
           </h3>
           <button
@@ -82,14 +92,18 @@ const ScheduleList: FC<Props> = ({
                 key={a.id}
                 boardId={boardId}
                 automation={a}
-                onEdit={() => { onEdit(a); }}
+                onEdit={() => {
+                  onEdit(a);
+                }}
                 onDeleted={onChanged}
                 onToggled={onChanged}
               />
             ))}
           </ul>
         ) : (
-          <p className="text-xs text-muted italic">{translations['automation.scheduleList.dueDateEmpty']}</p>
+          <p className="text-xs text-muted italic">
+            {translations['automation.scheduleList.dueDateEmpty']}
+          </p>
         )}
       </section>
     </div>

@@ -39,7 +39,7 @@ export async function handleAdminCreateUser(req: Request): Promise<Response> {
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -55,9 +55,7 @@ export async function handleAdminCreateUser(req: Request): Promise<Response> {
 
   if (providedPassword !== undefined) {
     const isWeak =
-      providedPassword.length < 8 ||
-      !hasLetter(providedPassword) ||
-      !hasDigit(providedPassword);
+      providedPassword.length < 8 || !hasLetter(providedPassword) || !hasDigit(providedPassword);
     if (isWeak) {
       return Response.json({ name: 'password-too-weak' }, { status: 422 });
     }
@@ -91,8 +89,7 @@ export async function handleAdminCreateUser(req: Request): Promise<Response> {
   });
 
   const sesEnabled = await flags.isEnabled('SES_ENABLED');
-  const shouldSend =
-    sendEmail === true && sesEnabled === true && env.ADMIN_INVITE_EMAIL_ENABLED === true;
+  const shouldSend = sendEmail === true && sesEnabled && env.ADMIN_INVITE_EMAIL_ENABLED;
 
   let emailSent = false;
   if (shouldSend) {
@@ -125,6 +122,6 @@ export async function handleAdminCreateUser(req: Request): Promise<Response> {
       },
       emailSent,
     },
-    { status: 201 },
+    { status: 201 }
   );
 }

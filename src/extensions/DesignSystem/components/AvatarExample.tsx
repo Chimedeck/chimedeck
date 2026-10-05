@@ -1,13 +1,7 @@
 // AvatarExample — shows initials-based and placeholder avatar patterns.
 // No image URLs — fully static and dependency-free.
 
-const COLORS = [
-  'bg-blue-500',
-  'bg-purple-500',
-  'bg-green-500',
-  'bg-yellow-500',
-  'bg-pink-500',
-];
+const COLORS = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500'];
 
 interface AvatarProps {
   initials: string;
@@ -47,7 +41,9 @@ export default function AvatarExample() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">Sizes</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">
+          Sizes
+        </p>
         <div className="flex items-center gap-4">
           <Avatar initials="AB" colorIndex={0} size="sm" label="Alice Brown (sm)" />
           <Avatar initials="AB" colorIndex={0} size="md" label="Alice Brown (md)" />
@@ -56,7 +52,9 @@ export default function AvatarExample() {
       </div>
 
       <div>
-        <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">Members row</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">
+          Members row
+        </p>
         <div className="flex -space-x-2">
           {STUB_USERS.map((u, i) => (
             <Avatar key={u.name} initials={u.initials} colorIndex={i} label={u.name} />

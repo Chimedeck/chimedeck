@@ -7,7 +7,10 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
+import {
+  requireBoardWritable,
+  type BoardScopedRequest,
+} from '../../board/middlewares/requireBoardWritable';
 import { generatePositions } from '../mods/fractional';
 
 const SORT_VALUES = new Set(['created-desc', 'created-asc', 'card-name', 'due-date', 'card-price']);
@@ -25,11 +28,6 @@ type CardRow = {
   archived: boolean;
 };
 
-type ListRow = {
-  id: string;
-  board_id: string;
-};
-
 function toTime(value: string | null | undefined, fallback: number): number {
   if (!value) return fallback;
   const parsed = Date.parse(value);
@@ -44,11 +42,17 @@ function toAmount(value: string | null | undefined): number {
 
 function compareCards(sortBy: SortBy, left: CardRow, right: CardRow): number {
   if (sortBy === 'created-desc') {
-    return toTime(right.created_at, Number.NEGATIVE_INFINITY) - toTime(left.created_at, Number.NEGATIVE_INFINITY);
+    return (
+      toTime(right.created_at, Number.NEGATIVE_INFINITY) -
+      toTime(left.created_at, Number.NEGATIVE_INFINITY)
+    );
   }
 
   if (sortBy === 'created-asc') {
-    return toTime(left.created_at, Number.POSITIVE_INFINITY) - toTime(right.created_at, Number.POSITIVE_INFINITY);
+    return (
+      toTime(left.created_at, Number.POSITIVE_INFINITY) -
+      toTime(right.created_at, Number.POSITIVE_INFINITY)
+    );
   }
 
   if (sortBy === 'card-name') {
@@ -56,25 +60,33 @@ function compareCards(sortBy: SortBy, left: CardRow, right: CardRow): number {
   }
 
   if (sortBy === 'due-date') {
-    const dueCompare = toTime(left.due_date, Number.POSITIVE_INFINITY) - toTime(right.due_date, Number.POSITIVE_INFINITY);
+    const dueCompare =
+      toTime(left.due_date, Number.POSITIVE_INFINITY) -
+      toTime(right.due_date, Number.POSITIVE_INFINITY);
     if (dueCompare !== 0) return dueCompare;
-    return toTime(right.created_at, Number.NEGATIVE_INFINITY) - toTime(left.created_at, Number.NEGATIVE_INFINITY);
+    return (
+      toTime(right.created_at, Number.NEGATIVE_INFINITY) -
+      toTime(left.created_at, Number.NEGATIVE_INFINITY)
+    );
   }
 
   const amountCompare = toAmount(right.amount) - toAmount(left.amount);
   if (amountCompare !== 0) return amountCompare;
-  return toTime(right.created_at, Number.NEGATIVE_INFINITY) - toTime(left.created_at, Number.NEGATIVE_INFINITY);
+  return (
+    toTime(right.created_at, Number.NEGATIVE_INFINITY) -
+    toTime(left.created_at, Number.NEGATIVE_INFINITY)
+  );
 }
 
 export async function handleSortListCards(req: Request, listId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const list = await db<ListRow>('lists').where({ id: listId }).first();
+  const list = await db('lists').where({ id: listId }).first();
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'List not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -82,7 +94,7 @@ export async function handleSortListCards(req: Request, listId: string): Promise
   const writableError = await requireBoardWritable(boardReq, list.board_id);
   if (writableError) return writableError;
 
-  const board = boardReq.board as NonNullable<BoardScopedRequest['board']>;
+  const board = boardReq.board!;
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -97,34 +109,45 @@ export async function handleSortListCards(req: Request, listId: string): Promise
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.sortBy || !SORT_VALUES.has(body.sortBy)) {
     return Response.json(
-      { error: { code: 'bad-request', message: 'sortBy must be one of: created-desc, created-asc, card-name, due-date, card-price' } },
-      { status: 400 },
+      {
+        error: {
+          code: 'bad-request',
+          message:
+            'sortBy must be one of: created-desc, created-asc, card-name, due-date, card-price',
+        },
+      },
+      { status: 400 }
     );
   }
 
   const cards = await db('cards')
     .where({ list_id: listId, archived: false })
-    .select<CardRow[]>('id', 'list_id', 'position', 'title', 'created_at', 'due_date', 'amount', 'archived');
+    .select<
+      CardRow[]
+    >('id', 'list_id', 'position', 'title', 'created_at', 'due_date', 'amount', 'archived');
 
   if (cards.length < 2) {
-    return Response.json({ data: cards.map((card) => ({ id: card.id, list_id: card.list_id, position: card.position })) });
+    return Response.json({
+      data: cards.map((card) => ({ id: card.id, list_id: card.list_id, position: card.position })),
+    });
   }
 
-  const sortBy = body.sortBy;
-  const sortedCards = [...cards].sort((left, right) => compareCards(sortBy, left, right));
+  const sortedCards = [...cards].sort((left, right) =>
+    compareCards(body.sortBy as SortBy, left, right)
+  );
   const positions = generatePositions(sortedCards.length);
   const now = new Date().toISOString();
 
   await db.transaction(async (trx) => {
     for (let i = 0; i < sortedCards.length; i += 1) {
       await trx('cards')
-        .where({ id: sortedCards[i]?.id })
+        .where({ id: sortedCards[i]!.id })
         .update({ position: positions[i], updated_at: now });
     }
   });
@@ -132,7 +155,7 @@ export async function handleSortListCards(req: Request, listId: string): Promise
   const payloadCards = sortedCards.map((card, index) => ({
     id: card.id,
     list_id: card.list_id,
-    position: positions[index],
+    position: positions[index]!,
   }));
 
   await writeEvent({

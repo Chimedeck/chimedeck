@@ -10,12 +10,8 @@ import { captureError } from '../monitoring/sentry';
 export function handleUnhandledError(err: unknown): Response {
   try {
     captureError(err);
-    const message =
-      err instanceof Error ? err.message : 'An unexpected error occurred';
-    return Response.json(
-      { error: { code: 'internal-server-error', message } },
-      { status: 500 }
-    );
+    const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+    return Response.json({ error: { code: 'internal-server-error', message } }, { status: 500 });
   } catch {
     // Last-resort fallback — keep the server alive even if JSON serialisation fails.
     return new Response('Internal Server Error', { status: 500 });

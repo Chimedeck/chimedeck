@@ -36,7 +36,9 @@ const CommentThread = ({
 }: Props) => {
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="text-xs font-semibold uppercase text-muted">{translations['comment.section.title']}</h3>
+      <h3 className="text-xs font-semibold uppercase text-muted">
+        {translations['comment.section.title']}
+      </h3>
 
       <div className="flex flex-col gap-4">
         {comments.length === 0 && (

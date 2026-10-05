@@ -1,9 +1,13 @@
 import { useEffect } from 'react';
-import { Squares2X2Icon } from '@heroicons/react/24/outline';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
-import { signupThunk, selectAuthStatus, selectAuthError, selectPendingEmail } from '../../duck/authDuck';
+import {
+  signupThunk,
+  selectAuthStatus,
+  selectAuthError,
+  selectPendingEmail,
+} from '../../duck/authDuck';
 import SignupForm from '../../components/SignupForm';
 import VerificationPending from '../../components/VerificationPending';
 import translations from '../../translations/en.json';
@@ -32,7 +36,11 @@ export default function SignupPage() {
       <main className="min-h-screen bg-bg-base flex items-center justify-center px-4">
         <div className="w-full max-w-md bg-bg-surface border border-border rounded-2xl shadow-2xl p-8">
           <div className="flex items-center gap-2 mb-8">
-            <Squares2X2Icon className="h-7 w-7 text-indigo-400" aria-hidden="true" />
+            <img
+              src="/apple-touch-icon.png"
+              alt={translations.appName}
+              className="h-7 w-7 rounded-sm object-contain"
+            />
             <span className="text-xl font-bold text-base">{translations.appName}</span>
           </div>
           <h1 className="text-2xl font-bold text-base mb-4">{translations.verifyEmail.title}</h1>
@@ -47,18 +55,18 @@ export default function SignupPage() {
       <div className="w-full max-w-md bg-bg-surface border border-border rounded-2xl shadow-2xl p-8">
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8">
-          <Squares2X2Icon className="h-7 w-7 text-indigo-400" aria-hidden="true" />
+          <img
+            src="/apple-touch-icon.png"
+            alt={translations.appName}
+            className="h-7 w-7 rounded-sm object-contain"
+          />
           <span className="text-xl font-bold text-base">{translations.appName}</span>
         </div>
 
         <h1 className="text-2xl font-bold text-base mb-1">{translations.signup.title}</h1>
         <p className="text-subtle text-sm mb-6">{translations.signup.subtitle}</p>
 
-        <SignupForm
-          onSubmit={handleSubmit}
-          isLoading={status === 'loading'}
-          apiError={apiError}
-        />
+        <SignupForm onSubmit={handleSubmit} isLoading={status === 'loading'} apiError={apiError} />
 
         <p className="text-muted text-sm text-center mt-6">
           {translations.signup.haveAccount}{' '}

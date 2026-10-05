@@ -42,6 +42,6 @@ export function registerSearchBoard(server: McpServer, token: string): void {
       return {
         content: [{ type: 'text', text: JSON.stringify(result.data) }],
       };
-    },
+    }
   );
 }

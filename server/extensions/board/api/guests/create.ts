@@ -9,25 +9,11 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
+import { applyLimitGuard } from '../../../../middlewares/limitGuard';
 import { requireBoardAccess, type BoardScopedRequest } from '../../middlewares/requireBoardAccess';
 import { writeEvent } from '../../../../mods/events/index';
 import type { GuestType } from '../../types';
-
-type AuthenticatedUserRequest = AuthenticatedRequest & {
-  currentUser: NonNullable<AuthenticatedRequest['currentUser']>;
-};
-type ResolvedBoardRequest = BoardScopedRequest & { board: { workspace_id: string } };
-type InviteGuestBody = { email?: string; guestType?: string };
-type UserRow = { id: string; name: string | null };
-type ExistingRow = { id: string };
-type GuestGrantRow = {
-  id: string;
-  email: string;
-  name: string;
-  guestType: GuestType;
-  grantedAt: string;
-  grantedBy: string;
-};
+import { getGuestCountForBoard } from '../../../subscription/common/usage';
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -37,11 +23,11 @@ export async function handleInviteGuestByEmail(req: Request, boardId: string): P
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const boardReq = req as ResolvedBoardRequest;
+  const boardReq = req as BoardScopedRequest;
   const accessError = await requireBoardAccess(boardReq, boardId);
   if (accessError) return accessError;
 
-  const board = boardReq.board;
+  const board = boardReq.board!;
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
@@ -49,13 +35,13 @@ export async function handleInviteGuestByEmail(req: Request, boardId: string): P
   const roleError = requireRole(scopedReq, 'ADMIN');
   if (roleError) return roleError;
 
-  let body: InviteGuestBody;
+  let body: { email?: string; guestType?: string };
   try {
-    body = (await req.json()) as InviteGuestBody;
+    body = await req.json();
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -63,7 +49,7 @@ export async function handleInviteGuestByEmail(req: Request, boardId: string): P
   if (!email || !isValidEmail(email)) {
     return Response.json(
       { name: 'invalid-email', data: { message: 'A valid email address is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -71,27 +57,38 @@ export async function handleInviteGuestByEmail(req: Request, boardId: string): P
   if (rawGuestType !== undefined && rawGuestType !== 'VIEWER' && rawGuestType !== 'MEMBER') {
     return Response.json(
       { name: 'invalid-guest-type', data: { message: 'guestType must be VIEWER or MEMBER' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
   const guestType: GuestType = rawGuestType ?? 'VIEWER';
+
+  const guestCount = await getGuestCountForBoard(boardId);
+  const limitError = await applyLimitGuard({
+    workspaceId: board.workspace_id,
+    limitKey: 'maxGuestsPerBoard',
+    currentUsage: guestCount,
+  });
+  if (limitError) return limitError;
 
   // Prevent inviting existing workspace members (non-GUEST) as guests.
   const existingMember = await db('memberships')
     .join('users', 'memberships.user_id', 'users.id')
     .where({ 'users.email': email, 'memberships.workspace_id': board.workspace_id })
     .whereNot('memberships.role', 'GUEST')
-    .first() as ExistingRow | undefined;
+    .first();
 
   if (existingMember) {
     return Response.json(
-      { name: 'user-already-workspace-member', data: { message: 'This user is already a workspace member' } },
-      { status: 409 },
+      {
+        name: 'user-already-workspace-member',
+        data: { message: 'This user is already a workspace member' },
+      },
+      { status: 409 }
     );
   }
 
   // Resolve or create user.
-  let user = (await db('users').where({ email }).first()) as UserRow | undefined;
+  let user = await db('users').where({ email }).first();
   if (!user) {
     // [why] Stub account: minimal row so the invite can be stored.
     // The user can claim the account later via a future invite-acceptance flow.
@@ -101,28 +98,27 @@ export async function handleInviteGuestByEmail(req: Request, boardId: string): P
       email,
       name: email.split('@')[0] ?? email,
     });
-    user = (await db('users').where({ id: userId }).first()) as UserRow | undefined;
+    user = await db('users').where({ id: userId }).first();
   }
 
-  const resolvedUser = user as UserRow;
-  const userId = resolvedUser.id;
+  const userId = user.id as string;
 
   // Check for duplicate board guest access.
   const existing = await db('board_guest_access')
     .where({ user_id: userId, board_id: boardId })
-    .first() as ExistingRow | undefined;
+    .first();
 
   if (existing) {
     return Response.json(
       { name: 'already-invited', data: { message: 'This user is already a guest on this board' } },
-      { status: 409 },
+      { status: 409 }
     );
   }
 
   // Get or create GUEST workspace membership.
   const existingMembership = await db('memberships')
     .where({ user_id: userId, workspace_id: board.workspace_id })
-    .first() as ExistingRow | undefined;
+    .first();
 
   await db.transaction(async (trx) => {
     if (!existingMembership) {
@@ -138,11 +134,11 @@ export async function handleInviteGuestByEmail(req: Request, boardId: string): P
       user_id: userId,
       board_id: boardId,
       guest_type: guestType,
-      granted_by: (req as AuthenticatedUserRequest).currentUser.id,
+      granted_by: (req as AuthenticatedRequest).currentUser!.id,
     });
   });
 
-  const grantRow = (await db('board_guest_access')
+  const grantRow = await db('board_guest_access')
     .join('users', 'board_guest_access.user_id', 'users.id')
     .where({ 'board_guest_access.user_id': userId, 'board_guest_access.board_id': boardId })
     .select(
@@ -151,19 +147,19 @@ export async function handleInviteGuestByEmail(req: Request, boardId: string): P
       db.raw('COALESCE(users.name, users.email) as name'),
       'board_guest_access.guest_type as guestType',
       'board_guest_access.granted_at as grantedAt',
-      'board_guest_access.granted_by as grantedBy',
+      'board_guest_access.granted_by as grantedBy'
     )
-    .first()) as GuestGrantRow | undefined;
+    .first();
 
   writeEvent({
     type: 'member_joined',
     boardId,
     entityId: boardId,
-    actorId: (req as AuthenticatedUserRequest).currentUser.id,
+    actorId: (req as AuthenticatedRequest).currentUser!.id,
     payload: {
       scope: 'board',
       userId,
-      displayName: resolvedUser.name ?? email,
+      displayName: (user.name as string | undefined) ?? email,
       role: 'GUEST',
       joinedAt: new Date().toISOString(),
     },
