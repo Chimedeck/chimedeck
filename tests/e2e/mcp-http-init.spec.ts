@@ -1,16 +1,16 @@
 // Playwright MCP HTTP Init test for Sprint 106
 // Covers: unauthenticated POST, valid POST, DELETE, session hijack, proxying
-import { test, expect, request } from '@playwright/test';
+import { test, expect, type APIRequestContext } from '@playwright/test';
 
 const BASE_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
 
 // Helper: login and get JWT
-async function loginAndGetJwt(request: any, email: string, password: string) {
-  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/login`, {
+async function loginAndGetJwt(request: APIRequestContext, email: string, password: string) {
+  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/token`, {
     data: { email, password },
   });
   const body = await loginRes.json();
-  return body.data.access_token;
+  return body.data.accessToken;
 }
 
 test.describe('MCP HTTP Init', () => {
@@ -43,7 +43,8 @@ test.describe('MCP HTTP Init', () => {
     expect(hfToken.startsWith('hf_')).toBeTruthy();
     // POST /api/mcp
     const mcpRes = await request.post(`${BASE_URL}/api/mcp`, {
-      headers: { Authorization: `Bearer ${hfToken}` },
+      // MCP streamable-HTTP requires the client to accept both JSON and SSE.
+      headers: { Authorization: `Bearer ${hfToken}`, Accept: 'application/json, text/event-stream' },
       data: {
         jsonrpc: '2.0', id: 1, method: 'initialize', params: {
           protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'test', version: '1.0' }

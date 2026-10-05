@@ -19,15 +19,11 @@ async function registerAndLogin(request: APIRequestContext, suffix: string): Pro
   const email = `mj-test-${suffix}-${Date.now()}@example.com`;
   const password = 'TestPassword1!';
 
-  await request.post(`${BASE_URL}/api/v1/auth/register`, {
+  const regRes = await request.post(`${BASE_URL}/api/v1/auth/register`, {
     data: { email, password, name: `MJ ${suffix}` },
   });
-
-  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/login`, {
-    data: { email, password },
-  });
-  const body = await loginRes.json() as { data: { access_token: string } };
-  return { token: body.data.access_token, email };
+  const body = await regRes.json() as { data: { accessToken: string } };
+  return { token: body.data.accessToken, email };
 }
 
 async function createWorkspace(request: APIRequestContext, token: string): Promise<string> {
@@ -53,7 +49,7 @@ async function createBoard(
 }
 
 async function getUserId(request: APIRequestContext, token: string): Promise<string> {
-  const res = await request.get(`${BASE_URL}/api/v1/me`, {
+  const res = await request.get(`${BASE_URL}/api/v1/users/me`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   const body = await res.json() as { data: { id: string } };
@@ -75,10 +71,11 @@ test.describe('member_joined event', () => {
     const guest = await registerAndLogin(request, 'mj-guest');
     const guestUserId = await getUserId(request, guest.token);
 
-    // Invite the guest to the board
+    // Invite the guest to the board. The guests endpoint accepts an email and
+    // resolves (or creates) the user, so pass the guest's email.
     const inviteRes = await request.post(`${BASE_URL}/api/v1/boards/${boardId}/guests`, {
       headers: { Authorization: `Bearer ${owner.token}` },
-      data: { userId: guestUserId },
+      data: { email: guest.email },
     });
     expect(inviteRes.status()).toBe(201);
 
@@ -108,12 +105,11 @@ test.describe('member_joined event', () => {
     const boardId = await createBoard(request, owner.token, workspaceId);
 
     const guest = await registerAndLogin(request, 'mj-ver-guest');
-    const guestUserId = await getUserId(request, guest.token);
 
     // Trigger at least one event (board_created fires on board creation; invite fires member_joined)
     await request.post(`${BASE_URL}/api/v1/boards/${boardId}/guests`, {
       headers: { Authorization: `Bearer ${owner.token}` },
-      data: { userId: guestUserId },
+      data: { email: guest.email },
     });
 
     const eventsRes = await request.get(`${BASE_URL}/api/v1/boards/${boardId}/events?since=0`, {

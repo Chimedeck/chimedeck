@@ -5,11 +5,12 @@
 // Based on: specs/tests/payment-card-price.md
 
 import { test, expect } from '@playwright/test';
-import { BASE_URL, registerAndLogin, createWorkspace, createBoard, createList, createCard } from './_helpers';
+import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, createCard, loginViaCookie, type Credentials } from './_helpers';
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
 test.describe('Payment — Card Price', () => {
+  let creds: Credentials;
   let token: string;
   let boardId: string;
   let cardId: string;
@@ -21,7 +22,8 @@ test.describe('Payment — Card Price', () => {
       return;
     }
 
-    token = await registerAndLogin(request, 'cardprice');
+    creds = await registerAndGetCredentials(request, 'cardprice');
+    token = creds.token;
     const workspaceId = await createWorkspace(request, token);
     boardId = await createBoard(request, token, workspaceId);
     const listId = await createList(request, token, boardId);
@@ -251,9 +253,8 @@ test.describe('Payment — Card Price', () => {
       return;
     }
 
-    await page.goto(UI_URL);
-    await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
+    await loginViaCookie(page, UI_URL, creds);
+    await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
     // A price badge or money indicator should be visible on the card
@@ -290,9 +291,8 @@ test.describe('Payment — Card Price', () => {
       return;
     }
 
-    await page.goto(UI_URL);
-    await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
+    await loginViaCookie(page, UI_URL, creds);
+    await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
     // Price badge should not be visible when monetisation is off

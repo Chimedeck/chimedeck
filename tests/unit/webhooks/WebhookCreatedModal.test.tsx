@@ -1,6 +1,6 @@
 // Unit tests for WebhookCreatedModal — secret reveal, copy/reset behaviour.
 // Pure logic tests; clipboard API interaction is tested via mock.
-import { describe, it, expect, mock, beforeEach, afterEach } from 'bun:test';
+import { describe, it, expect, mock } from 'bun:test';
 
 // Simulates the copy-to-clipboard state machine used by WebhookCreatedModal.
 function createCopyState() {
@@ -104,7 +104,7 @@ describe('WebhookCreatedModal — signing secret display', () => {
 
     // A plain WebhookItem should NOT have signingSecret (type-level check via cast)
     const listItem: WebhookItem = { ...response.data };
-    expect((listItem as any).signingSecret).toBe('secret-value'); // exists on object but not on type
+    expect((listItem as WebhookItem & { signingSecret: string }).signingSecret).toBe('secret-value'); // exists on object but not on type
   });
 });
 
@@ -122,8 +122,9 @@ describe('WebhookCreatedModal — translation keys', () => {
       'WebhookCreatedModal.done',
     ];
     for (const key of required) {
-      expect((translations as any)[key]).toBeDefined();
-      expect(typeof (translations as any)[key]).toBe('string');
+      const v = (translations as Record<string, unknown>)[key];
+      expect(v).toBeDefined();
+      expect(typeof v).toBe('string');
     }
   });
 
@@ -142,8 +143,9 @@ describe('WebhookCreatedModal — translation keys', () => {
       'RegisterWebhookModal.cancel',
     ];
     for (const key of required) {
-      expect((translations as any)[key]).toBeDefined();
-      expect(typeof (translations as any)[key]).toBe('string');
+      const v = (translations as Record<string, unknown>)[key];
+      expect(v).toBeDefined();
+      expect(typeof v).toBe('string');
     }
   });
 });

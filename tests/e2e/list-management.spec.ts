@@ -4,11 +4,28 @@
 // Soft-skips when the server is not reachable.
 
 import { test, expect } from '@playwright/test';
-import { BASE_URL, registerAndLogin, createWorkspace, createBoard, createList } from './_helpers';
+import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, loginViaCookie, type Credentials } from './_helpers';
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
+// The app boot performs an async token refresh, so navigating straight after
+// login can race it and land on /workspaces instead of the board.
+async function gotoBoard(page: import('@playwright/test').Page, boardId: string): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto(`${UI_URL}/b/${boardId}`);
+    await page.waitForLoadState('networkidle');
+    try {
+      await page.waitForSelector('[aria-label="Board lists"]', { timeout: 8000 });
+      return;
+    } catch {
+      await page.waitForTimeout(500);
+    }
+  }
+  throw new Error(`Board ${boardId} did not render (url: ${page.url()})`);
+}
+
 test.describe('List Management', () => {
+  let creds: Credentials;
   let token: string;
   let boardId: string;
   const run = Date.now();
@@ -20,53 +37,44 @@ test.describe('List Management', () => {
       return;
     }
 
-    token = await registerAndLogin(request, `list-${run}`);
+    creds = await registerAndGetCredentials(request, `list-${run}`);
+    token = creds.token;
     const workspaceId = await createWorkspace(request, token);
     boardId = await createBoard(request, token, workspaceId);
   });
 
   // ── API: Create ──────────────────────────────────────────────────────────────
 
-  test('Test 1 — Create list returns 201 with id and name', async ({ request }) => {
+  test('Test 1 — Create list returns 201 with id and title', async ({ request }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
     const res = await request.post(`${BASE_URL}/api/v1/boards/${boardId}/lists`, {
       headers: { Authorization: `Bearer ${token}` },
-      data: { name: `New List ${run}`, position: 0 },
+      data: { title: `New List ${run}` },
     });
 
-    if (res.status() === 404 || res.status() === 501) {
-      test.skip(true, 'List creation endpoint not yet implemented — skipping');
-      return;
-    }
-
     expect(res.status()).toBe(201);
-    const body = await res.json() as { data: { id: string; name: string } };
+    const body = await res.json() as { data: { id: string; title: string } };
     expect(body.data.id).toBeTruthy();
-    expect(body.data.name).toBe(`New List ${run}`);
+    expect(body.data.title).toBe(`New List ${run}`);
   });
 
   // ── API: Rename ──────────────────────────────────────────────────────────────
 
-  test('Test 2 — Rename list returns 200 with updated name', async ({ request }) => {
+  test('Test 2 — Rename list returns 200 with updated title', async ({ request }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
     const listId = await createList(request, token, boardId);
 
     const res = await request.patch(`${BASE_URL}/api/v1/lists/${listId}`, {
       headers: { Authorization: `Bearer ${token}` },
-      data: { name: `Renamed List ${run}` },
+      data: { title: `Renamed List ${run}` },
     });
 
-    if (res.status() === 404 || res.status() === 501) {
-      test.skip(true, 'List rename endpoint not yet implemented — skipping');
-      return;
-    }
-
     expect(res.status()).toBe(200);
-    const body = await res.json() as { data: { id: string; name: string } };
+    const body = await res.json() as { data: { id: string; title: string } };
     expect(body.data.id).toBe(listId);
-    expect(body.data.name).toBe(`Renamed List ${run}`);
+    expect(body.data.title).toBe(`Renamed List ${run}`);
   });
 
   // ── API: Reorder ─────────────────────────────────────────────────────────────
@@ -74,29 +82,45 @@ test.describe('List Management', () => {
   test('Test 3 — Reorder lists returns 200 with updated positions', async ({ request }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
-    const listIdA = await createList(request, token, boardId);
-    const listIdB = await createList(request, token, boardId);
+    // Reorder validates that the payload lists every ACTIVE list on the board,
+    // so work on a fresh board with a known list count.
+    const workspaceId = await createWorkspace(request, token);
+    const reorderBoardId = await createBoard(request, token, workspaceId);
+    const listIdA = await createList(request, token, reorderBoardId);
+    const listIdB = await createList(request, token, reorderBoardId);
 
-    // Swap positions: put B before A
-    const res = await request.patch(`${BASE_URL}/api/v1/boards/${boardId}/lists/reorder`, {
+    // Swap positions: put B before A. POST, not PATCH.
+    const res = await request.post(`${BASE_URL}/api/v1/boards/${reorderBoardId}/lists/reorder`, {
       headers: { Authorization: `Bearer ${token}` },
       data: { order: [listIdB, listIdA] },
     });
 
-    if (res.status() === 404 || res.status() === 501) {
-      test.skip(true, 'List reorder endpoint not yet implemented — skipping');
-      return;
-    }
-
     expect([200, 204]).toContain(res.status());
 
     // Verify the new order is reflected in the board lists
-    const listsRes = await request.get(`${BASE_URL}/api/v1/boards/${boardId}/lists`, {
+    const listsRes = await request.get(`${BASE_URL}/api/v1/boards/${reorderBoardId}/lists`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    const listsBody = await listsRes.json() as { data: Array<{ id: string; position: number }> };
+    const listsBody = await listsRes.json() as { data: Array<{ id: string }> };
     const ids = listsBody.data.map((l) => l.id);
     expect(ids.indexOf(listIdB)).toBeLessThan(ids.indexOf(listIdA));
+  });
+
+  test('Test 3b — Reorder rejects a payload that omits an active list', async ({ request }) => {
+    if (!token) test.skip(true, 'Server not running — skipping');
+
+    const workspaceId = await createWorkspace(request, token);
+    const reorderBoardId = await createBoard(request, token, workspaceId);
+    const listIdA = await createList(request, token, reorderBoardId);
+    await createList(request, token, reorderBoardId);
+
+    // Only one of two active lists supplied — must be rejected.
+    const res = await request.post(`${BASE_URL}/api/v1/boards/${reorderBoardId}/lists/reorder`, {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { order: [listIdA] },
+    });
+
+    expect(res.status()).toBe(400);
   });
 
   // ── API: Archive ─────────────────────────────────────────────────────────────
@@ -106,15 +130,10 @@ test.describe('List Management', () => {
 
     const listId = await createList(request, token, boardId);
 
-    const archiveRes = await request.patch(`${BASE_URL}/api/v1/lists/${listId}`, {
+    // Archive is PATCH, not POST.
+    const archiveRes = await request.patch(`${BASE_URL}/api/v1/lists/${listId}/archive`, {
       headers: { Authorization: `Bearer ${token}` },
-      data: { archived: true },
     });
-
-    if (archiveRes.status() === 404 || archiveRes.status() === 501) {
-      test.skip(true, 'List archive endpoint not yet implemented — skipping');
-      return;
-    }
 
     expect(archiveRes.status()).toBe(200);
 
@@ -133,13 +152,8 @@ test.describe('List Management', () => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
     const res = await request.post(`${BASE_URL}/api/v1/boards/${boardId}/lists`, {
-      data: { name: 'Unauthorised List', position: 0 },
+      data: { title: 'Unauthorised List' },
     });
-
-    if (res.status() === 404 || res.status() === 501) {
-      test.skip(true, 'Endpoint not yet implemented — skipping');
-      return;
-    }
 
     expect(res.status()).toBe(401);
   });
@@ -149,88 +163,76 @@ test.describe('List Management', () => {
   test('Test 6 — UI: Add list button creates a new list on the board', async ({ request, page }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
-    await page.goto(UI_URL);
-    await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
-    await page.waitForLoadState('networkidle');
+    // Fresh user/board so the assertion is about this list only.
+    const uiCreds = await registerAndGetCredentials(request, `list-ui6-${run}`);
+    const uiToken = uiCreds.token;
+    const uiWorkspaceId = await createWorkspace(request, uiToken);
+    const uiBoardId = await createBoard(request, uiToken, uiWorkspaceId);
 
-    const addListBtn = page.locator(
-      '[data-testid="add-list"], button:has-text("Add list"), button:has-text("Add a list")',
-    ).first();
+    await loginViaCookie(page, UI_URL, uiCreds);
+    await gotoBoard(page, uiBoardId);
 
-    if (await addListBtn.count() === 0) {
-      test.skip(true, 'Add-list button not found in UI — skipping');
-      return;
-    }
-
-    await addListBtn.click();
-
-    const nameInput = page.locator(
-      '[data-testid="list-name-input"], input[placeholder*="list name"], input[placeholder*="Enter list title"]',
-    ).first();
-
-    if (await nameInput.count() === 0) {
-      test.skip(true, 'List name input not found — skipping');
-      return;
-    }
+    // The board renders a "+ Add a list" button (no data-testid).
+    await page.getByRole('button', { name: /Add a list/i }).first().click();
+    const nameInput = page.locator('input:visible, textarea:visible').first();
+    await expect(nameInput).toBeVisible({ timeout: 5000 });
 
     const newListName = `UI List ${run}`;
     await nameInput.fill(newListName);
     await nameInput.press('Enter');
 
-    await page.waitForTimeout(500);
+    // The new list header appears. List headers are buttons labelled
+    // "Rename list <name>"; match exactly, because the wrapping column button's
+    // accessible name concatenates its nested controls and also matches loosely.
+    await expect(page.getByRole('button', { name: `Rename list ${newListName}`, exact: true }))
+      .toBeVisible({ timeout: 8000 });
 
-    const listHeader = page.locator(
-      `[data-testid^="list-header"], h2, h3, [class*="list-title"]`,
-    ).filter({ hasText: newListName }).first();
-
-    if (await listHeader.count() > 0) {
-      await expect(listHeader).toBeVisible({ timeout: 5000 });
-    }
+    // And it is reflected in the API.
+    const listsRes = await request.get(`${BASE_URL}/api/v1/boards/${uiBoardId}/lists`, {
+      headers: { Authorization: `Bearer ${uiToken}` },
+    });
+    const listsBody = await listsRes.json() as { data: Array<{ title: string }> };
+    expect(listsBody.data.some((l) => l.title === newListName)).toBe(true);
   });
 
   // ── UI: Rename list ────────────────────────────────────────────────────────────
 
-  test('Test 7 — UI: Double-clicking list header allows renaming', async ({ request, page }) => {
+  test('Test 7 — UI: Renaming a list via its header updates the name', async ({ request, page }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
-    // Seed a known list for the UI rename test
-    const seedListId = await createList(request, token, boardId);
-    void seedListId; // used implicitly via page.goto below
+    const uiCreds = await registerAndGetCredentials(request, `list-ui7-${run}`);
+    const uiToken = uiCreds.token;
+    const uiWorkspaceId = await createWorkspace(request, uiToken);
+    const uiBoardId = await createBoard(request, uiToken, uiWorkspaceId);
+    const originalName = `Original ${run}`;
+    const uiListId = await createList(request, uiToken, uiBoardId, originalName);
 
-    await page.goto(UI_URL);
-    await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
-    await page.waitForLoadState('networkidle');
+    await loginViaCookie(page, UI_URL, uiCreds);
+    await gotoBoard(page, uiBoardId);
 
-    // Find any editable list header
-    const listHeader = page.locator(
-      '[data-testid^="list-header"], [class*="list-header"], [class*="list-title"]',
-    ).first();
+    // List headers are buttons whose accessible name starts "Rename list <name>".
+    const renameBtn = page.getByRole('button', { name: `Rename list ${originalName}`, exact: true }).first();
+    await expect(renameBtn).toBeVisible({ timeout: 8000 });
+    await renameBtn.click();
 
-    if (await listHeader.count() === 0) {
-      test.skip(true, 'List header element not found — skipping UI rename test');
-      return;
-    }
-
-    await listHeader.dblclick();
-
-    const editInput = page.locator('input[data-testid*="list"], input[class*="list"]').first();
-    if (await editInput.count() === 0) {
-      test.skip(true, 'List rename input did not appear — skipping');
-      return;
-    }
+    const editInput = page.locator('input:visible, textarea:visible').first();
+    await expect(editInput).toBeVisible({ timeout: 5000 });
 
     const renamedValue = `Renamed via UI ${run}`;
     await editInput.fill(renamedValue);
     await editInput.press('Enter');
 
-    await page.waitForTimeout(400);
-    // The new name should be visible somewhere on the board
-    const updatedHeader = page.locator('body').filter({ hasText: renamedValue });
-    if (await updatedHeader.count() > 0) {
-      await expect(page.locator('body')).toContainText(renamedValue, { timeout: 5000 });
-    }
+    // The header now shows the new name.
+    await expect(page.getByRole('button', { name: `Rename list ${renamedValue}`, exact: true }))
+      .toBeVisible({ timeout: 8000 });
+
+    // And the API agrees.
+    const listRes = await request.get(`${BASE_URL}/api/v1/boards/${uiBoardId}/lists`, {
+      headers: { Authorization: `Bearer ${uiToken}` },
+    });
+    const listBody = await listRes.json() as { data: Array<{ id: string; title: string }> };
+    const updated = listBody.data.find((l) => l.id === uiListId);
+    expect(updated?.title).toBe(renamedValue);
   });
 
   // ── UI: Drag-to-reorder ────────────────────────────────────────────────────────
@@ -238,45 +240,67 @@ test.describe('List Management', () => {
   test('Test 8 — UI: Dragging a list changes its position', async ({ request, page }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
-    // Seed two lists for drag test
-    await createList(request, token, boardId);
-    await createList(request, token, boardId);
+    const uiCreds = await registerAndGetCredentials(request, `list-ui8-${run}`);
+    const uiToken = uiCreds.token;
+    const uiWorkspaceId = await createWorkspace(request, uiToken);
+    const uiBoardId = await createBoard(request, uiToken, uiWorkspaceId);
+    const nameA = `Drag A ${run}`;
+    const nameB = `Drag B ${run}`;
+    await createList(request, uiToken, uiBoardId, nameA);
+    await createList(request, uiToken, uiBoardId, nameB);
 
-    await page.goto(UI_URL);
-    await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
-    await page.waitForLoadState('networkidle');
+    // Order as the API sees it — the drag must change THIS, not just the DOM.
+    const apiOrder = async (): Promise<string[]> => {
+      const res = await request.get(`${BASE_URL}/api/v1/boards/${uiBoardId}/lists`, {
+        headers: { Authorization: `Bearer ${uiToken}` },
+      });
+      expect(res.status()).toBe(200);
+      const body = await res.json() as { data: Array<{ title: string }> };
+      return body.data.map((l) => l.title);
+    };
+    const apiOrderBefore = await apiOrder();
+    expect(apiOrderBefore.slice(0, 2)).toEqual([nameA, nameB]);
 
-    const lists = page.locator(
-      '[data-testid^="list-column"], [class*="list-column"], [class*="board-list"]',
-    );
+    await loginViaCookie(page, UI_URL, uiCreds);
+    await gotoBoard(page, uiBoardId);
 
-    const count = await lists.count();
-    if (count < 2) {
-      test.skip(true, 'Not enough lists rendered to test drag — skipping');
-      return;
-    }
+    // Columns are listitems whose accessible name is "List: <name>".
+    const columns = page.getByRole('listitem').filter({ has: page.getByRole('button', { name: /^Rename list/ }) });
+    const first = columns.first();
+    await expect(first).toBeVisible({ timeout: 8000 });
 
-    const firstList = lists.nth(0);
-    const secondList = lists.nth(1);
+    // Inner rename buttons carry aria-label exactly "Rename list <name>"; the
+    // wrapping column button concatenates nested labels too, so filter to leaf
+    // buttons by requiring no nested button.
+    const renameButtons = page.locator('button[aria-label^="Rename list "]').filter({ hasNot: page.locator('button') });
+    const orderBefore = (await renameButtons.allInnerTexts()).filter((x) => x.trim());
+    expect(orderBefore.length).toBeGreaterThanOrEqual(2);
 
-    const firstBox = await firstList.boundingBox();
-    const secondBox = await secondList.boundingBox();
+    const firstBox = await first.boundingBox();
+    expect(firstBox).toBeTruthy();
+    if (!firstBox) return;
 
-    if (!firstBox || !secondBox) {
-      test.skip(true, 'Could not compute bounding boxes for drag — skipping');
-      return;
-    }
+    // Drag the first column's header to the right of the second column.
+    const secondBox = await renameButtons.nth(1).boundingBox();
+    expect(secondBox).toBeTruthy();
+    if (!secondBox) return;
 
-    // Perform drag from first list to after second list
-    await page.mouse.move(firstBox.x + firstBox.width / 2, firstBox.y + firstBox.height / 2);
+    await page.mouse.move(firstBox.x + 20, firstBox.y + 10);
     await page.mouse.down();
     await page.waitForTimeout(200);
-    await page.mouse.move(secondBox.x + secondBox.width + 20, secondBox.y + secondBox.height / 2, { steps: 20 });
+    await page.mouse.move(secondBox.x + secondBox.width + 30, secondBox.y + 10, { steps: 20 });
     await page.mouse.up();
+    await page.waitForTimeout(800);
 
-    await page.waitForTimeout(600);
-    // Verify the page is still intact after drag (no crash)
-    await expect(page).not.toHaveURL(/error/);
+    // The board persists a new order: the first list is no longer first.
+    const orderAfter = (await renameButtons.allInnerTexts()).filter((x) => x.trim());
+    expect(orderAfter.length).toBe(orderBefore.length);
+    expect(orderAfter[0]).not.toBe(orderBefore[0]);
+
+    // And the change reached the server. Without this the test would pass even
+    // if the drag only mutated local state and never called the reorder endpoint.
+    await expect
+      .poll(apiOrder, { timeout: 8000 })
+      .toEqual([nameB, nameA]);
   });
 });
