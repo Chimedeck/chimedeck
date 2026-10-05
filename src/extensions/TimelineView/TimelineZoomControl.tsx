@@ -24,7 +24,7 @@ const TimelineZoomControl = ({ zoom, onZoomChange }: TimelineZoomControlProps) =
         <Button
           key={level}
           variant="ghost"
-          onClick={() => onZoomChange(level)}
+          onClick={() => { onZoomChange(level); }}
           aria-pressed={zoom === level}
           data-testid={`timeline-zoom-${level}`}
           className={`px-3 py-1 text-xs rounded-none ${

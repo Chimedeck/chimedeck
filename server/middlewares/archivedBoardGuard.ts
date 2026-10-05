@@ -2,10 +2,34 @@
 // Use this helper inside any mutation handler that resolves a board.
 import { db } from '../common/db';
 
+// db/migrations/0004_board.ts
+interface BoardStateRow {
+  id: string;
+  state: 'ACTIVE' | 'ARCHIVED';
+}
+
+// db/migrations/0006_card.ts
+interface CardListRow {
+  id: string;
+  list_id: string;
+}
+
+// db/migrations/0005_list.ts
+interface ListBoardRow {
+  id: string;
+  board_id: string;
+}
+
+// db/migrations/0010_comments_activity.ts
+interface CommentCardRow {
+  id: string;
+  card_id: string;
+}
+
 // Returns a 403 Response if the board (by id) is archived, null otherwise.
 // Also returns 404 if the board is not found.
 export async function requireBoardNotArchived(boardId: string): Promise<Response | null> {
-  const board = await db('boards').where({ id: boardId }).first();
+  const board = await db<BoardStateRow>('boards').where({ id: boardId }).first();
 
   if (!board) {
     return Response.json(
@@ -33,8 +57,8 @@ export async function requireBoardNotArchived(boardId: string): Promise<Response
 // Returns { error: Response } on failure or { board } on success.
 export async function resolveBoardFromCard(
   cardId: string,
-): Promise<{ error: Response } | { board: Record<string, unknown> }> {
-  const card = await db('cards').where({ id: cardId }).first();
+): Promise<{ error: Response } | { board: BoardStateRow }> {
+  const card = await db<CardListRow>('cards').where({ id: cardId }).first();
   if (!card) {
     return {
       error: Response.json(
@@ -44,7 +68,7 @@ export async function resolveBoardFromCard(
     };
   }
 
-  const list = await db('lists').where({ id: card.list_id }).first();
+  const list = await db<ListBoardRow>('lists').where({ id: card.list_id }).first();
   if (!list) {
     return {
       error: Response.json(
@@ -54,7 +78,7 @@ export async function resolveBoardFromCard(
     };
   }
 
-  const board = await db('boards').where({ id: list.board_id }).first();
+  const board = await db<BoardStateRow>('boards').where({ id: list.board_id }).first();
   if (!board) {
     return {
       error: Response.json(
@@ -84,8 +108,8 @@ export async function resolveBoardFromCard(
 // Convenience: resolve board from a commentId and return 403 if archived.
 export async function resolveBoardFromComment(
   commentId: string,
-): Promise<{ error: Response } | { board: Record<string, unknown> }> {
-  const comment = await db('comments').where({ id: commentId }).first();
+): Promise<{ error: Response } | { board: BoardStateRow }> {
+  const comment = await db<CommentCardRow>('comments').where({ id: commentId }).first();
   if (!comment) {
     return {
       error: Response.json(
@@ -95,5 +119,5 @@ export async function resolveBoardFromComment(
     };
   }
 
-  return resolveBoardFromCard(comment.card_id as string);
+  return resolveBoardFromCard(comment.card_id);
 }

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { XMarkIcon, BoltIcon } from '@heroicons/react/24/outline';
 import type { FC } from 'react';
 import Button from '../../../../common/components/Button';
-import IconPicker, { BUTTON_ICONS, type ButtonIconName } from '../shared/IconPicker';
+import IconPicker, { type ButtonIconName } from '../shared/IconPicker';
 import ActionList from '../AutomationPanel/RuleBuilder/ActionList';
 import type { ActionItemData } from '../AutomationPanel/RuleBuilder/ActionItem';
 import { createAutomation, updateAutomation } from '../../api';
@@ -50,7 +50,7 @@ const BoardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =
       id: a.id,
       actionType: a.actionType,
       label: a.actionType,
-      config: a.config as Record<string, unknown>,
+      config: a.config,
     })) ?? [],
   );
   const [saving, setSaving] = useState(false);
@@ -95,7 +95,7 @@ const BoardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =
             name: name.trim(),
             automationType: 'BOARD_BUTTON',
             icon,
-            trigger: null as any, // BOARD_BUTTON has no trigger
+            trigger: null, // BOARD_BUTTON has no trigger
             actions: actionPayload,
           },
         });
@@ -142,7 +142,7 @@ const BoardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =
             id="board-btn-name"
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => { setName(e.target.value); }}
             placeholder={translations['automation.boardButtonBuilder.namePlaceholder']}
             maxLength={80}
             className="rounded-md bg-bg-surface border border-border px-3 py-2 text-sm text-base placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -163,7 +163,7 @@ const BoardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =
               <button
                 key={s}
                 type="button"
-                onClick={() => setScope(s)}
+                onClick={() => { setScope(s); }}
                 className={[
                   'flex-1 rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors border',
                   scope === s
@@ -185,7 +185,7 @@ const BoardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =
                 id="scope-list-id"
                 type="text"
                 value={listId}
-                onChange={(e) => setListId(e.target.value)}
+                onChange={(e) => { setListId(e.target.value); }}
                 placeholder={translations['automation.boardButtonBuilder.listIdPlaceholder']}
                 className="rounded-md bg-bg-surface border border-border px-3 py-2 text-sm text-base placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -223,7 +223,7 @@ const BoardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =
             variant="primary"
             type="button"
             disabled={!isValid || saving}
-            onClick={handleSave}
+            onClick={() => { void handleSave(); }}
           >
             {saving ? translations['automation.boardButtonBuilder.saving'] : existing ? translations['automation.boardButtonBuilder.saveChanges'] : translations['automation.boardButtonBuilder.create']}
           </Button>

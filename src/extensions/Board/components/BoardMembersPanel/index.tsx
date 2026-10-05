@@ -55,7 +55,7 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
       && !isMembersLoading
       && (workspaceMembers.length === 0 || membersWorkspaceId !== boardWorkspaceId)
     ) {
-      dispatch(fetchWorkspaceMembersThunk({ workspaceId: boardWorkspaceId }));
+      void dispatch(fetchWorkspaceMembersThunk({ workspaceId: boardWorkspaceId }));
     }
   }, [dispatch, boardWorkspaceId, isMembersLoading, workspaceMembers.length, membersWorkspaceId]);
 
@@ -65,7 +65,7 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
       && !isMembersLoading
       && (workspaceMembers.length === 0 || membersWorkspaceId !== boardWorkspaceId)
     ) {
-      dispatch(fetchWorkspaceMembersThunk({ workspaceId: boardWorkspaceId }));
+      void dispatch(fetchWorkspaceMembersThunk({ workspaceId: boardWorkspaceId }));
     }
   };
 
@@ -158,7 +158,7 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
       {/* Panel — stop propagation so clicks inside don't close */}
       <div
         className="absolute right-0 top-0 h-full w-80 bg-bg-base border-l border-border flex flex-col shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); }}
         role="dialog"
         aria-label="Board Members"
       >
@@ -178,7 +178,7 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
         <div className="flex border-b border-border">
           <button
             type="button"
-            onClick={() => setActiveTab('members')}
+            onClick={() => { setActiveTab('members'); }}
             className={`flex-1 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
               activeTab === 'members'
                 ? 'text-indigo-400 border-b-2 border-indigo-400 -mb-px'
@@ -192,7 +192,7 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
           {/* Guests tab — only admins can invite guests; all can view */}
           <button
             type="button"
-            onClick={() => setActiveTab('guests')}
+            onClick={() => { setActiveTab('guests'); }}
             className={`flex-1 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
               activeTab === 'guests'
                 ? 'text-indigo-400 border-b-2 border-indigo-400 -mb-px'
@@ -232,7 +232,7 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
                   <button
                     type="button"
                     disabled={isJoining}
-                    onClick={handleJoin}
+                    onClick={() => void handleJoin()}
                     className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-inverse hover:bg-primary-hover disabled:opacity-50"
                   >
                     {isJoining ? 'Joining…' : 'Join this board'}
@@ -262,8 +262,8 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
                           member={member}
                           isLastAdmin={isThisLastAdmin}
                           canEdit={isAdmin}
-                          onRoleChange={handleRoleChange}
-                          onRemove={handleRemove}
+                          onRoleChange={(userId, role) => void handleRoleChange(userId, role)}
+                          onRemove={(userId) => void handleRemove(userId)}
                         />
                       );
                     })}

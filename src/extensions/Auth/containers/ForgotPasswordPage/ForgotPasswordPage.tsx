@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} noValidate>
+          <form onSubmit={(e) => { void handleSubmit(e); }} noValidate>
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
                 <label htmlFor="forgot-email" className="text-sm font-medium text-subtle">
@@ -70,7 +70,9 @@ export default function ForgotPasswordPage() {
                   type="email"
                   autoComplete="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                  }}
                   className="bg-bg-overlay border border-border rounded-lg px-3 py-2 text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                   placeholder="you@example.com"
                   aria-describedby={emailError ? 'forgot-email-error' : undefined}

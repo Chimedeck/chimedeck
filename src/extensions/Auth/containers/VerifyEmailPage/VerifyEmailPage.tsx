@@ -24,21 +24,20 @@ export default function VerifyEmailPage() {
 
   useEffect(() => {
     if (token) {
-      dispatch(verifyEmailThunk({ token }));
+      void dispatch(verifyEmailThunk({ token }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (status === 'success') {
       // Slight delay so user sees the success message before redirect
-      const timer = setTimeout(() => navigate('/workspaces', { replace: true }), 1500);
-      return () => clearTimeout(timer);
+      const timer = setTimeout(() => { navigate('/workspaces', { replace: true }); }, 1500);
+      return () => { clearTimeout(timer); };
     }
   }, [status, navigate]);
 
   const handleResend = () => {
-    dispatch(resendVerificationThunk());
+    void dispatch(resendVerificationThunk());
   };
 
   return (

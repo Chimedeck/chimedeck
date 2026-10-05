@@ -12,7 +12,7 @@ function makeClient(initialCount = 0): RateLimiterClient & { count: number } {
   let count = initialCount;
   return {
     count,
-    async eval(_script: string, _numkeys: number, _key: string, _ttl: string): Promise<number> {
+    async eval(): Promise<number> {
       count += 1;
       this.count = count;
       return count;
@@ -51,12 +51,6 @@ describe('applyRateLimit – RATE_LIMIT_ENABLED=true simulation', () => {
     // so we test the Lua-evaluation logic via buildRateLimiterKey + direct checks.
 
     // Simulate a client that returns count = 601 (above the read limit of 600).
-    const highCountClient: RateLimiterClient = {
-      async eval(): Promise<number> {
-        return 601;
-      },
-    };
-
     // Directly exercise the rate-limiter logic with RATE_LIMIT_ENABLED treated as true
     // by constructing a test that checks the internal helper behaviour.
     // The public function checks env.RATE_LIMIT_ENABLED, so we verify the key format.

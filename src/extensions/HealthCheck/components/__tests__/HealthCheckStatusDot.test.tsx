@@ -1,8 +1,14 @@
 // Render smoke tests for HealthCheckStatusDot.
 // Verifies the component renders without throwing for all status values.
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import { HealthCheckStatusDot } from '../HealthCheckStatusDot';
+
+declare module 'bun:test' {
+  interface Matchers<T> {
+    toHaveAttribute(attribute: string, value?: string | number | boolean | null | T): void;
+  }
+}
 
 describe('HealthCheckStatusDot', () => {
   it('renders with no status (unknown/gray)', () => {

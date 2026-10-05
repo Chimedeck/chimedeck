@@ -67,7 +67,7 @@ export default function DeleteWebhookDialog({ webhook, onClose, onDeleted }: Pro
             type="button"
             variant="danger"
             disabled={isLoading}
-            onClick={handleConfirm}
+            onClick={() => void handleConfirm()}
             data-testid="confirm-delete-button"
           >
             {translations['DeleteWebhookDialog.confirm']}

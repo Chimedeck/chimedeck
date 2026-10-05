@@ -25,7 +25,7 @@ const AutomationHeaderButton = ({ activeCount, onClick, hasBackground = false }:
     {activeCount > 0 && (
       <span
         className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-blue-500 px-1 text-[10px] font-bold leading-none text-inverse"
-        aria-label={`${activeCount} active automation${activeCount !== 1 ? 's' : ''}`}
+        aria-label={`${String(activeCount)} active automation${activeCount !== 1 ? 's' : ''}`}
       >
         {activeCount > 99 ? '99+' : activeCount}
       </span>

@@ -9,11 +9,17 @@ import { publisher } from '../../../../mods/pubsub/publisher';
 import { writeActivity } from '../../../activity/mods/write';
 import { createReactionNotification } from '../../../notifications/mods/createReactionNotification';
 
+type CommentRow = { card_id: string };
+type CardRow = { list_id: string; title: string | null };
+type ListRow = { board_id: string };
+type BoardRow = { id: string; workspace_id: string };
+type ActorRow = { display_name: string | null };
+
 export async function handleAddReaction(req: Request, commentId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const comment = await db('comments').where({ id: commentId }).first();
+  const comment = (await db('comments').where({ id: commentId }).first()) as CommentRow | undefined;
   if (!comment) {
     return Response.json(
       { error: { code: 'comment-not-found', message: 'Comment not found' } },
@@ -21,10 +27,14 @@ export async function handleAddReaction(req: Request, commentId: string): Promis
     );
   }
 
-  const card = await db('cards').where({ id: comment.card_id }).first();
-  const list = card ? await db('lists').where({ id: card.list_id }).first() : null;
-  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
-  if (!board) {
+  const card = (await db('cards').where({ id: comment.card_id }).first()) as CardRow | undefined;
+  const list = card
+    ? (await db('lists').where({ id: card.list_id }).first()) as ListRow | undefined
+    : null;
+  const board = list
+    ? (await db('boards').where({ id: list.board_id }).first()) as BoardRow | undefined
+    : null;
+  if (!card || !board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
       { status: 404 },
@@ -60,12 +70,13 @@ export async function handleAddReaction(req: Request, commentId: string): Promis
   }
 
   const emoji = body.emoji.trim();
-  const actorId = (req as AuthenticatedRequest).currentUser!.id;
+  const authenticatedRequest = req as AuthenticatedRequest & { currentUser: { id: string } };
+  const actorId = authenticatedRequest.currentUser.id;
 
   const reactionKey = { comment_id: commentId, user_id: actorId, emoji };
 
   // Duplicate add requests are idempotent and must not emit activity/notifications twice.
-  const existingReaction = await db('comment_reactions').where(reactionKey).first();
+  const existingReaction = (await db('comment_reactions').where(reactionKey).first()) as unknown;
   if (existingReaction) {
     return Response.json({ data: { comment_id: commentId, emoji, user_id: actorId } });
   }
@@ -74,11 +85,17 @@ export async function handleAddReaction(req: Request, commentId: string): Promis
     await db('comment_reactions').insert(reactionKey);
   } catch (error) {
     // Handle race between concurrent add requests safely (idempotent success, no duplicate emit).
-    const dbError = error as { code?: string };
+    const caughtError: unknown = error;
+    const dbErrorCode = (
+      typeof caughtError === 'object'
+      && caughtError !== null
+      && 'code' in caughtError
+      && typeof caughtError.code === 'string'
+    ) ? caughtError.code : null;
     if (
-      dbError?.code === '23505' ||
-      dbError?.code === 'SQLITE_CONSTRAINT' ||
-      dbError?.code === 'SQLITE_CONSTRAINT_UNIQUE'
+      dbErrorCode === '23505' ||
+      dbErrorCode === 'SQLITE_CONSTRAINT' ||
+      dbErrorCode === 'SQLITE_CONSTRAINT_UNIQUE'
     ) {
       return Response.json({ data: { comment_id: commentId, emoji, user_id: actorId } });
     }
@@ -86,10 +103,10 @@ export async function handleAddReaction(req: Request, commentId: string): Promis
   }
 
   // Fetch actor name for WS payload so clients can show reactor names in tooltips immediately.
-  const actor = await db('users')
+  const actor = (await db('users')
     .where({ id: actorId })
     .select(db.raw("COALESCE(name, email) as display_name"))
-    .first();
+    .first()) as ActorRow | undefined;
 
   await writeActivity({
     entityType: 'card',

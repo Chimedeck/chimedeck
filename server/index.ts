@@ -311,4 +311,4 @@ Bun.serve({
   websocket: wsHandlers,
 });
 
-console.info(`[server] Listening on http://localhost:${appConfig.port}`);
+console.info(`[server] Listening on http://localhost:${String(appConfig.port)}`);

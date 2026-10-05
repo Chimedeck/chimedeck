@@ -50,7 +50,7 @@ function parseCookieToken(req: Request): string | null {
   const header = req.headers.get('cookie');
   if (!header) return null;
   const match = /(?:^|;\s*)access_token=([^;]+)/.exec(header);
-  return match ? decodeURIComponent(match[1]!) : null;
+  return match ? decodeURIComponent(match[1] ?? '') : null;
 }
 
 // Returns null on success (populates req.currentUser), or an error Response on failure.

@@ -43,7 +43,7 @@ const WorkspaceDashboard = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
-    if (workspaceId) dispatch(fetchBoardsThunk({ workspaceId }));
+    if (workspaceId) void dispatch(fetchBoardsThunk({ workspaceId }));
   }, [dispatch, workspaceId]);
 
   const handleCreate = (title: string) => {
@@ -60,7 +60,7 @@ const WorkspaceDashboard = () => {
   const handleArchive = (boardId: string) => dispatch(archiveBoardThunk({ boardId }));
   const handleDelete = (boardId: string) => {
     if (window.confirm('Are you sure you want to delete this board? This cannot be undone.')) {
-      dispatch(deleteBoardThunk({ boardId }));
+      void dispatch(deleteBoardThunk({ boardId }));
     }
   };
   const handleDuplicate = (boardId: string) => dispatch(duplicateBoardThunk({ boardId }));
@@ -95,12 +95,12 @@ const WorkspaceDashboard = () => {
             )}
             <BoardCard
               board={board}
-              onClick={() => navigate(boardPath(board))}
-              onArchive={() => handleArchive(board.id)}
-              onDelete={() => handleDelete(board.id)}
-              onDuplicate={() => handleDuplicate(board.id)}
-              onStar={() => handleStar(board.id)}
-              onUnstar={() => handleUnstar(board.id)}
+              onClick={() => { navigate(boardPath(board)); }}
+              onArchive={() => void handleArchive(board.id)}
+              onDelete={() => { handleDelete(board.id); }}
+              onDuplicate={() => void handleDuplicate(board.id)}
+              onStar={() => void handleStar(board.id)}
+              onUnstar={() => void handleUnstar(board.id)}
             />
           </div>
         ))}
@@ -137,7 +137,7 @@ const WorkspaceDashboard = () => {
           {!isGuest && (
             <Button
               variant="primary"
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => { setShowCreateModal(true); }}
               className="px-4 py-2 text-sm" // [theme-exception] text-white on primary button
             >
               Create Board
@@ -148,7 +148,7 @@ const WorkspaceDashboard = () => {
       {pageContent}
       {showCreateModal && (
         <CreateBoardModal
-          onClose={() => setShowCreateModal(false)}
+          onClose={() => { setShowCreateModal(false); }}
           onCreate={handleCreate}
         />
       )}

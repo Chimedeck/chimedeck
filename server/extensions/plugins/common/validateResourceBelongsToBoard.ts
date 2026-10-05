@@ -4,6 +4,17 @@ import { db } from '../../../common/db';
 
 type Scope = 'card' | 'list' | 'board' | 'member';
 
+// Query columns are non-null strings in migrations 0005_list and 0006_card.
+interface ListBoardRow {
+  id: string;
+  board_id: string;
+}
+
+interface CardListRow {
+  id: string;
+  list_id: string;
+}
+
 export class ResourceBoardMismatchError extends Error {
   constructor(public readonly scope: Scope, public readonly resourceId: string, public readonly boardId: string) {
     super(`${scope} '${resourceId}' does not belong to board '${boardId}'`);
@@ -25,19 +36,19 @@ export async function validateResourceBelongsToBoard(
   }
 
   if (scope === 'list') {
-    const list = await db('lists').where({ id: resourceId, board_id: boardId }).first();
+    const list = await db<ListBoardRow>('lists').where({ id: resourceId, board_id: boardId }).first();
     if (!list) throw new ResourceBoardMismatchError(scope, resourceId, boardId);
     return;
   }
 
   if (scope === 'card') {
     // cards don't have a direct board_id — join through lists
-    const card = await db('cards')
+    const card = await db<CardListRow>('cards')
       .join('lists', 'cards.list_id', 'lists.id')
       .where('cards.id', resourceId)
       .where('lists.board_id', boardId)
       .select('cards.id')
-      .first();
+      .first<Pick<CardListRow, 'id'> | undefined>();
     if (!card) throw new ResourceBoardMismatchError(scope, resourceId, boardId);
     return;
   }

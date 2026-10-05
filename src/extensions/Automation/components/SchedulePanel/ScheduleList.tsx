@@ -49,7 +49,7 @@ const ScheduleList: FC<Props> = ({
                 key={a.id}
                 boardId={boardId}
                 automation={a}
-                onEdit={() => onEdit(a)}
+                onEdit={() => { onEdit(a); }}
                 onDeleted={onChanged}
                 onToggled={onChanged}
               />
@@ -82,7 +82,7 @@ const ScheduleList: FC<Props> = ({
                 key={a.id}
                 boardId={boardId}
                 automation={a}
-                onEdit={() => onEdit(a)}
+                onEdit={() => { onEdit(a); }}
                 onDeleted={onChanged}
                 onToggled={onChanged}
               />

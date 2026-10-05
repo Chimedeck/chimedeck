@@ -57,11 +57,13 @@ export function useAttachmentUpload({ cardId, onComplete, authToken = '', apiBas
             if (xhr.status >= 200 && xhr.status < 300) {
               resolve(attachmentId);
             } else {
-              reject(new Error(`S3 upload failed with status ${xhr.status}`));
+              reject(new Error(`S3 upload failed with status ${String(xhr.status)}`));
             }
           });
 
-          xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
+          xhr.addEventListener('error', () => {
+            reject(new Error('Network error during upload'));
+          });
           xhr.send(file);
         }),
       )

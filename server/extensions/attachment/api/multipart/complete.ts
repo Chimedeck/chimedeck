@@ -15,7 +15,9 @@ import { writeEvent } from '../../../../mods/events/write';
 import { resolveCardId } from '../../../../common/ids/resolveEntityId';
 
 interface CompletedPart {
-  partNumber: number;
+  partNumber?: number;
+  // AWS wire format — clients and SDKs send these capitalised.
+  PartNumber?: number;
   eTag?: string;
   etag?: string;
   ETag?: string;
@@ -101,15 +103,19 @@ export async function handleMultipartComplete(req: Request, cardId: string): Pro
   }
 
   const completeParts = body.parts
-    .sort((a, b) => a.partNumber - b.partNumber)
     .map((part) => {
+      // Accept both the AWS wire format (PartNumber/ETag) and camelCase, since
+      // clients and SDKs differ. The ETag already tolerated all three casings;
+      // the part number did not, which sent `PartNumber: undefined` to S3.
+      const rawNumber = part.partNumber ?? part.PartNumber;
       const rawETag = part.eTag ?? part.etag ?? part.ETag;
       const normalizedETag = typeof rawETag === 'string' ? rawETag.trim() : '';
       return {
-        PartNumber: part.partNumber,
+        PartNumber: typeof rawNumber === 'number' ? rawNumber : Number(rawNumber),
         ETag: normalizedETag,
       };
-    });
+    })
+    .sort((a, b) => a.PartNumber - b.PartNumber);
 
   if (completeParts.some((part) => !part.ETag)) {
     return Response.json(

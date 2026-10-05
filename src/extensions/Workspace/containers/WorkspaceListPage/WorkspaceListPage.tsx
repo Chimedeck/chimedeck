@@ -43,7 +43,7 @@ export default function WorkspaceListPage() {
         <Button
           variant="primary"
           size="md"
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => { setShowCreateModal(true); }}
         >
           {translations['WorkspaceListPage.newButton']}
         </Button>
@@ -62,7 +62,7 @@ export default function WorkspaceListPage() {
           <Button
             variant="primary"
             size="md"
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => { setShowCreateModal(true); }}
           >
             {translations['WorkspaceListPage.emptyAction']}
           </Button>
@@ -72,7 +72,7 @@ export default function WorkspaceListPage() {
           {workspaces.map((ws) => (
             <div
               key={ws.id}
-              onClick={() => handleOpen(ws.id)}
+              onClick={() => { handleOpen(ws.id); }}
               className="cursor-pointer rounded-xl border border-border bg-bg-surface p-5 transition-colors hover:border-slate-400 dark:hover:border-slate-600"
             >
               <BuildingOfficeIcon className="mb-3 h-8 w-8 text-subtle" aria-hidden="true" />

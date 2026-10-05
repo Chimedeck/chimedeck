@@ -70,7 +70,7 @@ export const MemberAvatarPopover = ({ member, isSelf, onRemove, onClose, anchorR
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    return () => { document.removeEventListener('keydown', onKey); };
   }, [onClose]);
 
   // Close on click outside
@@ -86,7 +86,7 @@ export const MemberAvatarPopover = ({ member, isSelf, onRemove, onClose, anchorR
       }
     };
     document.addEventListener('mousedown', onMousedown);
-    return () => document.removeEventListener('mousedown', onMousedown);
+    return () => { document.removeEventListener('mousedown', onMousedown); };
   }, [onClose, anchorRef]);
 
   const handleRemove = async () => {
@@ -159,7 +159,7 @@ export const MemberAvatarPopover = ({ member, isSelf, onRemove, onClose, anchorR
       ) : (
         <button
           className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-red-900/40 text-danger flex items-center gap-2"
-          onClick={handleRemove}
+          onClick={() => { void handleRemove(); }}
           disabled={removing}
         >
           {removing ? (

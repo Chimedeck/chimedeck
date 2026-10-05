@@ -104,7 +104,7 @@ const CardModalBottomBar = ({
             className={barButtonClass}
             aria-expanded={powerUps.open}
             aria-haspopup="true"
-            onClick={() => powerUps.setOpen((v) => !v)}
+            onClick={() => { powerUps.setOpen((v) => !v); }}
           >
             <PuzzlePieceIcon className="w-4 h-4" />
             Power-ups
@@ -134,7 +134,7 @@ const CardModalBottomBar = ({
             aria-expanded={automations.open}
             aria-haspopup="true"
             disabled={disabled}
-            onClick={() => automations.setOpen((v) => !v)}
+            onClick={() => { automations.setOpen((v) => !v); }}
           >
             <BoltIcon className="w-4 h-4" />
             Automations
@@ -154,7 +154,7 @@ const CardModalBottomBar = ({
             className={barButtonClass}
             aria-expanded={actions.open}
             aria-haspopup="true"
-            onClick={() => actions.setOpen((v) => !v)}
+            onClick={() => { actions.setOpen((v) => !v); }}
           >
             Actions
             <ChevronUpIcon className={`w-3 h-3 transition-transform ${actions.open ? '' : 'rotate-180'}`} />
@@ -164,7 +164,7 @@ const CardModalBottomBar = ({
               <button
                 type="button"
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-base hover:bg-bg-overlay rounded-lg transition-colors"
-                onClick={() => { actions.setOpen(false); onArchive(); }}
+                onClick={() => { actions.setOpen(false); void onArchive(); }}
               >
                 {archived
                   ? <><ArchiveBoxXMarkIcon className="w-4 h-4 shrink-0" /> Unarchive card</>
@@ -203,7 +203,7 @@ const CardModalBottomBar = ({
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-40"
                 onClick={() => {
                   actions.setOpen(false);
-                  if (confirm('Delete this card? This cannot be undone.')) onDelete();
+                  if (confirm('Delete this card? This cannot be undone.')) void onDelete();
                 }}
                 disabled={disabled}
               >

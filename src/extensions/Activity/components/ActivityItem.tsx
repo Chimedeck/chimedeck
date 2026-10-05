@@ -23,7 +23,7 @@ interface Props {
 
 // Replaces {placeholders} in a translation template with values from a record.
 function interpolate(template: string, vars: Record<string, string>): string {
-  return template.replaceAll(/\{(\w+)\}/g, (_, key) => vars[key] ?? `{${key}}`);
+  return template.replaceAll(/\{(\w+)\}/g, (_, key) => vars[key] ?? `{${String(key)}}`);
 }
 
 function textValue(value: unknown): string {

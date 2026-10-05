@@ -37,11 +37,11 @@ function formatLastChecked(isoString: string | null): string {
   const diffMs = Date.now() - new Date(isoString).getTime();
   const diffSec = Math.floor(diffMs / 1000);
   if (diffSec < 10) return 'just now';
-  if (diffSec < 60) return `${diffSec}s ago`;
+  if (diffSec < 60) return `${String(diffSec)}s ago`;
   const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin} min ago`;
+  if (diffMin < 60) return `${String(diffMin)} min ago`;
   const diffHr = Math.floor(diffMin / 60);
-  return `${diffHr}h ago`;
+  return `${String(diffHr)}h ago`;
 }
 
 /** Full Health Check tab panel: loads entries, renders rows, empty state, and countdown. */
@@ -55,11 +55,11 @@ export function HealthCheckTab({ boardId }: Props) {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Per-row probe state (on-demand single probe).
-  const { isProbing, probe } = useHealthCheckProbe({ boardId });
+  const { isProbing } = useHealthCheckProbe({ boardId });
 
   // Fetch the list on mount (and when boardId changes).
   useEffect(() => {
-    dispatch(fetchHealthChecksThunk({ boardId }));
+    void dispatch(fetchHealthChecksThunk({ boardId }));
   }, [dispatch, boardId]);
 
   // Probe-all on refresh (manual or auto).
@@ -74,7 +74,7 @@ export function HealthCheckTab({ boardId }: Props) {
   }, [dispatch, boardId]);
 
   const { secondsUntilRefresh, triggerRefresh } = useHealthCheckAutoRefresh({
-    onRefresh: handleRefresh,
+    onRefresh: () => { void handleRefresh(); },
   });
 
   const handleManualRefresh = useCallback(() => {
@@ -83,7 +83,7 @@ export function HealthCheckTab({ boardId }: Props) {
 
   const handleRemove = useCallback(
     (healthCheckId: string) => {
-      dispatch(removeHealthCheckThunk({ boardId, healthCheckId }));
+      void dispatch(removeHealthCheckThunk({ boardId, healthCheckId }));
     },
     [dispatch, boardId],
   );
@@ -132,7 +132,7 @@ export function HealthCheckTab({ boardId }: Props) {
             type="button"
             variant="primary"
             size="sm"
-            onClick={() => setAddModalOpen(true)}
+            onClick={() => { setAddModalOpen(true); }}
             className="flex items-center gap-1.5"
             aria-label="Add service to monitor"
           >
@@ -170,7 +170,7 @@ export function HealthCheckTab({ boardId }: Props) {
             <Spinner className="h-6 w-6" />
           </div>
         ) : isEmpty ? (
-          <HealthCheckEmptyState onAddService={() => setAddModalOpen(true)} />
+          <HealthCheckEmptyState onAddService={() => { setAddModalOpen(true); }} />
         ) : (
           <div role="rowgroup">
             {entries.map((entry) => (
@@ -189,7 +189,7 @@ export function HealthCheckTab({ boardId }: Props) {
       <AddServiceModal
         boardId={boardId}
         isOpen={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
+        onClose={() => { setAddModalOpen(false); }}
       />
     </div>
   );

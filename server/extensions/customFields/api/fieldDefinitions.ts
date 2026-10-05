@@ -20,7 +20,13 @@ export async function handleListCustomFields(req: Request, boardId: string): Pro
   if (visibilityError) return visibilityError;
 
   const scopedReq = req as BoardVisibilityScopedRequest;
-  const board = scopedReq.board!;
+  const board = scopedReq.board;
+  if (!board) {
+    return Response.json(
+      { error: { code: 'board-not-found', message: 'Board not found' } },
+      { status: 404 },
+    );
+  }
 
   if (board.visibility !== 'PUBLIC') {
     const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -44,7 +50,13 @@ export async function handleCreateCustomField(req: Request, boardId: string): Pr
   const accessError = await requireBoardAccess(boardReq, boardId);
   if (accessError) return accessError;
 
-  const board = boardReq.board!;
+  const board = boardReq.board;
+  if (!board) {
+    return Response.json(
+      { error: { code: 'board-not-found', message: 'Board not found' } },
+      { status: 404 },
+    );
+  }
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
@@ -114,7 +126,13 @@ export async function handleUpdateCustomField(
   const accessError = await requireBoardAccess(boardReq, boardId);
   if (accessError) return accessError;
 
-  const board = boardReq.board!;
+  const board = boardReq.board;
+  if (!board) {
+    return Response.json(
+      { error: { code: 'board-not-found', message: 'Board not found' } },
+      { status: 404 },
+    );
+  }
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
@@ -202,7 +220,13 @@ export async function handleDeleteCustomField(
   const accessError = await requireBoardAccess(boardReq, boardId);
   if (accessError) return accessError;
 
-  const board = boardReq.board!;
+  const board = boardReq.board;
+  if (!board) {
+    return Response.json(
+      { error: { code: 'board-not-found', message: 'Board not found' } },
+      { status: 404 },
+    );
+  }
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;

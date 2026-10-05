@@ -69,7 +69,7 @@ export async function upsertDraft({
         updated_at: now,
       });
     const updated = await db('user_card_drafts').where({ id: existing.id }).first<DraftRow>();
-    return updated!;
+    return updated;
   }
 
   const id = randomUUID();
@@ -89,7 +89,7 @@ export async function upsertDraft({
   });
 
   const inserted = await db('user_card_drafts').where({ id }).first<DraftRow>();
-  return inserted!;
+  return inserted;
 }
 
 // Deletes a draft for the current user. Returns true if a row was deleted.

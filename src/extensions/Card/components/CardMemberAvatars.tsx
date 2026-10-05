@@ -67,7 +67,7 @@ function CardMemberAvatarsComponent({
       {overflow > 0 && (
         <span
           className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-bg-overlay text-[10px] font-bold text-muted ring-2 ring-bg-surface"
-          title={`${overflow} more`}
+          title={`${String(overflow)} more`}
         >
           +{overflow}
         </span>
@@ -85,7 +85,7 @@ function CardMemberAvatarsComponent({
                 },
               }
             : {})}
-          onClose={() => setActiveMember(null)}
+          onClose={() => { setActiveMember(null); }}
           anchorRef={anchorRef as React.RefObject<HTMLElement>}
         />
       )}

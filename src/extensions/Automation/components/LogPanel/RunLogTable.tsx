@@ -1,6 +1,5 @@
 // RunLogTable — paginated table of automation run logs.
 // Columns: Status | Automation (name + type chip) | Card | Triggered by | When | Details
-import { useState } from 'react';
 import type { FC } from 'react';
 import type { AutomationRunLog, PaginatedRunLogs } from '../../types';
 import RunLogRow from './RunLogRow';
@@ -92,7 +91,7 @@ const RunLogTable: FC<Props> = ({
           <button
             className="px-2 py-1 text-xs text-muted hover:text-subtle disabled:opacity-40"
             disabled={page <= 1}
-            onClick={() => onPageChange(page - 1)}
+            onClick={() => { onPageChange(page - 1); }}
             aria-label={translations['automation.runLogTable.prevAriaLabel']}
           >
             {translations['automation.runLogTable.prev']}
@@ -103,7 +102,7 @@ const RunLogTable: FC<Props> = ({
           <button
             className="px-2 py-1 text-xs text-muted hover:text-subtle disabled:opacity-40"
             disabled={page >= totalPage}
-            onClick={() => onPageChange(page + 1)}
+            onClick={() => { onPageChange(page + 1); }}
             aria-label={translations['automation.runLogTable.nextAriaLabel']}
           >
             {translations['automation.runLogTable.next']}

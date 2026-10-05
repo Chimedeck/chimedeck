@@ -54,7 +54,7 @@ export default function ApiTokenPage() {
         <Button
           variant="primary"
           size="md"
-          onClick={() => setShowGenerate(true)}
+          onClick={() => { setShowGenerate(true); }}
         >
           {translations['ApiTokenPage.generateButton']}
         </Button>
@@ -109,7 +109,7 @@ export default function ApiTokenPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setRevokeTarget(token)}
+                      onClick={() => { setRevokeTarget(token); }}
                       className="!text-danger hover:!bg-red-900/30 hover:!text-red-300"
                     >
                       {translations['ApiTokenPage.revokeButton']}
@@ -124,8 +124,8 @@ export default function ApiTokenPage() {
 
       {showGenerate && (
         <GenerateTokenModal
-          onSubmit={handleGenerate}
-          onCancel={() => setShowGenerate(false)}
+          onSubmit={(body) => void handleGenerate(body)}
+          onCancel={() => { setShowGenerate(false); }}
           isLoading={isCreating}
         />
       )}
@@ -133,15 +133,15 @@ export default function ApiTokenPage() {
       {newRawToken && (
         <TokenCreatedModal
           rawToken={newRawToken}
-          onDone={() => setNewRawToken(null)}
+          onDone={() => { setNewRawToken(null); }}
         />
       )}
 
       {revokeTarget && (
         <RevokeTokenDialog
           tokenName={revokeTarget.name}
-          onConfirm={handleRevoke}
-          onCancel={() => setRevokeTarget(null)}
+          onConfirm={() => void handleRevoke()}
+          onCancel={() => { setRevokeTarget(null); }}
           isLoading={isRevoking}
         />
       )}

@@ -19,14 +19,14 @@ export function useViewPreference({ boardId }: { boardId: string }) {
 
   // Load the persisted preference when the board mounts
   useEffect(() => {
-    if (boardId) dispatch(fetchViewPreference({ boardId }));
+    if (boardId) void dispatch(fetchViewPreference({ boardId }));
   }, [dispatch, boardId]);
 
   const switchView = useCallback(
     (viewType: ViewType) => {
       // Optimistic local update so the UI responds immediately
       dispatch(setActiveView(viewType));
-      dispatch(saveViewPreference({ boardId, viewType }));
+      void dispatch(saveViewPreference({ boardId, viewType }));
     },
     [dispatch, boardId],
   );

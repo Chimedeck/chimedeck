@@ -6,16 +6,10 @@ import type { ReactNodeViewProps } from '@tiptap/react';
 import { useEffect, useState } from 'react';
 import apiClient from '~/common/api/client';
 import { parseCardIdFromUrl } from '../extensions/CardReferenceExtension';
-import type { Card } from '../api';
 
 interface CardPreview {
   title: string;
   listName: string;
-}
-
-interface CardApiResponse {
-  data: Card;
-  includes: { list: { id: string; title: string } };
 }
 
 const CardReferenceChip = ({ node, selected, updateAttributes }: ReactNodeViewProps) => {
@@ -54,7 +48,6 @@ const CardReferenceChip = ({ node, selected, updateAttributes }: ReactNodeViewPr
       .catch(() => {
         setLoading(false);
       });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [href]);
 
   const displayTitle = preview?.title ?? (loading ? '…' : href);

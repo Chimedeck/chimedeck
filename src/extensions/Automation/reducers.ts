@@ -14,7 +14,7 @@ export function useOptimisticAutomations(
   const [automations, setAutomations] = useState<Automation[]>(initial);
 
   // Keep the list in sync with fresh data from the server (e.g., after reload).
-  const setAll = useCallback((list: Automation[]) => setAutomations(list), []);
+  const setAll = useCallback((list: Automation[]) => { setAutomations(list); }, []);
 
   const toggleEnabled = useCallback(
     async ({

@@ -63,7 +63,10 @@ export function useTheme(): { theme: Theme; setTheme: (t: Theme) => void; cycle:
   const cycle = () => {
     setTheme((current) => {
       const idx = THEME_CYCLE.indexOf(current);
-      return THEME_CYCLE[(idx + 1) % THEME_CYCLE.length]!;
+      // idx is always a valid index (current is always a member of THEME_CYCLE),
+      // so the modulo result is always in range; the fallback is unreachable but
+      // satisfies noUncheckedIndexedAccess without a non-null assertion.
+      return THEME_CYCLE[(idx + 1) % THEME_CYCLE.length] ?? 'dark';
     });
   };
 

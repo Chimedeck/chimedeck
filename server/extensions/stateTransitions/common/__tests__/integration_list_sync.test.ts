@@ -21,23 +21,23 @@ class QueryBuilder {
 
   constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
 
-  where(criteria: Row): QueryBuilder {
+  where(criteria: Row): this {
     this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
     return this;
   }
 
-  orderBy(column: string, direction: 'asc' | 'desc' = 'asc'): QueryBuilder {
+  orderBy(column: string, direction: 'asc' | 'desc' = 'asc'): this {
     this.orderedBy = column;
     this.orderDirection = direction;
     return this;
   }
 
-  select(...columns: string[]): QueryBuilder {
+  select(...columns: string[]): this {
     this.selectedColumns = columns.length > 0 ? columns : null;
     return this;
   }
 
-  count(aliasExpression: string): QueryBuilder {
+  count(aliasExpression: string): this {
     this.countAlias = aliasExpression.split(' as ')[1] ?? 'count';
     return this;
   }
@@ -96,9 +96,10 @@ class QueryBuilder {
     }
 
     if (this.selectedColumns) {
+      const cols = this.selectedColumns;
       rows = rows.map((row) => {
         const next: Row = {};
-        for (const key of this.selectedColumns!) next[key] = row[key];
+        for (const key of cols) next[key] = row[key];
         return next;
       });
     }
@@ -152,38 +153,38 @@ function resetStore(): DataStore {
   };
 }
 
-mock.module('../../../../common/db', () => ({
+await mock.module('../../../../common/db', () => ({
   db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
 }));
 
-mock.module('../../../auth/middlewares/authentication', () => ({
+await mock.module('../../../auth/middlewares/authentication', () => ({
   authenticate: async (req: Request & { currentUser?: { id: string; email: string } }) => {
     req.currentUser = { id: 'user-1', email: 'user@example.com' };
     return null;
   },
 }));
 
-mock.module('../../../../middlewares/permissionManager', () => ({
+await mock.module('../../../../middlewares/permissionManager', () => ({
   requireWorkspaceMembership: async () => null,
   requireRole: () => null,
 }));
 
-mock.module('../../../board/middlewares/requireBoardWritable', () => ({
+await mock.module('../../../board/middlewares/requireBoardWritable', () => ({
   requireBoardWritable: async (req: Request & { board?: { id: string; workspace_id: string } }, boardId: string) => {
     req.board = { id: boardId, workspace_id: 'ws-1' };
     return null;
   },
 }));
 
-mock.module('../../../../mods/events/write', () => ({
+await mock.module('../../../../mods/events/write', () => ({
   writeEvent: async () => null,
 }));
 
-mock.module('../../../../common/sanitize', () => ({
+await mock.module('../../../../common/sanitize', () => ({
   sanitizeText: (value: string) => value,
 }));
 
-mock.module('../../../../config/featureFlags', () => ({
+await mock.module('../../../../config/featureFlags', () => ({
   featureFlags: {
     STATE_TRANSITIONS_ENABLED: true,
   },

@@ -562,7 +562,7 @@ function hydrateEditorLinkMarkClasses(editor: Editor): void {
     const range = getMarkRange(editor.state.doc.resolve(resolvePos), linkType);
     if (!range) return;
 
-    const rangeKey = `${range.from}:${range.to}`;
+    const rangeKey = `${String(range.from)}:${String(range.to)}`;
     if (seenRanges.has(rangeKey)) return;
     seenRanges.add(rangeKey);
 
@@ -734,7 +734,6 @@ function buildPreviewMarkdown(markdown: string, attachments: Attachment[]): stri
 
 const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled }: Props) => {
   const [editing, setEditing] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState(description);
   const [editMode, setEditMode] = useState<'rich' | 'markdown'>('rich');
   const [overflowOpen, setOverflowOpen] = useState(false);
@@ -919,7 +918,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
         event.preventDefault();
         const pos = view.state.selection.from;
 
-        const loadingToken = `link-loading-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const loadingToken = `link-loading-${String(Date.now())}-${Math.random().toString(36).slice(2, 8)}`;
         const loadingClass = buildLinkClassName('url', [LINK_CLASS_LOADING, loadingToken]);
 
         editorRef.current
@@ -1350,7 +1349,6 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
 
   const hydratedPreviewMarkdown = buildPreviewMarkdown(draft || '', cardAttachments);
   const isEmpty = !draft.trim();
-  const isLong = draft.length > 400;
   const previewHtml = addLinkTargetBlank(normalizeRenderedLinkHtml(marked.parse(hydratedPreviewMarkdown) as string));
   const attachProps = cardId ? { onAttach: handleAttach } : undefined;
 
@@ -1442,14 +1440,14 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
               <button
                 type="button"
                 className={`px-2 py-1 text-xs ${editMode === 'rich' ? 'bg-indigo-600 text-inverse' : 'bg-bg-surface text-muted'}`}
-                onClick={() => handleModeChange('rich')}
+                onClick={() => { handleModeChange('rich'); }}
               >
                 Rich text
               </button>
               <button
                 type="button"
                 className={`px-2 py-1 text-xs ${editMode === 'markdown' ? 'bg-indigo-600 text-inverse' : 'bg-bg-surface text-muted'}`}
-                onClick={() => handleModeChange('markdown')}
+                onClick={() => { handleModeChange('markdown'); }}
               >
                 Markdown
               </button>
@@ -1463,7 +1461,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                 <OneLineToolbar
                   editor={editor}
                   overflowOpen={overflowOpen}
-                  onToggleOverflow={() => setOverflowOpen((o) => !o)}
+                  onToggleOverflow={() => { setOverflowOpen((o) => !o); }}
                   linkPopoverOpen={linkPopoverOpen}
                   onToggleLinkPopover={() => {
                     closeLinkConfigUi();
@@ -1475,7 +1473,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                 {linkPopoverOpen && (
                   <LinkInsertPopover
                     editor={editor}
-                    onClose={() => setLinkPopoverOpen(false)}
+                    onClose={() => { setLinkPopoverOpen(false); }}
                   />
                 )}
                 {assetPickerOpen && cardId && (
@@ -1483,7 +1481,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                     attachments={cardAttachments}
                     onUploadNew={() => fileInputRef.current?.click()}
                     onInsert={handleInsertExisting}
-                    onClose={() => setAssetPickerOpen(false)}
+                    onClose={() => { setAssetPickerOpen(false); }}
                   />
                 )}
               </div>
@@ -1798,12 +1796,12 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                   <button
                     type="button"
                     className="text-indigo-400 hover:text-indigo-300 underline transition-colors"
-                    onClick={() => retrySync(buildDescriptionSaveMarkdown(
+                    onClick={() => { retrySync(buildDescriptionSaveMarkdown(
                       editMode,
                       editor,
                       draft,
                       cardAttachmentsRef.current,
-                    ))}
+                    )); }}
                     data-testid="draft-retry-sync"
                   >
                     {/* [why] "Retry Save" clarifies the user's pending action vs a background sync retry */}
@@ -1902,23 +1900,12 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                 : 'cursor-text hover:bg-bg-overlay',
               isEmpty
                 ? 'text-muted text-sm italic bg-bg-overlay'
-                : 'prose dark:prose-invert prose-sm max-w-none text-base',
-              isLong && !expanded ? 'overflow-hidden' : '',
+                : 'prose dark:prose-invert prose-sm max-w-none text-base break-words [&_a]:break-all',
             ].join(' ')}
-            style={isLong && !expanded ? { maxHeight: '12rem' } : undefined}
             {...(!isEmpty && { dangerouslySetInnerHTML: { __html: previewHtml } })}
           >
             {isEmpty ? 'Add a more detailed description…' : undefined}
           </button>
-          {isLong && (
-            <button
-              type="button"
-              className="mt-2 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-              onClick={() => setExpanded((e) => !e)}
-            >
-              {expanded ? 'Show less ↑' : 'Show more ↓'}
-            </button>
-          )}
         </div>
       )}
       {previewImage && (

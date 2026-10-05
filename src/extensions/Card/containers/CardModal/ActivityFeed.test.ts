@@ -11,7 +11,8 @@ test('activity feed: newest item is first', async ({ page }) => {
   if (count >= 2) {
     const firstTs = await feedItems.nth(0).getAttribute('data-ts');
     const secondTs = await feedItems.nth(1).getAttribute('data-ts');
-    expect(new Date(firstTs!).getTime()).toBeGreaterThanOrEqual(new Date(secondTs!).getTime());
+    if (firstTs === null || secondTs === null) throw new Error('missing data-ts attribute');
+    expect(new Date(firstTs).getTime()).toBeGreaterThanOrEqual(new Date(secondTs).getTime());
   }
 });
 

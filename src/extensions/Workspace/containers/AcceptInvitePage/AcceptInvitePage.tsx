@@ -30,7 +30,7 @@ const AcceptInvitePage = () => {
       return;
     }
     inspectInvite({ api, token })
-      .then((res) => setState({ status: 'ready', invite: res.data }))
+      .then((res) => { setState({ status: 'ready', invite: res.data }); })
       .catch((err) => {
         const errorName =
           err?.response?.data?.error?.code ?? 'unknown-error';
@@ -72,7 +72,7 @@ const AcceptInvitePage = () => {
             <Button
               variant="primary"
               size="md"
-              onClick={handleAccept}
+              onClick={() => { void handleAccept(); }}
             >
               Accept Invitation
             </Button>

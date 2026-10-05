@@ -35,7 +35,7 @@ export function useHealthCheckProbe({ boardId }: Options): Result {
 
   const probe = useCallback(
     (healthCheckId: string) => {
-      dispatch(probeSingleThunk({ boardId, healthCheckId }));
+      void dispatch(probeSingleThunk({ boardId, healthCheckId }));
     },
     [dispatch, boardId],
   );

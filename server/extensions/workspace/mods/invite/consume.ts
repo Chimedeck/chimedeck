@@ -19,7 +19,7 @@ export async function consumeInvite({ invite, userId }: ConsumeInviteParams): Pr
     // Upsert membership — idempotent if user somehow already a member.
     const existing = await trx('memberships')
       .where({ user_id: userId, workspace_id: invite.workspace_id })
-      .first();
+      .first<{ user_id: string } | undefined>();
 
     if (!existing) {
       await trx('memberships').insert({

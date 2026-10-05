@@ -69,7 +69,7 @@ function serializeResult(value: unknown): unknown {
 
 let msgCounter = 0;
 function nextId(): string {
-  return `jh-${Date.now()}-${++msgCounter}`;
+  return `jh-${String(Date.now())}-${String(++msgCounter)}`;
 }
 
 function sendToHost(type: string, payload?: unknown): Promise<unknown> {
@@ -152,23 +152,23 @@ class FrameContext {
   // ── UI actions ────────────────────────────────────────────────────
 
   popup(options: { title: string; url: string; args?: Record<string, unknown>; mouseEvent?: MouseEvent }): void {
-    sendToHost('UI_POPUP', options);
+    void sendToHost('UI_POPUP', options);
   }
 
   modal(options: { title?: string; url: string; fullscreen?: boolean; accentColor?: string }): void {
-    sendToHost('UI_MODAL', options);
+    void sendToHost('UI_MODAL', options);
   }
 
   updateModal(options: Partial<{ title: string; fullscreen: boolean; accentColor: string }>): void {
-    sendToHost('UI_UPDATE_MODAL', options);
+    void sendToHost('UI_UPDATE_MODAL', options);
   }
 
   closePopup(): void {
-    sendToHost('UI_CLOSE_POPUP', {});
+    void sendToHost('UI_CLOSE_POPUP', {});
   }
 
   closeModal(): void {
-    sendToHost('UI_CLOSE_MODAL', {});
+    void sendToHost('UI_CLOSE_MODAL', {});
   }
 
   sizeTo(element: HTMLElement | string): void {
@@ -176,7 +176,7 @@ class FrameContext {
     const height = typeof element === 'string'
       ? document.querySelector(element)?.scrollHeight ?? document.body.scrollHeight
       : element.scrollHeight;
-    sendToHost('UI_SIZE_TO', { height, selector });
+    void sendToHost('UI_SIZE_TO', { height, selector });
   }
 
   render(fn: () => void): void {
@@ -220,7 +220,8 @@ type CapabilityHandler = (t: FrameContext, options?: unknown) => unknown | Promi
 
 const capabilityHandlers = new Map<string, CapabilityHandler>();
 
-window.addEventListener('message', async (event: MessageEvent) => {
+window.addEventListener('message', (event: MessageEvent) => {
+  void (async () => {
   const data = event.data as PostMessageRequest & { capability?: string; options?: unknown };
   if (!data || !data.jhSdk || data.type !== 'CAPABILITY_INVOKE') return;
 
@@ -238,17 +239,19 @@ window.addEventListener('message', async (event: MessageEvent) => {
       { jhSdk: true, id: nextId(), type: 'RESOLVE_CAPABILITY_RESPONSE', payload: { requestId: id, result } },
       '*',
     );
-  } catch (err) {
+  } catch {
     window.parent.postMessage(
       { jhSdk: true, id: nextId(), type: 'RESOLVE_CAPABILITY_RESPONSE', payload: { requestId: id, result: null } },
       '*',
     );
   }
+  })();
 });
 
 // Handle BUTTON_CLICKED — host dispatches this when a button registered by a plugin is clicked.
 // Look up the callback by its opaque ID and invoke it with a fresh FrameContext.
-window.addEventListener('message', async (event: MessageEvent) => {
+window.addEventListener('message', (event: MessageEvent) => {
+  void (async () => {
   const data = event.data as PostMessageRequest & { payload?: { callbackId?: string; args?: Record<string, unknown> } };
   if (!data || !data.jhSdk || data.type !== 'BUTTON_CLICKED') return;
 
@@ -265,6 +268,7 @@ window.addEventListener('message', async (event: MessageEvent) => {
     // Swallow errors so a broken plugin callback can't crash the SDK
     console.error('[jhInstance] BUTTON_CLICKED callback error:', err);
   }
+  })();
 });
 
 // ────────────────────────────────────────────────────────────────────

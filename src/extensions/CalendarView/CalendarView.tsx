@@ -8,6 +8,7 @@ import CalendarMonthGrid from './CalendarMonthGrid';
 import CalendarWeekGrid from './CalendarWeekGrid';
 import { useCalendarDrag } from './useCalendarDrag';
 import translations from './translations/en.json';
+import { localDateKey } from '../../common/utils/dates';
 import type { CalendarMode, CalendarViewProps } from './types';
 import type { Card } from '../Card/api';
 
@@ -20,8 +21,9 @@ function buildCardsByDay(cards: Card[]): Map<string, Card[]> {
   const map = new Map<string, Card[]>();
   for (const card of cards) {
     if (!card.due_date) continue;
-    // Truncate to date portion only (handles ISO timestamps)
-    const key = card.due_date.slice(0, 10);
+    // Key by the viewer's local calendar date so the calendar agrees with the
+    // card tile / meta strip, which also render due dates in local time.
+    const key = localDateKey(card.due_date);
     const existing = map.get(key) ?? [];
     map.set(key, [...existing, card]);
   }
@@ -79,7 +81,6 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
   }, []);
 
   // ── Drag-to-reschedule (shared between month and week grids) ──────────────
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- addToast identity is stable in callers
   const { handleCardDrop } = useCalendarDrag({ cards, ...(addToast ? { addToast } : {}) });
 
   const hasUnscheduled = cards.length > scheduledCards.length;
@@ -91,7 +92,7 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
         {/* Mode toggle */}
         <div className="flex rounded border border-border" role="group" aria-label={translations['CalendarView.ariaMode']}>
           <button
-            onClick={() => setMode('month')}
+            onClick={() => { setMode('month'); }}
             className={`px-3 py-1 text-xs rounded-l ${mode === 'month' ? 'bg-blue-600 text-white' : 'text-subtle hover:text-base'}`} // [theme-exception]
             aria-pressed={mode === 'month'}
             data-testid="calendar-mode-month"
@@ -99,7 +100,7 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
             {translations['CalendarView.monthView']}
           </button>
           <button
-            onClick={() => setMode('week')}
+            onClick={() => { setMode('week'); }}
             className={`px-3 py-1 text-xs rounded-r ${mode === 'week' ? 'bg-blue-600 text-white' : 'text-subtle hover:text-base'}`} // [theme-exception]
             aria-pressed={mode === 'week'}
             data-testid="calendar-mode-week"
@@ -126,7 +127,7 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
           onPrev={handleMonthPrev}
           onNext={handleMonthNext}
           onCardClick={onCardClick}
-          onCardDrop={handleCardDrop}
+          onCardDrop={(cardId, newDate) => void handleCardDrop(cardId, newDate)}
         />
       )}
 
@@ -138,7 +139,7 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
           onPrev={handleWeekPrev}
           onNext={handleWeekNext}
           onCardClick={onCardClick}
-          onCardDrop={handleCardDrop}
+          onCardDrop={(cardId, newDate) => void handleCardDrop(cardId, newDate)}
         />
       )}
     </div>

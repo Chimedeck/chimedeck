@@ -8,7 +8,7 @@ import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 function parseCookie(header: string | null, name: string): string | null {
   if (!header) return null;
   const match = new RegExp(String.raw`(?:^|;\s*)${name}=([^;]+)`).exec(header);
-  return match ? decodeURIComponent(match[1]!) : null;
+  return match ? decodeURIComponent(match[1] ?? '') : null;
 }
 
 export async function handleRefresh(req: Request): Promise<Response> {
@@ -44,12 +44,12 @@ export async function handleRefresh(req: Request): Promise<Response> {
   const responseHeaders = new Headers({ 'Content-Type': 'application/json' });
   responseHeaders.append(
     'Set-Cookie',
-    `refresh_token=${result.token}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
+    `refresh_token=${result.token}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${String(jwtConfig.refreshTokenTtlDays * 86400)}`,
   );
   // Rotate the access_token cookie to match the new JWT.
   responseHeaders.append(
     'Set-Cookie',
-    `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${jwtConfig.accessTokenTtlSeconds}`,
+    `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${String(jwtConfig.accessTokenTtlSeconds)}`,
   );
 
   const avatarUrl = buildAvatarProxyUrl({ userId: user.id, avatarUrl: user.avatar_url ?? null });

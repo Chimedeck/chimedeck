@@ -9,6 +9,17 @@ import {
 } from '../../../middlewares/permissionManager';
 import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
 
+type ListRow = {
+  id: string;
+  board_id: string;
+  color: string | null;
+};
+
+type AuthenticatedBoardRequest = AuthenticatedRequest & BoardScopedRequest & {
+  board: NonNullable<BoardScopedRequest['board']>;
+  currentUser: { id: string };
+};
+
 function normalizeColor(value: unknown): string | null | undefined {
   if (value === null) return null;
   if (typeof value !== 'string') return undefined;
@@ -22,7 +33,7 @@ export async function handleUpdateListColor(req: Request, listId: string): Promi
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const list = await db('lists').where({ id: listId }).first();
+  const list = await db<ListRow>('lists').where({ id: listId }).first();
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'List not found' } },
@@ -34,7 +45,7 @@ export async function handleUpdateListColor(req: Request, listId: string): Promi
   const writableError = await requireBoardWritable(boardReq, list.board_id);
   if (writableError) return writableError;
 
-  const board = boardReq.board!;
+  const board = boardReq.board as NonNullable<BoardScopedRequest['board']>;
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -61,15 +72,17 @@ export async function handleUpdateListColor(req: Request, listId: string): Promi
     );
   }
 
-  const [updated] = await db('lists')
+  const updatedRows = await db<ListRow>('lists')
     .where({ id: listId })
-    .update({ color: normalizedColor }, ['*']);
+    .update({ color: normalizedColor }, ['*']) as ListRow[];
+  const updated = updatedRows[0];
 
+  const authenticatedRequest = req as AuthenticatedBoardRequest;
   await writeEvent({
     type: 'list_updated',
     boardId: list.board_id,
     entityId: listId,
-    actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system',
+    actorId: authenticatedRequest.currentUser.id,
     payload: { list: updated },
   });
 

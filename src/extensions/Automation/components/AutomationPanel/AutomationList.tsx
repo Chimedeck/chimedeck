@@ -109,7 +109,7 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
           className={`rounded p-1 transition-colors ${
             toggling ? 'opacity-50 cursor-not-allowed' : 'hover:bg-bg-overlay'
           } ${automation.isEnabled ? 'text-emerald-400' : 'text-muted'}`}
-          onClick={handleToggle}
+          onClick={() => void handleToggle()}
           disabled={toggling}
           aria-label={automation.isEnabled ? translations['automation.list.row.disableAriaLabel'] : translations['automation.list.row.enableAriaLabel']}
           title={automation.isEnabled ? translations['automation.list.row.disableTitle'] : translations['automation.list.row.enableTitle']}
@@ -138,11 +138,11 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
               ? 'bg-danger text-white hover:opacity-90' // [theme-exception] text-white on danger active state
               : 'text-muted hover:bg-bg-overlay hover:text-danger'
           } ${deleting ? 'opacity-50 cursor-not-allowed' : ''}`}
-          onClick={handleDelete}
+          onClick={() => void handleDelete()}
           disabled={deleting}
           aria-label={confirmDelete ? translations['automation.list.row.confirmDeleteAriaLabel'] : translations['automation.list.row.deleteAriaLabel']}
           title={confirmDelete ? translations['automation.list.row.confirmDeleteTitle'] : translations['automation.list.row.deleteTitle']}
-          onBlur={() => setConfirmDelete(false)}
+          onBlur={() => { setConfirmDelete(false); }}
         >
           <TrashIcon className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -175,7 +175,7 @@ const AutomationList = ({ boardId, automations, onCreateRule, onEditRule, onChan
             key={automation.id}
             boardId={boardId}
             automation={automation}
-            onEdit={() => onEditRule(automation)}
+            onEdit={() => { onEditRule(automation); }}
             onDeleted={onChanged}
             onToggled={onChanged}
           />

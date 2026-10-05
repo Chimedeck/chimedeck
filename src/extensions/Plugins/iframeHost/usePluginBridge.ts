@@ -502,7 +502,7 @@ export function usePluginBridge({
     };
 
     window.addEventListener('message', handler);
-    return () => window.removeEventListener('message', handler);
+    return () => { window.removeEventListener('message', handler); };
   }, [findPluginByOrigin, handleDataGet, handleDataSet, handleCapabilityResponse, handleCtxQuery, isDomainAllowed, sendDomainError, onOpenModal, onCloseModal, onUpdateModal, onOpenPopup, onClosePopup, onSizeTo]);
 
   // Resolve a capability across all active plugins that have registered it
@@ -519,7 +519,7 @@ export function usePluginBridge({
 
       const invokeEligible = (eligible: BoardPlugin[]): Promise<unknown[]> => {
         return new Promise<unknown[]>((resolvePromise) => {
-          const requestId = `cap-${Date.now()}-${Math.random()}`;
+          const requestId = `cap-${String(Date.now())}-${String(Math.random())}`;
           pendingCapabilityRef.current.set(requestId, {
             resolve: resolvePromise,
             results: [],

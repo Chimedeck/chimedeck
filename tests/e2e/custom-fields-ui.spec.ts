@@ -4,29 +4,38 @@
 // Based on: tests/e2e/custom-fields-ui.md (now deleted)
 
 import { test, expect, type APIRequestContext } from '@playwright/test';
-import { BASE_URL, registerAndLogin, createWorkspace, createBoard, createList, createCard } from './_helpers';
+import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, createCard, loginViaCookie, type Credentials } from './_helpers';
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
 interface SetupResult {
+  creds: Credentials;
   token: string;
   boardId: string;
   cardId: string;
 }
 
-async function setupBoardWithCard(request: APIRequestContext, page: import('@playwright/test').Page): Promise<SetupResult> {
-  const token = await registerAndLogin(request, 'cf-ui');
-  const wsId = await createWorkspace(request, token);
-  const boardId = await createBoard(request, token, wsId);
-  const listId = await createList(request, token, boardId);
-  const cardId = await createCard(request, token, listId, 'CF UI Test Card');
+async function setupBoardWithCard(request: APIRequestContext): Promise<SetupResult> {
+  const creds = await registerAndGetCredentials(request, 'cf-ui');
+  const wsId = await createWorkspace(request, creds.token);
+  const boardId = await createBoard(request, creds.token, wsId);
+  const listId = await createList(request, creds.token, boardId);
+  const cardId = await createCard(request, creds.token, listId, 'CF UI Test Card');
 
-  await page.goto(`${UI_URL}`);
-  await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-  await page.goto(`${UI_URL}/boards/${boardId}`);
-  await page.waitForLoadState('networkidle');
+  return { creds, token: creds.token, boardId, cardId };
+}
 
-  return { token, boardId, cardId };
+
+async function openBoard(page: import('@playwright/test').Page, setup: SetupResult): Promise<void> {
+  await loginViaCookie(page, UI_URL, setup.creds);
+  // App boot performs an async token refresh; navigating immediately can race
+  // and land on /workspaces. Retry until the card tile renders.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto(`${UI_URL}/b/${setup.boardId}`);
+    await page.waitForLoadState('networkidle');
+    if (await page.locator('[aria-label^="Card:"]').first().isVisible().catch(() => false)) return;
+    await page.waitForTimeout(500);
+  }
 }
 
 async function createFieldViaApi(
@@ -39,33 +48,36 @@ async function createFieldViaApi(
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  const body = await res.json() as { data: { id: string } };
+  const body = await res.json() as { data?: { id: string }; error?: unknown };
+  if (!res.ok || !body.data?.id) {
+    throw new Error(`Failed to create custom field (${res.status}): ${JSON.stringify(body)}`);
+  }
   return body.data.id;
 }
 
 async function openCardModal(page: import('@playwright/test').Page) {
-  await page.locator('[data-testid="card-tile"], .card-tile, [class*="card"]').first().click();
-  await page.waitForSelector('[data-testid="card-modal"], [role="dialog"], [aria-label*="card"]', { timeout: 5000 });
+  await page.locator('[aria-label^="Card:"]').first().click();
+  await page.waitForSelector('[data-testid="card-modal"], [role="dialog"][aria-label^="Card:"]', { timeout: 5000 });
 }
 
 test.describe('Custom Fields UI — Card Modal Value Editing', () => {
   test('TEXT field — edit and save value in card modal, badge on tile', async ({ request, page }) => {
-    const { token, boardId } = await setupBoardWithCard(request, page);
+    const setup = await setupBoardWithCard(request);
+    const { token, boardId } = setup;
     await createFieldViaApi(token, boardId, {
       name: 'Notes',
       field_type: 'TEXT',
       show_on_card: true,
       position: 0,
     });
-    await page.reload();
-    await page.waitForLoadState('networkidle');
+    await openBoard(page, setup);
 
     await openCardModal(page);
 
     const customFieldsSection = page.getByText(/custom fields/i);
     await expect(customFieldsSection).toBeVisible({ timeout: 5000 });
 
-    const notesInput = page.getByLabel(/Notes/i).or(page.locator('input[placeholder*="Notes"], textarea[placeholder*="Notes"]'));
+    const notesInput = page.getByRole('textbox', { name: 'Notes value' });
     await notesInput.click();
     await notesInput.fill('Hello world');
     await notesInput.press('Tab');
@@ -76,51 +88,52 @@ test.describe('Custom Fields UI — Card Modal Value Editing', () => {
   });
 
   test('NUMBER field — edit value in card modal, badge on tile', async ({ request, page }) => {
-    const { token, boardId } = await setupBoardWithCard(request, page);
+    const setup = await setupBoardWithCard(request);
+    const { token, boardId } = setup;
     await createFieldViaApi(token, boardId, {
       name: 'Story Points',
       field_type: 'NUMBER',
       show_on_card: true,
       position: 0,
     });
-    await page.reload();
-    await page.waitForLoadState('networkidle');
+    await openBoard(page, setup);
 
     await openCardModal(page);
 
-    const numInput = page.getByLabel(/Story Points/i).or(page.locator('input[type="number"]'));
+    const numInput = page.getByRole('spinbutton', { name: 'Story Points value' }).or(page.locator('input[type="number"]')).first();
     await numInput.click();
     await numInput.fill('8');
     await numInput.press('Enter');
 
     await page.keyboard.press('Escape');
 
-    await expect(page.getByText('8')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('[aria-label="Story Points: 8"], [title="Story Points: 8"]').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('CHECKBOX field — toggle value in card modal', async ({ request, page }) => {
-    const { token, boardId } = await setupBoardWithCard(request, page);
+    const setup = await setupBoardWithCard(request);
+    const { token, boardId } = setup;
     await createFieldViaApi(token, boardId, {
       name: 'Reviewed',
       field_type: 'CHECKBOX',
       show_on_card: true,
       position: 0,
     });
-    await page.reload();
-    await page.waitForLoadState('networkidle');
+    await openBoard(page, setup);
 
     await openCardModal(page);
 
-    const checkbox = page.getByLabel(/Reviewed/i);
+    const checkbox = page.getByRole('checkbox', { name: 'Reviewed' });
     await expect(checkbox).not.toBeChecked();
-    await checkbox.check();
-    await expect(checkbox).toBeChecked();
+    await checkbox.click();
+    await expect(page.locator('[aria-label="Reviewed: ✓"], [title="Reviewed: ✓"]').first()).toBeVisible({ timeout: 5000 });
 
     await page.keyboard.press('Escape');
   });
 
   test('DROPDOWN field — select option in card modal', async ({ request, page }) => {
-    const { token, boardId } = await setupBoardWithCard(request, page);
+    const setup = await setupBoardWithCard(request);
+    const { token, boardId } = setup;
     await createFieldViaApi(token, boardId, {
       name: 'Priority',
       field_type: 'DROPDOWN',
@@ -132,8 +145,7 @@ test.describe('Custom Fields UI — Card Modal Value Editing', () => {
       show_on_card: true,
       position: 0,
     });
-    await page.reload();
-    await page.waitForLoadState('networkidle');
+    await openBoard(page, setup);
 
     await openCardModal(page);
 
@@ -146,19 +158,19 @@ test.describe('Custom Fields UI — Card Modal Value Editing', () => {
   });
 
   test('Clear a field value removes badge from tile', async ({ request, page }) => {
-    const { token, boardId } = await setupBoardWithCard(request, page);
+    const setup = await setupBoardWithCard(request);
+    const { token, boardId } = setup;
     await createFieldViaApi(token, boardId, {
       name: 'Notes',
       field_type: 'TEXT',
       show_on_card: true,
       position: 0,
     });
-    await page.reload();
-    await page.waitForLoadState('networkidle');
+    await openBoard(page, setup);
 
     await openCardModal(page);
 
-    const notesInput = page.getByLabel(/Notes/i).or(page.locator('input[placeholder*="Notes"]'));
+    const notesInput = page.getByRole('textbox', { name: 'Notes value' });
     await notesInput.fill('Hello world');
     await notesInput.press('Tab');
 
@@ -176,25 +188,25 @@ test.describe('Custom Fields UI — Card Modal Value Editing', () => {
   });
 
   test('show_on_card=false — no badge on tile', async ({ request, page }) => {
-    const { token, boardId } = await setupBoardWithCard(request, page);
+    const setup = await setupBoardWithCard(request);
+    const { token, boardId } = setup;
     await createFieldViaApi(token, boardId, {
       name: 'Internal Notes',
       field_type: 'TEXT',
       show_on_card: false,
       position: 0,
     });
-    await page.reload();
-    await page.waitForLoadState('networkidle');
+    await openBoard(page, setup);
 
     await openCardModal(page);
 
-    const notesInput = page.getByLabel(/Internal Notes/i).or(page.locator('input[placeholder*="Internal Notes"]'));
+    const notesInput = page.getByRole('textbox', { name: 'Internal Notes value' });
     await notesInput.fill('private text');
     await notesInput.press('Tab');
     await page.keyboard.press('Escape');
 
     // The card tile should NOT show the value as a badge
-    const tile = page.locator('[data-testid="card-tile"], .card-tile, [class*="card"]').first();
+    const tile = page.locator('[aria-label^="Card:"]').first();
     await expect(tile.getByText('private text')).not.toBeVisible({ timeout: 3000 });
   });
 });

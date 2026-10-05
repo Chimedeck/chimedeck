@@ -103,7 +103,9 @@ export async function runProbe({ url, expectedStatus }: { url: string; expectedS
   }
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
   const startTime = Date.now();
 
   try {
@@ -125,7 +127,7 @@ export async function runProbe({ url, expectedStatus }: { url: string; expectedS
     const responseTimeMs = Date.now() - startTime;
     const isTimeout = (err as Error).name === 'AbortError';
     const errorMessage = isTimeout
-      ? `Timeout after ${responseTimeMs}ms`
+      ? `Timeout after ${String(responseTimeMs)}ms`
       : (err as Error).message;
 
     return {

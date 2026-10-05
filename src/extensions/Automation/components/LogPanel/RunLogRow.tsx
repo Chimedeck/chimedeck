@@ -25,13 +25,13 @@ interface Props {
 function relativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return `${seconds}s ago`;
+  if (seconds < 60) return `${String(seconds)}s ago`;
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return `${String(minutes)}m ago`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return `${String(hours)}h ago`;
   const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return `${String(days)}d ago`;
 }
 
 const STATUS_ICON: Record<string, { icon: typeof CheckCircleIcon; cls: string; label: string }> = {
@@ -51,10 +51,17 @@ const TYPE_ICON: Record<string, { icon: typeof BoltIcon; label: string }> = {
 const RunLogRow: FC<Props> = ({ run, onOpenCard }) => {
   const [expanded, setExpanded] = useState(false);
 
-  const statusMeta = STATUS_ICON[run.status] ?? STATUS_ICON['FAILED']!;
+  const statusMeta = STATUS_ICON[run.status] ?? {
+    icon: XCircleIcon,
+    cls: 'text-danger',
+    label: translations['automation.runLogRow.status.failed'],
+  };
   const StatusIcon = statusMeta.icon;
 
-  const typeMeta = TYPE_ICON[run.automationType ?? ''] ?? TYPE_ICON['RULE']!;
+  const typeMeta = TYPE_ICON[run.automationType ?? ''] ?? {
+    icon: BoltIcon,
+    label: translations['automation.runLogRow.type.rule'],
+  };
   const TypeIcon = typeMeta.icon;
 
   return (
@@ -87,7 +94,7 @@ const RunLogRow: FC<Props> = ({ run, onOpenCard }) => {
           {run.cardId && run.cardName ? (
             <button
               className="truncate text-xs text-blue-400 hover:underline text-left max-w-[120px]"
-              onClick={() => onOpenCard?.(run.cardId!)}
+              onClick={() => onOpenCard?.(run.cardId ?? '')}
               title={run.cardName}
             >
               {run.cardName}
@@ -116,7 +123,9 @@ const RunLogRow: FC<Props> = ({ run, onOpenCard }) => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setExpanded((v) => !v)}
+            onClick={() => {
+              setExpanded((v) => !v);
+            }}
             aria-label={expanded ? translations['automation.runLogRow.collapseAriaLabel'] : translations['automation.runLogRow.expandAriaLabel']}
           >
             {expanded ? (

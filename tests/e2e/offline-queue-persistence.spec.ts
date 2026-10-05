@@ -10,6 +10,7 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 
 const BASE_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
+const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 const DB_NAME = 'kanban-offline-queue';
 const STORE = 'mutations';
 
@@ -20,19 +21,17 @@ const STORE = 'mutations';
 async function registerAndLogin(
   request: APIRequestContext,
   suffix: string,
-): Promise<{ token: string; email: string; password: string }> {
+): Promise<{ token: string; email: string; password: string; refreshToken: string }> {
   const email = `oq-test-${suffix}-${Date.now()}@example.com`;
   const password = 'TestPassword1!';
 
-  await request.post(`${BASE_URL}/api/v1/auth/register`, {
+  const regRes = await request.post(`${BASE_URL}/api/v1/auth/register`, {
     data: { email, password, name: `OQ ${suffix}` },
   });
-
-  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/login`, {
-    data: { email, password },
-  });
-  const body = await loginRes.json() as { data: { access_token: string } };
-  return { token: body.data.access_token, email, password };
+  const body = await regRes.json() as { data: { accessToken: string } };
+  const setCookie = regRes.headers()['set-cookie'] ?? '';
+  const refreshMatch = setCookie.match(/refresh_token=([^;]+)/);
+  return { token: body.data.accessToken, email, password, refreshToken: refreshMatch ? refreshMatch[1] : '' };
 }
 
 async function createWorkspace(request: APIRequestContext, token: string): Promise<string> {
@@ -124,14 +123,13 @@ async function readMutationsFromIDB(page: Page): Promise<unknown[]> {
   );
 }
 
-/** Log in via the UI login form so auth cookies/tokens are set. */
-async function loginViaUi(page: Page, email: string, password: string): Promise<void> {
-  await page.goto(`${BASE_URL}/login`);
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/password/i).fill(password);
-  await page.getByRole('button', { name: /log in|sign in/i }).click();
-  // Wait until redirected away from /login (i.e. auth succeeded)
-  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10_000 });
+/** Inject the refresh_token cookie so the app's boot refresh restores auth. */
+async function loginViaCookie(page: Page, refreshToken: string): Promise<void> {
+  if (refreshToken) {
+    await page.context().addCookies([
+      { name: 'refresh_token', value: refreshToken, url: `${UI_URL}/api/v1/auth/refresh`, httpOnly: true, sameSite: 'Strict' },
+    ]);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -143,13 +141,13 @@ test.describe('offline mutation queue — IndexedDB persistence', () => {
     page,
     request,
   }) => {
-    const { token, email, password } = await registerAndLogin(request, 'hydrate');
+    const { token, refreshToken } = await registerAndLogin(request, 'hydrate');
     const workspaceId = await createWorkspace(request, token);
     const boardId = await createBoard(request, token, workspaceId);
 
     // Navigate to app first so the origin is established, then seed IDB
-    await loginViaUi(page, email, password);
-    await page.goto(`${BASE_URL}/boards/${boardId}`, { waitUntil: 'domcontentloaded' });
+    await loginViaCookie(page, refreshToken);
+    await page.goto(`${UI_URL}/b/${boardId}`, { waitUntil: 'domcontentloaded' });
 
     const mutationId = `test-hydrate-${Date.now()}`;
     const mutation = {
@@ -170,12 +168,18 @@ test.describe('offline mutation queue — IndexedDB persistence', () => {
     expect(beforeReload).toHaveLength(1);
     expect((beforeReload[0] as { id: string }).id).toBe(mutationId);
 
+    // Block the replay request so it cannot succeed. On boot the app hydrates the
+    // queue from IndexedDB and then replays on WS connect; a successful replay
+    // removes the mutation. To observe the hydration-only state we make the
+    // replay fail (network error stops replay, leaving the mutation queued).
+    await page.route(`**/api/v1/boards/${boardId}/lists`, (route) => route.abort());
+
     // Hard reload — App.tsx calls loadPersistedMutations() on boot which should
     // hydrate the in-memory queue with this mutation
     await page.reload({ waitUntil: 'networkidle' });
 
-    // After reload, the mutation must still be in IndexedDB (it is only removed
-    // when replay succeeds — not merely on hydration)
+    // After reload the mutation must still be in IndexedDB: it is only removed
+    // when replay succeeds, and we forced the replay to fail.
     const afterReload = await readMutationsFromIDB(page);
     expect(afterReload).toHaveLength(1);
     expect((afterReload[0] as { id: string }).id).toBe(mutationId);
@@ -185,12 +189,12 @@ test.describe('offline mutation queue — IndexedDB persistence', () => {
     page,
     request,
   }) => {
-    const { token, email, password } = await registerAndLogin(request, 'replay');
+    const { token, refreshToken } = await registerAndLogin(request, 'replay');
     const workspaceId = await createWorkspace(request, token);
     const boardId = await createBoard(request, token, workspaceId);
 
-    await loginViaUi(page, email, password);
-    await page.goto(`${BASE_URL}/boards/${boardId}`, { waitUntil: 'domcontentloaded' });
+    await loginViaCookie(page, refreshToken);
+    await page.goto(`${UI_URL}/b/${boardId}`, { waitUntil: 'domcontentloaded' });
 
     const listTitle = `Replayed-List-${Date.now()}`;
     const mutationId = `test-replay-${Date.now()}`;
@@ -203,19 +207,18 @@ test.describe('offline mutation queue — IndexedDB persistence', () => {
       enqueuedAt: Date.now(),
     };
 
-    // Seed mutation and reload
+    // Seed mutation, then reload. The listener must be attached BEFORE the
+    // reload because boot hydrates the queue and replay fires as soon as the WS
+    // connects — registering afterwards races and can miss the request.
     await seedMutationInIDB(page, mutation);
-    await page.reload({ waitUntil: 'domcontentloaded' });
 
-    // Intercept the list-creation API call that the queue replay will send
     const replayRequest = page.waitForRequest(
       (req) =>
         req.url().includes(`/api/v1/boards/${boardId}/lists`) && req.method() === 'POST',
       { timeout: 15_000 },
     );
 
-    // Navigate to the board page so the WS connects and replay is triggered
-    await page.goto(`${BASE_URL}/boards/${boardId}`, { waitUntil: 'networkidle' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
 
     // Verify the replay HTTP call was made
     const replayed = await replayRequest;

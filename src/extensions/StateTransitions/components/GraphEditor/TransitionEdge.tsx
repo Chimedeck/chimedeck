@@ -54,12 +54,6 @@ const quadraticBezierPoint = ({
   };
 };
 
-const toPoints = (waypoints: StateTransitionWaypoint[]): Point[] =>
-  waypoints.map((waypoint) => ({ x: waypoint.x, y: waypoint.y }));
-
-const toWaypoints = (points: Point[]): StateTransitionWaypoint[] =>
-  points.map((point) => ({ x: point.x, y: point.y }));
-
 const buildOrthogonalPoints = ({
   p0,
   p2,

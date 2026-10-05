@@ -45,7 +45,7 @@ const CardDueDate = ({ dueDate, dueComplete, onChange, onDoneChange, disabled, l
           <button
             type="button"
             className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border-2 transition-colors ${checkboxBg} ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
-            onClick={() => onDoneChange(!dueComplete)}
+            onClick={() => { onDoneChange(!dueComplete); }}
             aria-label={dueComplete ? 'Mark as not done' : 'Mark as done'}
             disabled={disabled}
           >
@@ -70,7 +70,7 @@ const CardDueDate = ({ dueDate, dueComplete, onChange, onDoneChange, disabled, l
         <button
           type="button"
           className="text-xs text-muted hover:text-base transition-colors"
-          onClick={() => onChange(null)}
+          onClick={() => { onChange(null); }}
         >
           Clear
         </button>

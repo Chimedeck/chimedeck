@@ -12,6 +12,13 @@ import {
 import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
 import { generatePositions } from '../mods/fractional';
 
+type ListRow = {
+  id: string;
+  board_id: string;
+  archived: boolean;
+  position: string;
+};
+
 export async function handleReorderLists(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -20,7 +27,7 @@ export async function handleReorderLists(req: Request, boardId: string): Promise
   const writableError = await requireBoardWritable(boardReq, boardId);
   if (writableError) return writableError;
 
-  const board = boardReq.board!;
+  const board = boardReq.board as NonNullable<BoardScopedRequest['board']>;
   const canonicalBoardId = board.id;
 
   const scopedReq = req as WorkspaceScopedRequest;
@@ -46,17 +53,18 @@ export async function handleReorderLists(req: Request, boardId: string): Promise
       { status: 400 },
     );
   }
+  const order = body.order;
 
   // Fetch active lists for this board
-  const activeLists = await db('lists').where({ board_id: canonicalBoardId, archived: false });
+  const activeLists = await db<ListRow>('lists').where({ board_id: canonicalBoardId, archived: false });
 
   // Validate count matches — archived lists are excluded (requirements §5.4)
-  if (body.order.length !== activeLists.length) {
+  if (order.length !== activeLists.length) {
     return Response.json(
       {
         name: 'reorder-count-mismatch',
         data: {
-          message: `order has ${body.order.length} items but board has ${activeLists.length} active lists`,
+          message: `order has ${String(order.length)} items but board has ${String(activeLists.length)} active lists`,
         },
       },
       { status: 400 },
@@ -64,8 +72,8 @@ export async function handleReorderLists(req: Request, boardId: string): Promise
   }
 
   // Validate all IDs belong to this board
-  const activeIds = new Set(activeLists.map((l) => l.id as string));
-  for (const id of body.order) {
+  const activeIds = new Set(activeLists.map((list) => list.id));
+  for (const id of order) {
     if (!activeIds.has(id)) {
       return Response.json(
         { error: { code: 'list-board-mismatch', message: `List ${id} does not belong to this board` } },
@@ -75,17 +83,17 @@ export async function handleReorderLists(req: Request, boardId: string): Promise
   }
 
   // Assign fresh well-spaced positions
-  const positions = generatePositions(body.order.length);
+  const positions = generatePositions(order.length);
 
   await db.transaction(async (trx) => {
-    for (let i = 0; i < body.order!.length; i++) {
+    for (let i = 0; i < order.length; i++) {
       await trx('lists')
-        .where({ id: body.order![i] })
+        .where({ id: order[i] })
         .update({ position: positions[i] });
     }
   });
 
-  const updatedLists = await db('lists')
+  const updatedLists = await db<ListRow>('lists')
     .where({ board_id: canonicalBoardId, archived: false })
     .orderBy('position', 'asc');
 

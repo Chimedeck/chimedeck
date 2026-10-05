@@ -179,7 +179,7 @@ function toDateInputValue(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return `${String(year)}-${month}-${day}`;
 }
 
 function toTimeInputValue(date: Date): string {
@@ -381,7 +381,7 @@ export const ChecklistItem = ({
       <input
         type="checkbox"
         checked={item.checked}
-        onChange={(e) => onToggle(item.id, e.target.checked)}
+        onChange={(e) => void onToggle(item.id, e.target.checked)}
         disabled={disabled}
         className="mt-0.5 h-4 w-4 rounded border-border-strong text-blue-500 bg-bg-surface"
         aria-label={`Toggle: ${item.title}`}
@@ -395,9 +395,9 @@ export const ChecklistItem = ({
             setTitle(e.target.value);
             // [why] Auto-resize the textarea to fit all content so long items are fully visible while editing.
             e.target.style.height = 'auto';
-            e.target.style.height = `${e.target.scrollHeight}px`;
+            e.target.style.height = `${String(e.target.scrollHeight)}px`;
           }}
-          onBlur={submitRename}
+          onBlur={() => void submitRename()}
           onPaste={handleEditPaste}
           // [why] Stop pointer propagation so dnd-kit's row-level listener doesn't
           // capture the pointer-down and turn text selection into an item drag.
@@ -416,7 +416,7 @@ export const ChecklistItem = ({
           ref={(el) => {
             if (el) {
               el.style.height = 'auto';
-              el.style.height = `${el.scrollHeight}px`;
+              el.style.height = `${String(el.scrollHeight)}px`;
             }
           }}
           autoFocus
@@ -561,7 +561,7 @@ export const ChecklistItem = ({
                 <button
                   type="button"
                   className="rounded p-1 text-subtle hover:bg-bg-overlay hover:text-base"
-                  onClick={() => setAssignOpen(false)}
+                  onClick={() => { setAssignOpen(false); }}
                   aria-label="Close assign popover"
                 >
                   <XMarkIcon className="h-4 w-4" aria-hidden="true" />
@@ -572,7 +572,7 @@ export const ChecklistItem = ({
                 className="mb-2 w-full rounded border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Search members"
                 value={memberQuery}
-                onChange={(event) => setMemberQuery(event.target.value)}
+                onChange={(event) => { setMemberQuery(event.target.value); }}
               />
               <div className="max-h-56 space-y-1 overflow-y-auto">
                 <button
@@ -630,7 +630,7 @@ export const ChecklistItem = ({
                 <button
                   type="button"
                   className="rounded p-1 text-subtle hover:bg-bg-overlay hover:text-base"
-                  onClick={() => setDueOpen(false)}
+                  onClick={() => { setDueOpen(false); }}
                   aria-label="Close due date popover"
                 >
                   <XMarkIcon className="h-4 w-4" aria-hidden="true" />
@@ -645,7 +645,7 @@ export const ChecklistItem = ({
                       id={`checklist-item-due-date-${item.id}`}
                       type="date"
                       value={dueDateInput}
-                      onChange={(event) => setDueDateInput(event.target.value)}
+                      onChange={(event) => { setDueDateInput(event.target.value); }}
                       onFocus={(event) => {
                         openNativePicker(event.currentTarget);
                       }}
@@ -658,7 +658,7 @@ export const ChecklistItem = ({
                     <input
                       type="time"
                       value={dueTimeInput}
-                      onChange={(event) => setDueTimeInput(event.target.value)}
+                      onChange={(event) => { setDueTimeInput(event.target.value); }}
                       onFocus={(event) => {
                         openNativePicker(event.currentTarget);
                       }}

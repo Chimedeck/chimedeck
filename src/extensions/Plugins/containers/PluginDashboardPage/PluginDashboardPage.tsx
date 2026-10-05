@@ -66,7 +66,7 @@ const PluginDashboardPage = () => {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const addToast = useCallback((message: string, variant: ToastItem['variant'] = 'info') => {
-    const id = `toast-${Date.now()}`;
+    const id = `toast-${String(Date.now())}`;
     setToasts((prev) => [...prev, { id, message, variant }]);
   }, []);
 
@@ -104,7 +104,7 @@ const PluginDashboardPage = () => {
 
   // Fetch categories once on mount
   useEffect(() => {
-    dispatch(fetchCategoriesThunk());
+    void dispatch(fetchCategoriesThunk());
   }, [dispatch]);
 
   // If the API returns a 403-style error for a non-member, redirect back to board.
@@ -158,7 +158,7 @@ const PluginDashboardPage = () => {
   }, []);
 
   const handleRegisterSubmit = useCallback((body: RegisterPluginBody) => {
-    dispatch(registerPluginThunk(body));
+    void dispatch(registerPluginThunk(body));
   }, [dispatch]);
 
   const handleRegisterClose = useCallback(() => {
@@ -172,7 +172,7 @@ const PluginDashboardPage = () => {
       const params: { boardId: string; q?: string; category?: string | null } = { boardId };
       if (searchQuery) params.q = searchQuery;
       if (selectedCategory) params.category = selectedCategory;
-      dispatch(fetchDiscoverablePluginsThunk(params));
+      void dispatch(fetchDiscoverablePluginsThunk(params));
     }
   }, [dispatch, boardId, searchQuery, selectedCategory]);
 
@@ -187,7 +187,7 @@ const PluginDashboardPage = () => {
   }, [dispatch]);
 
   const handleEditSubmit = useCallback((pluginId: string, body: UpdatePluginBody) => {
-    dispatch(updatePluginThunk({ pluginId, body }));
+    void dispatch(updatePluginThunk({ pluginId, body }));
   }, [dispatch]);
 
   const handleSearchChange = useCallback((q: string) => {
@@ -196,7 +196,7 @@ const PluginDashboardPage = () => {
       const params: { boardId: string; q?: string; category?: string | null } = { boardId };
       if (q) params.q = q;
       if (selectedCategory) params.category = selectedCategory;
-      dispatch(fetchDiscoverablePluginsThunk(params));
+      void dispatch(fetchDiscoverablePluginsThunk(params));
     }
   }, [dispatch, boardId, selectedCategory]);
 
@@ -206,13 +206,13 @@ const PluginDashboardPage = () => {
       const params: { boardId: string; q?: string; category?: string | null } = { boardId };
       if (searchQuery) params.q = searchQuery;
       if (category) params.category = category;
-      dispatch(fetchDiscoverablePluginsThunk(params));
+      void dispatch(fetchDiscoverablePluginsThunk(params));
     }
   }, [dispatch, boardId, searchQuery]);
 
   const handleClearSearch = useCallback(() => {
     dispatch(clearSearch());
-    if (boardId) dispatch(fetchDiscoverablePluginsThunk({ boardId }));
+    if (boardId) void dispatch(fetchDiscoverablePluginsThunk({ boardId }));
   }, [dispatch, boardId]);
 
   return (
@@ -222,7 +222,7 @@ const PluginDashboardPage = () => {
       <div className="border-b border-slate-700 px-6 py-4 flex items-center justify-between">
         <div>
           <button
-            onClick={() => boardId && navigate(boardPath({ id: boardId }))}
+            onClick={() => { if (boardId) { navigate(boardPath({ id: boardId })); } }}
             className="text-subtle hover:text-base text-sm mb-1 flex items-center gap-1"
           >
             {translations['plugins.dashboard.backToBoard']}
@@ -231,7 +231,7 @@ const PluginDashboardPage = () => {
         </div>
         {isAdmin ? (
           <button
-            onClick={() => setRegisterOpen(true)}
+            onClick={() => { setRegisterOpen(true); }}
             className="text-sm bg-blue-600 hover:bg-blue-500 text-white rounded px-3 py-2" // [theme-exception] text-white on bg-blue-600 button
           >
             {translations['plugins.dashboard.registerPlugin']}
@@ -268,7 +268,7 @@ const PluginDashboardPage = () => {
                   <EnabledPluginRow
                     key={bp.id}
                     boardPlugin={bp}
-                    onDisable={disablePlugin}
+                    onDisable={(bp) => void disablePlugin(bp)}
                     onSettings={handleSettings}
                   />
                 ))}
@@ -312,7 +312,7 @@ const PluginDashboardPage = () => {
                   <DiscoverPluginRow
                     key={plugin.id}
                     plugin={plugin}
-                    onEnable={enablePlugin}
+                    onEnable={(plugin) => void enablePlugin(plugin)}
                   />
                 ))}
               </div>

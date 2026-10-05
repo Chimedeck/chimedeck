@@ -49,12 +49,12 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       }
     } else {
       setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      setTimeout(() => { setSaved(false); }, 3000);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <form onSubmit={(e) => { void handleSubmit(e); }} className="flex flex-col gap-5">
       {/* Display name */}
       <div className="flex flex-col gap-1">
         <label htmlFor="display-name" className="text-sm font-medium text-subtle">
@@ -64,7 +64,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
           id="display-name"
           type="text"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => { setName(e.target.value); }}
           maxLength={100}
           required
           className="rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base outline-none placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"

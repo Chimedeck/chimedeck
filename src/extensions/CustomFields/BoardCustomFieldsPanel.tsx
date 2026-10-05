@@ -55,12 +55,13 @@ const BoardCustomFieldsPanel = () => {
   // Per-field operation in-progress flag (keyed by field id).
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
 
-  const setFieldBusy = (id: string, busy: boolean) =>
+  const setFieldBusy = (id: string, busy: boolean) => {
     setBusyIds((prev) => {
       const next = new Set(prev);
       busy ? next.add(id) : next.delete(id);
       return next;
     });
+  };
 
   // ─── Create ──────────────────────────────────────────────────────────────
 
@@ -208,10 +209,10 @@ const BoardCustomFieldsPanel = () => {
                   type="text"
                   value={renameValue}
                   autoFocus
-                  onChange={(e) => setRenameValue(e.target.value)}
-                  onBlur={() => commitRename(field)}
+                  onChange={(e) => { setRenameValue(e.target.value); }}
+                  onBlur={() => void commitRename(field)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') commitRename(field);
+                    if (e.key === 'Enter') void commitRename(field);
                     if (e.key === 'Escape') setRenamingId(null);
                   }}
                   className="flex-1 bg-bg-overlay border border-border rounded px-2 py-0.5 text-sm text-base focus:outline-none focus:ring-1 focus:ring-primary"
@@ -221,7 +222,7 @@ const BoardCustomFieldsPanel = () => {
                 <button
                   type="button"
                   className="flex-1 text-left text-sm text-base hover:text-base truncate"
-                  onClick={() => startRename(field)}
+                  onClick={() => { startRename(field); }}
                   aria-label={`Rename field ${field.name}`}
                   disabled={busy}
                 >
@@ -236,7 +237,7 @@ const BoardCustomFieldsPanel = () => {
               {/* Delete */}
               <button
                 type="button"
-                onClick={() => handleDelete(field)}
+                onClick={() => void handleDelete(field)}
                 disabled={busy}
                 className="text-muted hover:text-danger transition-colors text-xs"
                 aria-label={`Delete field ${field.name}`}
@@ -250,7 +251,7 @@ const BoardCustomFieldsPanel = () => {
               <input
                 type="checkbox"
                 checked={field.show_on_card}
-                onChange={() => handleToggleShowOnCard(field)}
+                onChange={() => void handleToggleShowOnCard(field)}
                 disabled={busy}
                 className="accent-blue-500"
                 aria-label={translations['CustomFields.showOnCardLabel']}
@@ -264,7 +265,7 @@ const BoardCustomFieldsPanel = () => {
                 {expandedOptionsId !== field.id && (
                   <button
                     type="button"
-                    onClick={() => openOptionsEditor(field)}
+                    onClick={() => { openOptionsEditor(field); }}
                     className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
                     aria-label={`Edit options for ${field.name}`}
                     disabled={busy}
@@ -282,7 +283,7 @@ const BoardCustomFieldsPanel = () => {
                     <div className="flex gap-2 pt-1">
                       <button
                         type="button"
-                        onClick={() => commitOptions(field)}
+                        onClick={() => void commitOptions(field)}
                         disabled={busy}
                         className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded py-1 transition-colors" // [theme-exception] text-white on bg-blue-600 button
                       >
@@ -313,7 +314,7 @@ const BoardCustomFieldsPanel = () => {
           <input
             type="text"
             value={newField.name}
-            onChange={(e) => setNewField((f) => ({ ...f, name: e.target.value }))}
+            onChange={(e) => { setNewField((f) => ({ ...f, name: e.target.value })); }}
             placeholder={translations['CustomFields.fieldNamePlaceholder']}
             className="w-full bg-bg-overlay border border-border rounded px-2 py-1 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary"
             autoFocus
@@ -323,9 +324,9 @@ const BoardCustomFieldsPanel = () => {
           {/* Type selector */}
           <select
             value={newField.field_type}
-            onChange={(e) =>
-              setNewField((f) => ({ ...f, field_type: e.target.value as FieldType, options: [] }))
-            }
+            onChange={(e) => {
+              setNewField((f) => ({ ...f, field_type: e.target.value as FieldType, options: [] }));
+            }}
             className="w-full bg-bg-overlay border border-border rounded px-2 py-1 text-sm text-base focus:outline-none focus:ring-1 focus:ring-primary"
             aria-label={translations['CustomFields.typeLabel']}
           >
@@ -340,7 +341,7 @@ const BoardCustomFieldsPanel = () => {
           {newField.field_type === 'DROPDOWN' && (
             <DropdownFieldEditor
               options={newField.options}
-              onChange={(opts) => setNewField((f) => ({ ...f, options: opts }))}
+              onChange={(opts) => { setNewField((f) => ({ ...f, options: opts })); }}
             />
           )}
 
@@ -349,7 +350,7 @@ const BoardCustomFieldsPanel = () => {
             <input
               type="checkbox"
               checked={newField.show_on_card}
-              onChange={(e) => setNewField((f) => ({ ...f, show_on_card: e.target.checked }))}
+              onChange={(e) => { setNewField((f) => ({ ...f, show_on_card: e.target.checked })); }}
               className="accent-blue-500"
               aria-label={translations['CustomFields.showOnCardLabel']}
             />
@@ -362,7 +363,7 @@ const BoardCustomFieldsPanel = () => {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={handleCreate}
+              onClick={() => void handleCreate()}
               disabled={creating || !newField.name.trim()}
               className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded py-1 transition-colors" // [theme-exception] text-white on bg-blue-600 button
             >
@@ -381,7 +382,7 @@ const BoardCustomFieldsPanel = () => {
       ) : (
         <button
           type="button"
-          onClick={() => setShowForm(true)}
+          onClick={() => { setShowForm(true); }}
           className="w-full text-left text-xs text-blue-400 hover:text-blue-300 transition-colors py-1"
           aria-label={translations['CustomFields.ariaCreateField']}
         >

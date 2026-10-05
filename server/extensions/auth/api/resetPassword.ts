@@ -62,7 +62,7 @@ export async function handleResetPassword(req: Request): Promise<Response> {
 
   // Notify any open WebSocket connections for this user to close (code 4001).
   await pubsub.publish(
-    `session:${user.id}`,
+    `session:${String(user.id)}`,
     JSON.stringify({ type: 'session_revoked' }),
   );
 

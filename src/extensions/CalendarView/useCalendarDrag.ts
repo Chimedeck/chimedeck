@@ -5,6 +5,7 @@ import { useCallback } from 'react';
 import { apiClient } from '~/common/api/client';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { boardSliceActions } from '../Board/slices/boardSlice';
+import { localDateKey } from '../../common/utils/dates';
 import type { Card } from '../Card/api';
 
 interface UseCalendarDragOptions {
@@ -24,7 +25,7 @@ export function useCalendarDrag({ cards, addToast }: UseCalendarDragOptions): Us
   const handleCardDrop = useCallback(
     async (cardId: string, newDate: string) => {
       const card = cards.find((c) => c.id === cardId);
-      if (!card || card.due_date?.slice(0, 10) === newDate) return;
+      if (!card || (card.due_date && localDateKey(card.due_date) === newDate)) return;
 
       const prevDate = card.due_date;
 

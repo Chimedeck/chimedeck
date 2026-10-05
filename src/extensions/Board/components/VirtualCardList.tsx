@@ -41,7 +41,6 @@ const VirtualCardList = ({ cards, renderCard, estimatedCardHeight = 80 }: Props)
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { useVirtualizer } = require('@tanstack/react-virtual');
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks -- conditional only on count, never changes
   const virtualizer = useVirtualizer({
     count: cards.length,
     getScrollElement: () => parentRef.current,
@@ -64,7 +63,7 @@ const VirtualCardList = ({ cards, renderCard, estimatedCardHeight = 80 }: Props)
             style={{
               position: 'absolute',
               top: 0,
-              transform: `translateY(${row.start}px)`,
+              transform: `translateY(${String(row.start)}px)`,
               width: '100%',
               paddingBottom: '8px',
             }}

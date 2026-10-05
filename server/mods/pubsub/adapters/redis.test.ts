@@ -18,7 +18,7 @@ describeIfRedis('RedisPubSubAdapter', () => {
     // Patch internal sub to avoid needing a live Redis connection for this unit test.
     (adapter as any).sub = { subscribe: async () => {}, unsubscribe: async () => {} };
     await adapter.subscribe('test:dup-guard', () => {});
-    await expect(adapter.subscribe('test:dup-guard', () => {})).rejects.toThrow(
+    expect(adapter.subscribe('test:dup-guard', () => {})).rejects.toThrow(
       'Already subscribed to channel: test:dup-guard'
     );
     await adapter.unsubscribe('test:dup-guard');

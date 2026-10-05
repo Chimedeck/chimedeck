@@ -138,7 +138,6 @@ export function useOfflineDescriptionDraft({
       cancelled = true;
     };
     // [why] Only re-run when the card changes — not on every description change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cardId, userId, workspaceId, token]);
 
   // ---------- Debounced local + server persistence on content change ----------

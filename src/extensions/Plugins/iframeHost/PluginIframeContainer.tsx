@@ -102,7 +102,7 @@ const PluginIframeContainer = ({ boardId, children }: Props) => {
   // Load active plugins when the board opens; refresh whenever boardId changes.
   useEffect(() => {
     if (boardId) {
-      dispatch(fetchBoardPluginsThunk({ boardId }));
+      void dispatch(fetchBoardPluginsThunk({ boardId }));
     }
   }, [dispatch, boardId]);
 

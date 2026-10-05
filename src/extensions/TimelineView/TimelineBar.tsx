@@ -5,6 +5,7 @@
 //
 // TODO: dependency arrows — deferred to a future sprint.
 import translations from './translations/en.json';
+import { parseLocalDate } from '../../common/utils/dates';
 import type { TimelineBarProps } from './types';
 
 /** Width of each resize handle in pixels. */
@@ -19,14 +20,6 @@ export const ROW_SLOT_HEIGHT = BAR_HEIGHT + 4;
 const DEFAULT_COLOR = '#3b82f6';
 /** Minimum bar width in pixels (ensures handles are always reachable). */
 const MIN_BAR_WIDTH = HANDLE_WIDTH * 2 + 8;
-
-function parseLocalDate(s: string): Date {
-  // Slice the first 10 chars to handle both "YYYY-MM-DD" and full ISO "YYYY-MM-DDTHH:mm:ss...Z"
-  // DB timestamp columns return full ISO strings; slicing avoids NaN from the time component.
-  const datePart = s.slice(0, 10);
-  const parts = datePart.split('-');
-  return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-}
 
 function daysBetween(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
@@ -44,8 +37,12 @@ const TimelineBar = ({
   onResizeRightStart,
 }: TimelineBarProps) => {
   // Prefer live drag overrides so the bar tracks the mouse during drag.
-  const startDateStr = (dragOverride?.start_date ?? card.start_date)!;
-  const dueDateStr = (dragOverride?.due_date ?? card.due_date)!;
+  // [why] scheduledCards always has start_date/due_date set; the guard is a
+  // type-system safety net matching the previous non-null assertion.
+  const startDateStr = (dragOverride?.start_date ?? card.start_date);
+  if (!startDateStr) throw new Error('Timeline bar card missing start_date');
+  const dueDateStr = (dragOverride?.due_date ?? card.due_date);
+  if (!dueDateStr) throw new Error('Timeline bar card missing due_date');
 
   const startDate = parseLocalDate(startDateStr);
   const dueDate = parseLocalDate(dueDateStr);
@@ -88,8 +85,8 @@ const TimelineBar = ({
 
       {/* Bar body — drag to move both dates */}
       <div
-        onMouseDown={(e) => onMoveStart(card.id, e)}
-        onClick={() => onCardClick(card.id)}
+        onMouseDown={(e) => { onMoveStart(card.id, e); }}
+        onClick={() => { onCardClick(card.id); }}
         className="flex flex-1 cursor-grab items-center overflow-hidden px-1"
         role="button"
         tabIndex={0}

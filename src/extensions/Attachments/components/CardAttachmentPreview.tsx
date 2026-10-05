@@ -119,7 +119,7 @@ export function CardAttachmentPreview({ attachmentId, card, cardUrl, canWrite, o
                       </button>
                       <button
                         type="button"
-                        onClick={() => setConfirmDelete(false)}
+                        onClick={() => { setConfirmDelete(false); }}
                         className="text-[11px] text-muted hover:text-subtle"
                       >
                         {translations['attachments.item.delete.no']}
@@ -129,7 +129,7 @@ export function CardAttachmentPreview({ attachmentId, card, cardUrl, canWrite, o
                 ) : (
                   <button
                     type="button"
-                    onClick={() => setConfirmDelete(true)}
+                    onClick={() => { setConfirmDelete(true); }}
                     className="w-full text-left px-3 py-1.5 text-xs text-danger hover:bg-bg-overlay hover:text-danger"
                   >
                     Remove

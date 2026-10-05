@@ -8,7 +8,9 @@ export function generateShortId(length = SHORT_ID_LENGTH): string {
   const bytes = randomBytes(length);
   let out = '';
   for (let i = 0; i < length; i += 1) {
-    out += SHORT_ID_ALPHABET[bytes[i] % SHORT_ID_ALPHABET.length];
+    const byte = bytes[i];
+    if (byte === undefined) throw new Error('short-id-random-byte-missing');
+    out += SHORT_ID_ALPHABET.charAt(byte % SHORT_ID_ALPHABET.length);
   }
   return out;
 }
@@ -18,7 +20,7 @@ export async function generateUniqueShortId(
 ): Promise<string> {
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const shortId = generateShortId();
-    const existing = await db(tableName).where({ short_id: shortId }).first();
+    const existing = await db(tableName).where({ short_id: shortId }).first<{ short_id: string } | undefined>();
     if (!existing) return shortId;
   }
   throw new Error(`failed-to-generate-unique-short-id:${tableName}`);

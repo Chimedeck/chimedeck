@@ -64,7 +64,9 @@ const BoardCommentsPanel = ({ boardId, onCardClick }: Props) => {
               <button
                 type="button"
                 className="ml-2 truncate max-w-[40%] text-primary hover:underline text-xs"
-                onClick={() => onCardClick(comment.card_id)}
+                onClick={() => {
+                  onCardClick(comment.card_id);
+                }}
                 title={comment.card_title ?? undefined}
               >
                 {comment.card_title}
@@ -85,7 +87,7 @@ const BoardCommentsPanel = ({ boardId, onCardClick }: Props) => {
       {loading && <p className="text-xs text-subtle">{translations['BoardViews.loadingComments']}</p>}
 
       {hasMore && !loading && (
-        <Button variant="link" size="sm" onClick={() => loadPage(cursor)}>
+        <Button variant="link" size="sm" onClick={() => { void loadPage(cursor); }}>
           {translations['BoardViews.loadMoreComments']}
         </Button>
       )}

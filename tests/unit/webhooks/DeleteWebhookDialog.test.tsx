@@ -104,7 +104,7 @@ describe('DeleteWebhookDialog — cancel action', () => {
   });
 
   it('does not call deleteWebhook when cancel is clicked', () => {
-    const deleteWebhook = mock((_id: string) => Promise.resolve({ data: undefined }));
+    const deleteWebhook = mock(() => Promise.resolve({ data: undefined }));
     const onClose = mock(() => {});
 
     // Simulate cancel — only onClose fires, deleteWebhook is never called.

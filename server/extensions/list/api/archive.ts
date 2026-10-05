@@ -9,11 +9,17 @@ import {
 } from '../../../middlewares/permissionManager';
 import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
 
+type ListRow = {
+  id: string;
+  board_id: string;
+  archived: boolean;
+};
+
 export async function handleArchiveList(req: Request, listId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const list = await db('lists').where({ id: listId }).first();
+  const list = await db<ListRow>('lists').where({ id: listId }).first();
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'List not found' } },
@@ -25,7 +31,7 @@ export async function handleArchiveList(req: Request, listId: string): Promise<R
   const writableError = await requireBoardWritable(boardReq, list.board_id);
   if (writableError) return writableError;
 
-  const board = boardReq.board!;
+  const board = boardReq.board as NonNullable<BoardScopedRequest['board']>;
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -36,9 +42,9 @@ export async function handleArchiveList(req: Request, listId: string): Promise<R
 
   // Toggle archived state
   const newArchived = !list.archived;
-  const updated = await db('lists')
+  const updated = await db<ListRow>('lists')
     .where({ id: listId })
-    .update({ archived: newArchived }, ['*']);
+    .update({ archived: newArchived }, ['*']) as ListRow[];
 
   // Client expects { listId } to remove list from state
   await writeEvent({ type: 'list_archived', boardId: board.id, entityId: listId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { listId } });

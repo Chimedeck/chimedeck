@@ -24,8 +24,11 @@ export async function handleAdminCreateUser(req: Request): Promise<Response> {
   const authReq = req as AuthenticatedRequest;
   const authError = await authenticate(authReq);
   if (authError) return authError;
+  if (!authReq.currentUser) {
+    return Response.json({ name: 'unauthorized' }, { status: 401 });
+  }
 
-  const callerEmail = authReq.currentUser!.email;
+  const callerEmail = authReq.currentUser.email;
   if (!isAdminEmailDomain(callerEmail)) {
     return Response.json({ name: 'admin-access-required' }, { status: 403 });
   }
@@ -93,7 +96,7 @@ export async function handleAdminCreateUser(req: Request): Promise<Response> {
 
   let emailSent = false;
   if (shouldSend) {
-    const callerUser = await db('users').where({ id: authReq.currentUser!.id }).first();
+    const callerUser = await db('users').where({ id: authReq.currentUser.id }).first();
     const inviterName = callerUser?.name ?? callerEmail;
     const loginUrl = `${env.APP_URL}/login`;
 

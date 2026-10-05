@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { XMarkIcon, BoltIcon } from '@heroicons/react/24/outline';
 import type { FC } from 'react';
 import Button from '../../../../common/components/Button';
-import IconPicker, { BUTTON_ICONS, type ButtonIconName } from '../shared/IconPicker';
+import IconPicker, { type ButtonIconName } from '../shared/IconPicker';
 import ActionList from '../AutomationPanel/RuleBuilder/ActionList';
 import type { ActionItemData } from '../AutomationPanel/RuleBuilder/ActionItem';
 import { createAutomation, updateAutomation } from '../../api';
@@ -31,7 +31,7 @@ const CardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =>
       id: a.id,
       actionType: a.actionType,
       label: a.actionType,
-      config: a.config as Record<string, unknown>,
+      config: a.config,
     })) ?? [],
   );
   const [saving, setSaving] = useState(false);
@@ -68,7 +68,7 @@ const CardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =>
             name: name.trim(),
             automationType: 'CARD_BUTTON',
             icon,
-            trigger: null as any, // CARD_BUTTON has no trigger
+            trigger: null, // CARD_BUTTON has no trigger
             actions: actionPayload,
           },
         });
@@ -116,7 +116,9 @@ const CardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =>
             id="btn-name"
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+            }}
             placeholder={translations['automation.cardButtonBuilder.namePlaceholder']}
             maxLength={80}
             className="rounded-md bg-bg-surface border border-border px-3 py-2 text-sm text-base placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -151,7 +153,7 @@ const CardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =>
             variant="primary"
             type="button"
             disabled={!isValid || saving}
-            onClick={handleSave}
+            onClick={() => { void handleSave(); }}
           >
             {saving ? translations['automation.cardButtonBuilder.saving'] : existing ? translations['automation.cardButtonBuilder.saveChanges'] : translations['automation.cardButtonBuilder.create']}
           </Button>

@@ -17,7 +17,7 @@ function toIsoDate(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+  return `${String(y)}-${m}-${d}`;
 }
 
 /** Format a week range label, e.g. "Mar 9 – Mar 15, 2026". */
@@ -30,9 +30,9 @@ function weekRangeLabel(weekStart: Date): string {
   const year = weekEnd.getFullYear();
 
   if (weekStart.getMonth() === weekEnd.getMonth()) {
-    return `${startMonth} ${weekStart.getDate()} – ${weekEnd.getDate()}, ${year}`;
+    return `${startMonth} ${String(weekStart.getDate())} – ${String(weekEnd.getDate())}, ${String(year)}`;
   }
-  return `${startMonth} ${weekStart.getDate()} – ${endMonth} ${weekEnd.getDate()}, ${year}`;
+  return `${startMonth} ${String(weekStart.getDate())} – ${endMonth} ${String(weekEnd.getDate())}, ${String(year)}`;
 }
 
 export interface CalendarWeekGridProps {

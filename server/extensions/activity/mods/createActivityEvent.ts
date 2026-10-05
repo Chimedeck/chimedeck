@@ -31,8 +31,6 @@ async function fireCardMemberWebhook({
   if (!env.WEBHOOKS_ENABLED) return;
   const webhooks = await getActiveWebhooksForEvent({ knex: db, eventType });
   for (const wh of webhooks) {
-    // [why] fire-and-forget delivery — failures are recorded per delivery row
-    // by dispatchWebhook and must never block the activity write.
     void dispatchWebhook({
       endpoint: wh.endpoint_url,
       signingSecret: wh.signing_secret,

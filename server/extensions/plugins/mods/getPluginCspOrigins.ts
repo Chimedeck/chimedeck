@@ -6,6 +6,14 @@
 // connect-src so scripts inside the plugin iframe can reach their declared APIs.
 import { db } from '../../../common/db';
 
+// Migrations 0021/0023: nullable connector text, required active flag,
+// and unconstrained nullable JSONB (not necessarily an array of strings).
+interface PluginCspRow {
+  connector_url: string | null;
+  is_active: boolean;
+  whitelisted_domains: unknown;
+}
+
 export interface PluginCspOrigins {
   /** Origins to add to frame-src (connector_url of each active plugin). */
   frameSrc: string[];
@@ -30,7 +38,7 @@ function toOrigin(url: string): string | null {
  * if performance becomes a concern.
  */
 export async function getPluginCspOrigins(): Promise<PluginCspOrigins> {
-  const plugins = await db('plugins')
+  const plugins = await db<PluginCspRow>('plugins')
     .where({ is_active: true })
     .select('connector_url', 'whitelisted_domains');
 
@@ -40,7 +48,7 @@ export async function getPluginCspOrigins(): Promise<PluginCspOrigins> {
   for (const plugin of plugins) {
     // connector_url → frame-src so the iframe can be loaded.
     if (plugin.connector_url) {
-      const origin = toOrigin(plugin.connector_url as string);
+      const origin = toOrigin(plugin.connector_url);
       if (origin) frameSrcSet.add(origin);
     }
 

@@ -8,11 +8,15 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 
+type WorkspaceRow = { id: string };
+type BoardRow = { id: string; workspace_id: string };
+type LabelRow = { id: string; board_id: string; name: string; color: string };
+
 export async function handleCreateLabel(req: Request, workspaceId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const workspace = await db('workspaces').where({ id: workspaceId }).first();
+  const workspace = await db<WorkspaceRow>('workspaces').where({ id: workspaceId }).first();
   if (!workspace) {
     return Response.json(
       { error: { code: 'workspace-not-found', message: 'Workspace not found' } },
@@ -45,7 +49,7 @@ export async function handleCreateLabel(req: Request, workspaceId: string): Prom
   }
 
   // [why] Verify the board belongs to this workspace to prevent cross-workspace label injection.
-  const board = await db('boards').where({ id: body.boardId, workspace_id: workspaceId }).first();
+  const board = await db<BoardRow>('boards').where({ id: body.boardId, workspace_id: workspaceId }).first();
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found in this workspace' } },
@@ -70,6 +74,6 @@ export async function handleCreateLabel(req: Request, workspaceId: string): Prom
   const id = randomUUID();
   await db('labels').insert({ id, board_id: body.boardId, name: body.name.trim(), color: body.color });
 
-  const label = await db('labels').where({ id }).first();
+  const label = await db<LabelRow>('labels').where({ id }).first();
   return Response.json({ data: label }, { status: 201 });
 }

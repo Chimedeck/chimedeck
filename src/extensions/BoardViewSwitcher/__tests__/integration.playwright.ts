@@ -18,18 +18,18 @@ async function loginAndGetBoardUrl(request: import('@playwright/test').APIReques
   const { data: { token } } = await loginRes.json();
 
   const workspacesRes = await request.get(`${BASE_URL}/api/v1/workspaces`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${String(token)}` },
   });
   const { data: workspaces } = await workspacesRes.json();
   const workspaceId = workspaces[0].id;
 
-  const boardsRes = await request.get(`${BASE_URL}/api/v1/workspaces/${workspaceId}/boards`, {
-    headers: { Authorization: `Bearer ${token}` },
+  const boardsRes = await request.get(`${BASE_URL}/api/v1/workspaces/${String(workspaceId)}/boards`, {
+    headers: { Authorization: `Bearer ${String(token)}` },
   });
   const { data: boards } = await boardsRes.json();
   const boardId = boards[0].id;
 
-  return { token, boardUrl: `/boards/${boardId}` };
+  return { token, boardUrl: `/boards/${String(boardId)}` };
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────

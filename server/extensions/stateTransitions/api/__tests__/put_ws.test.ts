@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
+import type { db as database } from '../../../../common/db';
 import { StateTransitionForbiddenError } from '../../common/errors';
 
 type Row = Record<string, unknown>;
@@ -15,18 +16,18 @@ class QueryBuilder {
 
   constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
 
-  where(criteria: Row): QueryBuilder {
+  where(criteria: Row): this {
     this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
     return this;
   }
 
-  orderBy(column: string, direction: 'asc' | 'desc' = 'asc'): QueryBuilder {
+  orderBy(column: string, direction: 'asc' | 'desc' = 'asc'): this {
     this.orderedBy = column;
     this.orderDirection = direction;
     return this;
   }
 
-  select(...columns: string[]): QueryBuilder {
+  select(...columns: string[]): this {
     this.selectedColumns = columns.length > 0 ? columns : null;
     return this;
   }
@@ -36,15 +37,15 @@ class QueryBuilder {
     return rows[0];
   }
 
-  async update(patch: Row, returning?: string[]): Promise<Row[] | number> {
-    const rows = (this.store[this.tableName] as Row[]).filter((row) =>
+  update(patch: Row, returning?: string[]): Promise<Row[] | number> {
+    const rows = this.store[this.tableName].filter((row) =>
       this.filters.every((predicate) => predicate(row)),
     );
     for (const row of rows) Object.assign(row, patch);
     if (returning && returning.length > 0) {
-      return rows.map((row) => ({ ...row }));
+      return Promise.resolve(rows.map((row) => ({ ...row })));
     }
-    return rows.length;
+    return Promise.resolve(rows.length);
   }
 
   then<TResult1 = Row[], TResult2 = never>(
@@ -54,8 +55,8 @@ class QueryBuilder {
     return this.execute().then(onfulfilled, onrejected);
   }
 
-  private async execute(): Promise<Row[]> {
-    let rows = (this.store[this.tableName] as Row[]).filter((row) =>
+  private execute(): Promise<Row[]> {
+    let rows = this.store[this.tableName].filter((row) =>
       this.filters.every((predicate) => predicate(row)),
     );
 
@@ -70,15 +71,16 @@ class QueryBuilder {
       });
     }
 
-    if (this.selectedColumns) {
+    const selectedColumns = this.selectedColumns;
+    if (selectedColumns) {
       rows = rows.map((row) => {
         const next: Row = {};
-        for (const key of this.selectedColumns!) next[key] = row[key];
+        for (const key of selectedColumns) next[key] = row[key];
         return next;
       });
     }
 
-    return rows.map((row) => ({ ...row }));
+    return Promise.resolve(rows.map((row) => ({ ...row })));
   }
 }
 
@@ -110,39 +112,40 @@ function resetStore(): DataStore {
   };
 }
 
-mock.module('../../../../config/featureFlags', () => ({
+void mock.module('../../../../config/featureFlags', () => ({
   featureFlags: {
     STATE_TRANSITIONS_ENABLED: true,
   },
 }));
 
-mock.module('../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
+void mock.module('../../../../common/db', () => ({
+  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof database,
 }));
 
-mock.module('../../../auth/middlewares/authentication', () => ({
-  authenticate: async (req: Request & { currentUser?: { id: string; email: string } }) => {
+void mock.module('../../../auth/middlewares/authentication', () => ({
+  authenticate: (req: Request & { currentUser?: { id: string; email: string } }) => {
     req.currentUser = { id: 'actor-1', email: 'actor@example.com' };
-    return null;
+    return Promise.resolve(null);
   },
 }));
 
-mock.module('../../../../middlewares/permissionManager', () => ({
-  requireWorkspaceMembership: async () => null,
+void mock.module('../../../../middlewares/permissionManager', () => ({
+  requireWorkspaceMembership: () => Promise.resolve(null),
   requireRole: () => null,
 }));
 
-mock.module('../../../board/middlewares/requireBoardWritable', () => ({
-  requireBoardWritable: async (req: Request & { board?: { id: string; workspace_id: string } }, boardId: string) => {
+void mock.module('../../../board/middlewares/requireBoardWritable', () => ({
+  requireBoardWritable: (req: Request & { board?: { id: string; workspace_id: string } }, boardId: string) => {
     req.board = { id: boardId, workspace_id: 'ws-1' };
-    return null;
+    return Promise.resolve(null);
   },
 }));
 
-mock.module('../../../../mods/pubsub/publisher', () => ({
+void mock.module('../../../../mods/pubsub/publisher', () => ({
   publisher: {
-    publish: async (boardId: string, message: string) => {
+    publish: (boardId: string, message: string) => {
       publishedMessages.push({ boardId, message });
+      return Promise.resolve();
     },
   },
 }));
@@ -210,9 +213,13 @@ describe('PUT state transitions websocket broadcast', () => {
       },
     };
 
-    await expect(
-      validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' }),
-    ).resolves.toBeUndefined();
+    let initialValidationError: unknown;
+    try {
+      await Promise.resolve(validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' }));
+    } catch (error) {
+      initialValidationError = error;
+    }
+    expect(initialValidationError).toBeUndefined();
 
     const req = new Request('http://localhost/api/v1/boards/board-1/state-transitions', {
       method: 'PUT',
@@ -232,8 +239,12 @@ describe('PUT state transitions websocket broadcast', () => {
     const putRes = await handlePutStateTransitions(req, 'board-1');
     expect(putRes.status).toBe(200);
 
-    await expect(
-      validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' }),
-    ).rejects.toBeInstanceOf(StateTransitionForbiddenError);
+    let updatedValidationError: unknown;
+    try {
+      await Promise.resolve(validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' }));
+    } catch (error) {
+      updatedValidationError = error;
+    }
+    expect(updatedValidationError).toBeInstanceOf(StateTransitionForbiddenError);
   });
 });

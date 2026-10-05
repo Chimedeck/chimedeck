@@ -58,7 +58,7 @@ const BoardDeleteDialog = ({ boardTitle, listCount, cardCount, onConfirm, onCanc
           <Button type="button" variant="secondary" size="md" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="button" variant="danger" size="md" onClick={handleConfirm} disabled={busy}>
+          <Button type="button" variant="danger" size="md" onClick={() => void handleConfirm()} disabled={busy}>
             {busy ? 'Deleting…' : 'Delete board'}
           </Button>
         </div>

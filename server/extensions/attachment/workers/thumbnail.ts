@@ -19,8 +19,19 @@ const THUMBNAIL_SUPPORTED_TYPES = new Set([
   'image/webp',
 ]);
 
+// Attachment columns consumed here, from 0011_attachments.ts and
+// 0033_attachments_enhanced.ts / 0108_attachment_dimensions.ts (width/height).
+interface AttachmentRow {
+  id: string;
+  card_id: string;
+  mime_type: string | null;
+  s3_key: string | null;
+  width: number | null;
+  height: number | null;
+}
+
 export async function generateThumbnail({ attachmentId }: { attachmentId: string }): Promise<void> {
-  const attachment = await db('attachments').where({ id: attachmentId }).first();
+  const attachment = await db<AttachmentRow>('attachments').where({ id: attachmentId }).first();
   if (!attachment) return;
 
   // Use mime_type (client-provided on upload) to gate image-only processing
@@ -48,8 +59,8 @@ export async function generateThumbnail({ attachmentId }: { attachmentId: string
   // Persist dimensions and return without generating a thumbnail_key.
   if (mimeType === 'image/gif') {
     await db('attachments').where({ id: attachmentId }).update({
-      width: metadata.width ?? null,
-      height: metadata.height ?? null,
+      width: metadata.width,
+      height: metadata.height,
     });
     return;
   }
@@ -75,7 +86,7 @@ export async function generateThumbnail({ attachmentId }: { attachmentId: string
 
   await db('attachments').where({ id: attachmentId }).update({
     thumbnail_key: thumbnailKey,
-    width: metadata.width ?? null,
-    height: metadata.height ?? null,
+    width: metadata.width,
+    height: metadata.height,
   });
 }

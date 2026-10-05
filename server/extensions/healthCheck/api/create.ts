@@ -9,11 +9,26 @@ import { validateUrl, UrlValidationError } from '../common/validateUrl';
 
 const MAX_NAME_LENGTH = 120;
 
+type AuthenticatedUserRequest = AuthenticatedRequest & { currentUser: { id: string } };
+
+type HealthCheckRow = {
+  id: string;
+  board_id: string;
+  name: string;
+  url: string;
+  type: string;
+  preset_key: string | null;
+  expected_status: number | null;
+  is_active: boolean;
+  created_at: string | Date;
+};
+
 export async function handleCreateHealthCheck(
   req: Request,
   boardId: string,
 ): Promise<Response> {
-  const authError = await authenticate(req as AuthenticatedRequest);
+  const authenticatedRequest = req as AuthenticatedUserRequest;
+  const authError = await authenticate(authenticatedRequest);
   if (authError) return authError;
 
   const visibilityError = await applyBoardVisibility(req, boardId);
@@ -24,7 +39,7 @@ export async function handleCreateHealthCheck(
     url?: string;
     type?: string;
     presetKey?: string;
-    expectedStatus?: number;
+    expectedStatus?: unknown;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -45,7 +60,7 @@ export async function handleCreateHealthCheck(
 
   if (body.name.trim().length > MAX_NAME_LENGTH) {
     return Response.json(
-      { name: 'bad-request', data: { message: `name must not exceed ${MAX_NAME_LENGTH} characters` } },
+      { name: 'bad-request', data: { message: `name must not exceed ${String(MAX_NAME_LENGTH)} characters` } },
       { status: 400 },
     );
   }
@@ -97,7 +112,7 @@ export async function handleCreateHealthCheck(
   const duplicate = await db('board_health_checks')
     .where({ board_id: boardId })
     .whereRaw('LOWER(url) = LOWER(?)', [parsedUrl.toString()])
-    .first();
+    .first<{ id: string } | undefined>();
 
   if (duplicate) {
     return Response.json(
@@ -107,7 +122,7 @@ export async function handleCreateHealthCheck(
   }
 
   const id = randomUUID();
-  const createdBy = (req as AuthenticatedRequest).currentUser!.id;
+  const createdBy = authenticatedRequest.currentUser.id;
 
   await db('board_health_checks').insert({
     id,
@@ -121,7 +136,7 @@ export async function handleCreateHealthCheck(
     created_by: createdBy,
   });
 
-  const created = await db('board_health_checks').where({ id }).first();
+  const created = await db('board_health_checks').where({ id }).first<HealthCheckRow>();
 
   return Response.json(
     {

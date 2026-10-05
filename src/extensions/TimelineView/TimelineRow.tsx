@@ -7,6 +7,7 @@ import TimelineBar, { ROW_SLOT_HEIGHT } from './TimelineBar';
 import Button from '../../common/components/Button';
 import { useTimelineDrag } from './useTimelineDrag';
 import translations from './translations/en.json';
+import { parseLocalDate } from '../../common/utils/dates';
 import type { TimelineRowProps } from './types';
 import type { Card } from '../Card/api';
 
@@ -16,12 +17,6 @@ const BAR_TOP = 8;
 const BAR_BOTTOM_PAD = 6;
 
 // ── Row-packing helpers ────────────────────────────────────────────────────
-
-function parseLocalDate(s: string): Date {
-  const datePart = s.slice(0, 10);
-  const [y, m, d] = datePart.split('-');
-  return new Date(Number(y), Number(m) - 1, Number(d));
-}
 
 function daysBetween(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
@@ -34,9 +29,12 @@ function daysBetween(a: Date, b: Date): number {
  */
 function assignRows(cards: Card[], originDate: Date): Map<string, number> {
   const intervals = cards.map((card) => {
-    const startStr = card.start_date ?? card.due_date!;
+    // [why] assignRows is only called with scheduledCards, which always have a
+    // due_date; the guard is a type-system safety net matching the previous `!`.
+    if (!card.due_date) throw new Error('scheduled card missing due_date');
+    const startStr = card.start_date ?? card.due_date;
     const startDay = daysBetween(originDate, parseLocalDate(startStr));
-    const dueDay   = daysBetween(originDate, parseLocalDate(card.due_date!));
+    const dueDay   = daysBetween(originDate, parseLocalDate(card.due_date));
     return { id: card.id, startDay, dueDay };
   });
 
@@ -161,7 +159,7 @@ const TimelineRow = ({
                 key={card.id}
                 variant="ghost"
                 className="rounded bg-bg-overlay px-2 py-0.5 text-xs text-subtle hover:bg-bg-sunken"
-                onClick={() => onCardClick(card.id)}
+                onClick={() => { onCardClick(card.id); }}
                 data-testid={`timeline-unscheduled-chip-${card.id}`}
               >
                 {card.title}

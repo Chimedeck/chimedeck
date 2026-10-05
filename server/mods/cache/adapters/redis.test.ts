@@ -6,7 +6,8 @@ const describeIfRedis = REDIS_URL ? describe : describe.skip;
 
 describeIfRedis('RedisCacheAdapter', () => {
   it('implements CacheProvider interface', () => {
-    const adapter = new RedisCacheAdapter(REDIS_URL!);
+    if (!REDIS_URL) throw new Error('REDIS_URL not set');
+    const adapter = new RedisCacheAdapter(REDIS_URL);
     expect(typeof adapter.set).toBe('function');
     expect(typeof adapter.get).toBe('function');
     expect(typeof adapter.del).toBe('function');

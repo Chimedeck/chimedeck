@@ -34,7 +34,7 @@ const CardTile = ({
     <div
       className={`group rounded bg-bg-surface px-3 py-2 shadow-sm cursor-pointer hover:bg-blue-50 transition-colors${card.archived ? ' opacity-60' : ''}`}
       style={style}
-      onClick={() => onClick(card.id)}
+      onClick={() => { onClick(card.id); }}
       role="button"
       tabIndex={0}
       aria-label={`Card: ${card.title}`}

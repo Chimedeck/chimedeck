@@ -196,7 +196,7 @@ const ListDropdown = ({ editor }: ListDropdownProps) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    return () => { document.removeEventListener('mousedown', handler); };
   }, [open]);
 
   const { isBullet, isOrdered } = useEditorState({
@@ -298,7 +298,7 @@ const HeadingDropdown = ({ editor }: HeadingDropdownProps) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    return () => { document.removeEventListener('mousedown', handler); };
   }, [open]);
 
   // [why] editor.isActive() reads the current selection from the editor state.
@@ -312,7 +312,7 @@ const HeadingDropdown = ({ editor }: HeadingDropdownProps) => {
       activeLevel:
         ctx.editor
           ? (([1, 2, 3, 4, 5, 6] as HeadingLevel[]).find((l) =>
-              ctx.editor!.isActive('heading', { level: l }),
+              ctx.editor?.isActive('heading', { level: l }),
             ) ?? null)
           : null,
     }),
@@ -321,7 +321,7 @@ const HeadingDropdown = ({ editor }: HeadingDropdownProps) => {
   const activeLabel =
     activeLevel === null
       ? 'Normal text'
-      : `Heading ${activeLevel}`;
+      : `Heading ${String(activeLevel)}`;
 
   const apply = (level: HeadingLevel | null) => {
     if (!editor) return;
@@ -434,7 +434,7 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach, link
       }
     };
     document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    return () => { document.removeEventListener('keydown', handler); };
   }, []);
 
   // Close emoji picker when clicking outside.
@@ -475,7 +475,7 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach, link
       }
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    return () => { document.removeEventListener('mousedown', handler); };
   }, [overflowOpen, onToggleOverflow]);
 
   const runCmd = useCallback(
@@ -694,7 +694,7 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach, link
             <CommandMenu
               editor={editor}
               onClose={onToggleOverflow}
-              onOpenEmojiPicker={() => setEmojiPickerOpen(true)}
+              onOpenEmojiPicker={() => { setEmojiPickerOpen(true); }}
               extraCommands={hiddenResponsiveCommands}
             />
           )}
@@ -718,7 +718,7 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach, link
     </div>
 
       {/* Editor help modal — rendered via portal outside the toolbar div */}
-      {helpOpen && <EditorHelpModal onClose={() => setHelpOpen(false)} />}
+      {helpOpen && <EditorHelpModal onClose={() => { setHelpOpen(false); }} />}
     </>
   );
 };

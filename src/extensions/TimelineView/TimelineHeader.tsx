@@ -22,7 +22,7 @@ function toIsoDate(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+  return `${String(y)}-${m}-${d}`;
 }
 
 interface DateColumn {
@@ -50,7 +50,7 @@ function buildMonthBands(originDate: Date, totalDays: number, dayWidth: number):
     const daysInChunk = Math.min(daysLeft, totalDays - i);
     bands.push({
       dateKey: toIsoDate(d),
-      label: `${MONTH_SHORT[d.getMonth()]} ${d.getFullYear()}`,
+      label: `${MONTH_SHORT[d.getMonth()] ?? ''} ${String(d.getFullYear())}`,
       widthPx: daysInChunk * dayWidth,
     });
     i += daysInChunk;
@@ -94,11 +94,11 @@ function buildWeekColumns(
       toIsoDate(addDays(d, k)),
     ).includes(todayIso);
     // Show the week range: "Mar 10 – 16" or "Mar 29 – Apr 4" when spanning a month boundary.
-    const startLabel = `${MONTH_SHORT[d.getMonth()]} ${d.getDate()}`;
+    const startLabel = `${MONTH_SHORT[d.getMonth()] ?? ''} ${String(d.getDate())}`;
     const endLabel =
       endDate.getMonth() === d.getMonth()
         ? String(endDate.getDate())
-        : `${MONTH_SHORT[endDate.getMonth()]} ${endDate.getDate()}`;
+        : `${MONTH_SHORT[endDate.getMonth()] ?? ''} ${String(endDate.getDate())}`;
     cols.push({
       dateKey: toIsoDate(d),
       label: `${startLabel} – ${endLabel}`,
@@ -127,7 +127,7 @@ function buildMonthColumns(
       today.getMonth() === d.getMonth() && today.getFullYear() === d.getFullYear();
     cols.push({
       dateKey: toIsoDate(d),
-      label: `${MONTH_SHORT[d.getMonth()]} ${d.getFullYear()}`,
+      label: `${MONTH_SHORT[d.getMonth()] ?? ''} ${String(d.getFullYear())}`,
       widthPx: daysInChunk * dayWidth,
       isToday: isCurrentMonth,
     });

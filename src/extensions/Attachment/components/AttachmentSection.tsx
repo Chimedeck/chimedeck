@@ -31,7 +31,7 @@ export function AttachmentSection({ cardId, authToken, apiBase = '' }: Props): R
     // TODO: add a dedicated list endpoint in a future sprint.
   };
 
-  useEffect(() => { refresh(); }, [cardId]);
+  useEffect(() => { void refresh(); }, [cardId]);
 
   const handleDelete = async (id: string): Promise<void> => {
     await fetch(`${apiBase}/api/v1/attachments/${id}`, { method: 'DELETE', headers: authHeaders });
@@ -58,24 +58,24 @@ export function AttachmentSection({ cardId, authToken, apiBase = '' }: Props): R
   };
 
   const handleUploadComplete = (): void => {
-    refresh();
+    void refresh();
   };
 
   return (
     <section style={{ marginTop: 16 }}>
       <h4 style={{ fontSize: 14, marginBottom: 8 }}>{translations['attachment.section.title']}</h4>
       {attachments.map((a) => (
-        <AttachmentItem key={a.id} attachment={a} onDelete={handleDelete} onDownload={handleDownload} />
+        <AttachmentItem key={a.id} attachment={a} onDelete={(id) => void handleDelete(id)} onDownload={(id) => void handleDownload(id)} />
       ))}
       <AttachmentUploader cardId={cardId} onUploadComplete={handleUploadComplete} />
       <button
-        onClick={() => setShowUrlModal(true)}
+        onClick={() => { setShowUrlModal(true); }}
         style={{ marginTop: 8, fontSize: 12, cursor: 'pointer' }}
       >
         {translations['attachment.section.addUrl']}
       </button>
       {showUrlModal && (
-        <AttachmentUrlModal cardId={cardId} onAdd={handleAddUrl} onClose={() => setShowUrlModal(false)} />
+        <AttachmentUrlModal cardId={cardId} onAdd={handleAddUrl} onClose={() => { setShowUrlModal(false); }} />
       )}
     </section>
   );

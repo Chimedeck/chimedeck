@@ -9,22 +9,24 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 
 const BASE_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
+const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-interface Credentials { email: string; password: string; token: string }
+interface Credentials { email: string; password: string; token: string; refreshToken: string }
 
 async function registerAndLogin(request: APIRequestContext, suffix: string): Promise<Credentials> {
   const email = `td-test-${suffix}-${Date.now()}@journeyh.io`;
   const password = 'TestPassword1!';
-  await request.post(`${BASE_URL}/api/v1/auth/register`, {
+  const regRes = await request.post(`${BASE_URL}/api/v1/auth/register`, {
     data: { email, password, name: `TD ${suffix}` },
   });
-  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/token`, {
-    data: { email, password },
-  });
-  const body = await loginRes.json() as { data: { accessToken: string } };
-  return { email, password, token: body.data.accessToken };
+  // Register returns an accessToken directly (201); avoid a separate login call
+  // which is rate-limited (10/IP/min) and would 429 under the full suite.
+  const body = await regRes.json() as { data: { accessToken: string } };
+  const setCookie = regRes.headers()['set-cookie'] ?? '';
+  const refreshMatch = setCookie.match(/refresh_token=([^;]+)/);
+  return { email, password, token: body.data.accessToken, refreshToken: refreshMatch ? refreshMatch[1] : '' };
 }
 
 async function createWorkspace(request: APIRequestContext, token: string): Promise<string> {
@@ -78,20 +80,40 @@ async function getCard(request: APIRequestContext, token: string, cardId: string
   return body.data;
 }
 
+
+/** Local calendar date ("YYYY-MM-DD") of an ISO timestamp. */
+function localDateKey(iso: string): string {
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${String(y)}-${m}-${day}`;
+}
+
 function offsetDate(offsetDays: number): string {
   const d = new Date();
   d.setDate(d.getDate() + offsetDays);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+// App boot performs an async token refresh; navigating immediately can race and
+// land on /workspaces. Retry until the board view switcher renders.
+async function gotoBoardUntilReady(page: Page, baseUrl: string, boardId: string): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto(`${baseUrl}/b/${boardId}`);
+    await page.waitForLoadState('networkidle');
+    if (await page.getByTestId('board-view-switcher').isVisible().catch(() => false)) return;
+    await page.waitForTimeout(500);
+  }
+}
+
 async function goToTimelineView(page: Page, baseUrl: string, boardId: string, creds: Credentials) {
-  await page.goto(`${baseUrl}/login`);
-  await page.fill('input[type="email"]', creds.email);
-  await page.fill('input[type="password"]', creds.password);
-  await page.click('button[type="submit"]');
-  await page.waitForURL(`${baseUrl}/workspaces**`, { timeout: 15000 });
-  await page.goto(`${baseUrl}/boards/${boardId}`);
-  await page.waitForLoadState('networkidle');
+  if (creds.refreshToken) {
+    await page.context().addCookies([
+      { name: 'refresh_token', value: creds.refreshToken, url: `${baseUrl}/api/v1/auth/refresh`, httpOnly: true, sameSite: 'Strict' },
+    ]);
+  }
+  await gotoBoardUntilReady(page, baseUrl, boardId);
   await page.getByTestId('board-view-tab-TIMELINE').click();
   await expect(page.getByTestId('timeline-view')).toBeVisible({ timeout: 10000 });
 }
@@ -108,8 +130,8 @@ async function dragHandle(page: Page, handleTestId: string, deltaX: number) {
   await page.mouse.move(startX, startY);
   await page.mouse.down();
   // Move in small steps to trigger all mousemove events.
-  const steps = Math.abs(deltaX) / 4;
-  await page.mouse.move(startX + deltaX, startY, { steps: Math.max(steps, 4) });
+  const steps = Math.max(Math.ceil(Math.abs(deltaX) / 4), 4);
+  await page.mouse.move(startX + deltaX, startY, { steps });
   await page.mouse.up();
 }
 
@@ -127,7 +149,7 @@ test.describe('Timeline Drag / Resize', () => {
     const dueDate = offsetDate(3);
     await patchCard(request, creds.token, cardId, { start_date: startDate, due_date: dueDate });
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     // Intercept the PATCH request so we can verify it is made.
     const patchPromise = page.waitForRequest(
@@ -155,7 +177,7 @@ test.describe('Timeline Drag / Resize', () => {
     const dueDate = offsetDate(5);
     await patchCard(request, creds.token, cardId, { start_date: startDate, due_date: dueDate });
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     const patchPromise = page.waitForRequest(
       (req) => req.method() === 'PATCH' && req.url().includes(`/cards/${cardId}`),
@@ -182,7 +204,7 @@ test.describe('Timeline Drag / Resize', () => {
     const dueDate = offsetDate(6);
     await patchCard(request, creds.token, cardId, { start_date: startDate, due_date: dueDate });
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     const patchPromise = page.waitForRequest(
       (req) => req.method() === 'PATCH' && req.url().includes(`/cards/${cardId}`),
@@ -224,7 +246,7 @@ test.describe('Timeline Drag / Resize', () => {
     const dueDate = offsetDate(4);
     await patchCard(request, creds.token, cardId, { start_date: startDate, due_date: dueDate });
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     // Intercept the PATCH and force a 500 error.
     await page.route(`**/api/v1/cards/${cardId}`, (route) => {
@@ -240,9 +262,11 @@ test.describe('Timeline Drag / Resize', () => {
     // Error toast should appear.
     await expect(page.getByText(/failed to update card dates/i)).toBeVisible({ timeout: 8000 });
 
-    // After revert, the server-side dates should remain unchanged.
+    // After revert, the server-side dates should remain unchanged. Compare on
+    // the local calendar date: the server stores these as instants, so slicing
+    // the raw UTC string would shift the day for non-UTC servers.
     const serverCard = await getCard(request, creds.token, cardId);
-    expect(serverCard.start_date?.slice(0, 10)).toBe(startDate);
-    expect(serverCard.due_date?.slice(0, 10)).toBe(dueDate);
+    expect(serverCard.start_date ? localDateKey(serverCard.start_date) : null).toBe(startDate);
+    expect(serverCard.due_date ? localDateKey(serverCard.due_date) : null).toBe(dueDate);
   });
 });

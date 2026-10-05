@@ -94,7 +94,7 @@ const IconPicker: FC<Props> = ({ value, onChange }) => {
             type="button"
             title={name.replace('Icon', '')}
             aria-pressed={selected}
-            onClick={() => onChange(name)}
+            onClick={() => { onChange(name); }}
             className={[
               'flex items-center justify-center rounded-md p-1.5 transition-colors',
               selected

@@ -41,7 +41,7 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
       setLocalError(translations['ProfilePage.invalidFile']);
       return;
     }
-    dispatch(uploadAvatarThunk({ file }));
+    void dispatch(uploadAvatarThunk({ file }));
   }
 
   function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
@@ -58,7 +58,7 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
   }
 
   function handleRemove() {
-    dispatch(removeAvatarThunk());
+    void dispatch(removeAvatarThunk());
   }
 
   return (
@@ -71,7 +71,7 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
         style={{ width: 128, height: 128 }}
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-        onDragLeave={() => setDragOver(false)}
+        onDragLeave={() => { setDragOver(false); }}
         onDrop={handleDrop}
         role="button"
         tabIndex={0}

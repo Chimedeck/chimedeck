@@ -19,7 +19,15 @@ export async function handleResendVerification(req: Request): Promise<Response> 
   const authError = await authenticate(authReq);
   if (authError) return authError;
 
-  const userId = authReq.currentUser!.id;
+  const currentUser = authReq.currentUser;
+  if (!currentUser) {
+    return Response.json(
+      { error: { code: 'unauthorized', message: 'Unauthorized' } },
+      { status: 401 },
+    );
+  }
+
+  const userId = currentUser.id;
 
   // Rate limit: 3 per hour per user
   const rlKey = `rl:resend-verification:${userId}`;

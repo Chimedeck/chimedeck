@@ -45,9 +45,9 @@ export default function ResizablePanels({ left, right, className = '' }: Resizab
 
   // Update mobile breakpoint on resize
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    const onResize = () => { setIsMobile(window.innerWidth < MOBILE_BREAKPOINT); };
     window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    return () => { window.removeEventListener('resize', onResize); };
   }, []);
 
   const clampRatio = useCallback((rawRatio: number, containerWidth: number): number => {
@@ -127,7 +127,7 @@ export default function ResizablePanels({ left, right, className = '' }: Resizab
 
   if (isMobile) {
     return (
-      <div className={`flex flex-col ${className}`}>
+      <div className={`flex flex-col ${className} overflow-y-auto scrollbar-contrast`}>
         <div className="w-full">{left}</div>
         <div className="w-full">{right}</div>
       </div>

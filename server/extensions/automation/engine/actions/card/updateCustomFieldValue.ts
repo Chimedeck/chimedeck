@@ -5,6 +5,29 @@ import type { ActionHandler, ActionContext } from '../../../common/types';
 
 type FieldType = 'TEXT' | 'NUMBER' | 'DATE' | 'CHECKBOX' | 'DROPDOWN';
 
+// Read projections from migrations 0005_list, 0006_card and 0032_custom_fields.
+interface CardRow {
+  id: string;
+  list_id: string;
+}
+
+interface ListRow {
+  id: string;
+  board_id: string;
+}
+
+interface CustomFieldRow {
+  id: string;
+  board_id: string;
+  field_type: FieldType;
+  options: unknown; // Nullable JSONB; parseFieldOptions handles its runtime representation.
+}
+
+interface CustomFieldValueRow {
+  card_id: string;
+  custom_field_id: string;
+}
+
 interface DropdownOption {
   id: string;
   label?: string;
@@ -95,18 +118,18 @@ export const cardUpdateCustomFieldValueAction: ActionHandler = {
     const cardId = evalContext.cardId;
     if (!cardId) throw new Error('card-id-missing');
 
-    const card = await trx('cards').where({ id: cardId }).first();
+    const card = await trx<CardRow>('cards').where({ id: cardId }).first();
     if (!card) throw new Error('card-not-found');
 
-    const list = await trx('lists').where({ id: card.list_id }).first();
+    const list = await trx<ListRow>('lists').where({ id: card.list_id }).first();
     if (list?.board_id !== automation.board_id) throw new Error('card-on-different-board');
 
-    const field = await trx('custom_fields')
+    const field = await trx<CustomFieldRow>('custom_fields')
       .where({ id: config.fieldId, board_id: automation.board_id })
       .first();
     if (!field) throw new Error('custom-field-not-found');
 
-    const dbFieldType = String(field.field_type) as FieldType;
+    const dbFieldType = field.field_type;
     if (dbFieldType !== config.fieldType) throw new Error('custom-field-type-mismatch');
 
     if (config.fieldType === 'DROPDOWN') {
@@ -117,7 +140,7 @@ export const cardUpdateCustomFieldValueAction: ActionHandler = {
 
     const valueColumns = toValueColumns(config);
 
-    const existing = await trx('card_custom_field_values')
+    const existing = await trx<CustomFieldValueRow>('card_custom_field_values')
       .where({ card_id: cardId, custom_field_id: config.fieldId })
       .first();
 

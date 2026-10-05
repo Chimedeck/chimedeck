@@ -47,12 +47,12 @@ const QuotaBar: FC<Props> = ({ quota }) => {
       <div className="h-2 w-full rounded-full bg-bg-overlay overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-300 ${barColor(pct)}`}
-          style={{ width: `${pct}%` }}
+          style={{ width: `${String(pct)}%` }}
           role="progressbar"
           aria-valuenow={pct}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label={`${pct}% quota used`}
+          aria-label={`${String(pct)}% quota used`}
         />
       </div>
 

@@ -1,8 +1,7 @@
 // tests/integration/auth/emailDomainRestriction.test.ts
 // Verifies that email domain restriction is enforced on registration and email change.
-import { describe, it, expect, beforeEach } from 'bun:test';
+import { describe, it, expect } from 'bun:test';
 import { extractDomain, isEmailDomainAllowed } from '../../../server/extensions/auth/common/emailDomain';
-import { env } from '../../../server/config/env';
 
 // ---------------------------------------------------------------------------
 // Unit tests for helpers
@@ -63,7 +62,6 @@ describe('isEmailDomainAllowed — multiple allowed domains', () => {
 // ---------------------------------------------------------------------------
 
 import { handleRegister } from '../../../server/extensions/auth/api/register';
-import { handleChangeEmail } from '../../../server/extensions/auth/api/changeEmail';
 
 // We stub db and other side-effects by testing only the domain-guard early return.
 // The guard fires BEFORE any database access, so we can invoke the handler with

@@ -37,7 +37,7 @@ const CustomFieldsSection = ({ boardId, cardId, disabled = false }: Props) => {
     });
 
     observer.observe(gridRef.current);
-    return () => observer.disconnect();
+    return () => { observer.disconnect(); };
   }, [fieldsLoading, valuesLoading, fields.length]);
 
   const handleValueChange = useCallback(
@@ -89,7 +89,7 @@ const CustomFieldsSection = ({ boardId, cardId, disabled = false }: Props) => {
                 field={field}
                 value={value}
                 disabled={disabled}
-                onValueChange={(updated) => handleValueChange(field.id, updated)}
+                onValueChange={(updated) => { handleValueChange(field.id, updated); }}
               />
             </div>
           );

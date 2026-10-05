@@ -52,7 +52,7 @@ const EditProfilePage = () => {
         <div className="flex items-center gap-3">
           <button
             className="text-subtle hover:text-base transition-colors text-sm"
-            onClick={() => navigate(-1)}
+            onClick={() => { navigate(-1); }}
           >
             {translations['UserProfile.backButton']}
           </button>
@@ -66,7 +66,7 @@ const EditProfilePage = () => {
             aria-selected={activeTab === 'profile'}
             aria-controls="tab-panel-profile"
             className={tabClass('profile')}
-            onClick={() => switchTab('profile')}
+            onClick={() => { switchTab('profile'); }}
           >
             {translations['UserProfile.tabProfile']}
           </button>
@@ -75,7 +75,7 @@ const EditProfilePage = () => {
             aria-selected={activeTab === 'notifications'}
             aria-controls="tab-panel-notifications"
             className={tabClass('notifications')}
-            onClick={() => switchTab('notifications')}
+            onClick={() => { switchTab('notifications'); }}
           >
             {translations['UserProfile.tabNotifications']}
           </button>
@@ -95,7 +95,7 @@ const EditProfilePage = () => {
             <section>
               <ChangeEmailForm
                 currentEmail={displayEmail}
-                onSuccess={(newEmail) => setDisplayEmail(newEmail)}
+                onSuccess={(newEmail) => { setDisplayEmail(newEmail); }}
               />
             </section>
           </div>

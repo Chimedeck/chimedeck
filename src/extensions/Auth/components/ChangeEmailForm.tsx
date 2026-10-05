@@ -35,7 +35,7 @@ export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: 
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   if (pendingEmail) {
-    return <EmailChangePending pendingEmail={pendingEmail} onDismiss={() => setPendingEmail(null)} />;
+    return <EmailChangePending pendingEmail={pendingEmail} onDismiss={() => { setPendingEmail(null); }} />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,7 +75,7 @@ export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
       <h2 className="text-lg font-semibold text-base">{translations.changeEmail.title}</h2>
 
       <Input
@@ -84,7 +84,7 @@ export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: 
         type="email"
         required
         value={newEmail}
-        onChange={(e) => setNewEmail(e.target.value)}
+        onChange={(e) => { setNewEmail(e.target.value); }}
         placeholder={currentEmail}
         className="w-full"
       />
@@ -95,7 +95,7 @@ export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: 
         type="password"
         required
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        onChange={(e) => { setPassword(e.target.value); }}
         className="w-full"
       />
 

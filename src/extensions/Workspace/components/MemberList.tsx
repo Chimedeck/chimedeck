@@ -37,7 +37,7 @@ const MemberList = ({
   const ownerCount = members.filter((m) => m.role === 'OWNER').length;
 
   const handleRoleChange = (userId: string, newRole: Role) => {
-    dispatch(updateMemberRoleThunk({ workspaceId, userId, role: newRole }));
+    void dispatch(updateMemberRoleThunk({ workspaceId, userId, role: newRole }));
   };
 
   const handleRemoveConfirm = (userId: string) => {
@@ -46,7 +46,7 @@ const MemberList = ({
 
   const handleRemove = () => {
     if (confirmRemoveUserId) {
-      dispatch(removeMemberThunk({ workspaceId, userId: confirmRemoveUserId }));
+      void dispatch(removeMemberThunk({ workspaceId, userId: confirmRemoveUserId }));
       setConfirmRemoveUserId(null);
     }
   };
@@ -95,9 +95,9 @@ const MemberList = ({
                 {canManageMembers && member.userId !== currentUserId ? (
                   <select
                     value={member.role}
-                    onChange={(e) =>
-                      handleRoleChange(member.userId, e.target.value as Role)
-                    }
+                    onChange={(e) => {
+                      handleRoleChange(member.userId, e.target.value as Role);
+                    }}
                     aria-label={`Change role for ${member.email}`}
                     className="rounded border border-border bg-bg-overlay text-base px-2 py-0.5 text-xs"
                   >
@@ -118,7 +118,7 @@ const MemberList = ({
                     <Button
                       variant="link"
                       size="sm"
-                      onClick={() => handleRemoveConfirm(member.userId)}
+                      onClick={() => { handleRemoveConfirm(member.userId); }}
                       aria-label={`Remove ${member.email}`}
                       className="!text-danger"
                     >
@@ -154,7 +154,7 @@ const MemberList = ({
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => setConfirmRemoveUserId(null)}
+                onClick={() => { setConfirmRemoveUserId(null); }}
               >
                 Cancel
               </Button>

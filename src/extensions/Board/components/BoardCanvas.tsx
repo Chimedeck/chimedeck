@@ -662,7 +662,9 @@ const BoardCanvas = ({
       setCollapsedListIds(parseCollapsedListIds(event.newValue));
     };
     globalThis.window.addEventListener('storage', handleStorage);
-    return () => globalThis.window.removeEventListener('storage', handleStorage);
+    return () => {
+      globalThis.window.removeEventListener('storage', handleStorage);
+    };
   }, [collapsedListsStorageKey]);
 
   const handleToggleListCollapsed = useCallback((listId: string) => {
@@ -1575,7 +1577,7 @@ const BoardCanvas = ({
       collisionDetection={collisionDetection}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
+      onDragEnd={(event) => { void handleDragEnd(event); }}
     >
       <ProgressiveHydrationDispatcher
         listOrder={listOrder}

@@ -47,7 +47,7 @@ export async function handleListAvailableBoardPlugins(
   }
 
   const countResult = await query.clone().count('plugins.id as count').first();
-  const total = parseInt(String((countResult as any)?.count ?? '0'), 10);
+  const total = parseInt(String((countResult as { count?: number | string } | undefined)?.count ?? '0'), 10);
 
   const rows = await query
     .orderBy('plugins.created_at', 'asc')
@@ -73,7 +73,7 @@ export async function handleListAvailableBoardPlugins(
     );
 
   return Response.json({
-    data: rows.map((p: any) => normalizePlugin(p)),
+    data: rows.map((p: Record<string, unknown>) => normalizePlugin(p)),
     metadata: { total },
   });
 }

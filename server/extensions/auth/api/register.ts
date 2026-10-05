@@ -79,7 +79,7 @@ export async function handleRegister(req: Request): Promise<Response> {
 
   // When verification is enabled: send email and return 201 without a JWT
   if (verificationEnabled) {
-    const verificationUrl = `${env.APP_URL}/verify-email?token=${verificationToken}`;
+    const verificationUrl = `${env.APP_URL}/verify-email?token=${verificationToken ?? ''}`;
     const emailContent = await buildVerificationEmail({ verificationUrl });
     await send({ to: email, ...emailContent });
 
@@ -104,7 +104,7 @@ export async function handleRegister(req: Request): Promise<Response> {
   const responseHeaders = new Headers({ 'Content-Type': 'application/json' });
   responseHeaders.append(
     'Set-Cookie',
-    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
+    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Max-Age=${String(jwtConfig.refreshTokenTtlDays * 86400)}`,
   );
 
   const avatarUrl = buildAvatarProxyUrl({ userId: user.id, avatarUrl: user.avatar_url ?? null });

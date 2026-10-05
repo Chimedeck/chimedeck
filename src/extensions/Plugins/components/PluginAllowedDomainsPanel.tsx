@@ -25,7 +25,6 @@ const PluginAllowedDomainsPanel = ({ boardPlugin, boardId }: Props) => {
   // null → all whitelistedDomains are permitted; array → only those in the array
   const initialSelected = useMemo<string[]>(
     () => (savedAllowedDomains === null ? [...whitelistedDomains] : savedAllowedDomains),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [boardPlugin.id],
   );
 
@@ -83,7 +82,7 @@ const PluginAllowedDomainsPanel = ({ boardPlugin, boardId }: Props) => {
               type="checkbox"
               id={`allowed-domain-${domain}`}
               checked={selected.includes(domain)}
-              onChange={() => toggleDomain(domain)}
+              onChange={() => { toggleDomain(domain); }}
               className="w-3.5 h-3.5 accent-blue-500 cursor-pointer"
             />
             <label

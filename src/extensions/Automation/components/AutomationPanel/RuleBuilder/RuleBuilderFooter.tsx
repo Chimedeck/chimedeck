@@ -1,5 +1,4 @@
 // RuleBuilderFooter — Save / Cancel bar at the bottom of the RuleBuilder.
-import { useState } from 'react';
 import Button from '../../../../../common/components/Button';
 import translations from '../../../translations/en.json';
 
@@ -35,7 +34,9 @@ const RuleBuilderFooter = ({
         className="w-full rounded-md border border-border bg-bg-overlay px-3 py-1.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
         placeholder={translations['automation.ruleBuilderFooter.ruleNamePlaceholder']}
         value={ruleName}
-        onChange={(e) => onRuleNameChange(e.target.value)}
+        onChange={(e) => {
+          onRuleNameChange(e.target.value);
+        }}
         maxLength={100}
       />
     </div>

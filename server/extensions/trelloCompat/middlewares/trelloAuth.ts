@@ -33,6 +33,6 @@ export async function trelloAuth(req: Request): Promise<Response | null> {
     return TRELLO_UNAUTHORIZED();
   }
 
-  (req as AuthenticatedRequest).currentUser = (authReq as AuthenticatedRequest).currentUser!;
+  (req as AuthenticatedRequest).currentUser = user;
   return null;
 }

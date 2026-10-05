@@ -17,7 +17,7 @@ const ApiKeyRevealModal = ({ apiKey, onClose }: Props) => {
     try {
       await navigator.clipboard.writeText(apiKey);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => { setCopied(false); }, 2000);
     } catch {
       // fallback: select the text
     }
@@ -50,7 +50,7 @@ const ApiKeyRevealModal = ({ apiKey, onClose }: Props) => {
               {apiKey}
             </code>
             <button
-              onClick={handleCopy}
+              onClick={() => { void handleCopy(); }}
               className="flex-shrink-0 bg-bg-overlay hover:bg-bg-sunken text-subtle text-sm rounded px-3 py-2"
               aria-label={translations['plugins.apiKeyModal.copyAriaLabel']}
             >

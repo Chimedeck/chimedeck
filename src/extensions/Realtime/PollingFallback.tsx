@@ -38,7 +38,7 @@ export function usePollingFallback({
     try {
       // apiClient response interceptor auto-unwraps to response.data
       const result = (await apiClient.get(
-        `/boards/${boardId}/events?since=${lastSeqRef.current}`
+        `/boards/${boardId}/events?since=${String(lastSeqRef.current)}`
       )) as { data: RealtimeEvent[]; metadata: { hasMore: boolean; latestSequence: string } };
 
       const events = result.data;
@@ -74,7 +74,7 @@ export function usePollingFallback({
 
     // Fire an immediate poll then set up the recurring interval
     void poll();
-    intervalRef.current = setInterval(poll, POLL_INTERVAL_MS);
+    intervalRef.current = setInterval(() => { void poll(); }, POLL_INTERVAL_MS);
 
     return () => {
       if (intervalRef.current !== null) {

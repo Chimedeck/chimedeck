@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
+import type { db as database } from '../../../../../common/db';
 
 type Row = Record<string, unknown>;
 type DataStore = {
@@ -29,18 +30,18 @@ class QueryBuilder {
 
   constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
 
-  where(criteria: Row): QueryBuilder {
+  where(criteria: Row): this {
     this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
     return this;
   }
 
-  orderBy(field: string, direction: 'asc' | 'desc' = 'asc'): QueryBuilder {
+  orderBy(field: string, direction: 'asc' | 'desc' = 'asc'): this {
     this.orderByField = field;
     this.orderByDirection = direction;
     return this;
   }
 
-  select(...columns: string[]): QueryBuilder {
+  select(...columns: string[]): this {
     this.pickedColumns = columns.length > 0 ? columns : null;
     return this;
   }
@@ -50,22 +51,23 @@ class QueryBuilder {
     return rows[0];
   }
 
-  async insert(payload: Row | Row[]): Promise<void> {
+  insert(payload: Row | Row[]): Promise<void> {
     const rows = Array.isArray(payload) ? payload : [payload];
-    for (const row of rows) (this.store[this.tableName] as Row[]).push({ ...row });
+    for (const row of rows) this.store[this.tableName].push({ ...row });
+    return Promise.resolve();
   }
 
-  async update(patch: Row): Promise<number> {
+  update(patch: Row): Promise<number> {
     const rows = this.executeSync(false);
     rows.forEach((row) => Object.assign(row, patch));
-    return rows.length;
+    return Promise.resolve(rows.length);
   }
 
-  async delete(): Promise<number> {
-    const rows = this.store[this.tableName] as Row[];
+  delete(): Promise<number> {
+    const rows = this.store[this.tableName];
     const before = rows.length;
     this.store[this.tableName] = rows.filter((row) => !this.filters.every((filter) => filter(row)));
-    return before - this.store[this.tableName].length;
+    return Promise.resolve(before - this.store[this.tableName].length);
   }
 
   then<TResult1 = Row[], TResult2 = never>(
@@ -76,7 +78,7 @@ class QueryBuilder {
   }
 
   private executeSync(clone = true): Row[] {
-    const source = this.store[this.tableName] as Row[];
+    const source = this.store[this.tableName];
     let rows = source.filter((row) => this.filters.every((filter) => filter(row)));
     if (this.orderByField) {
       const field = this.orderByField;
@@ -87,14 +89,15 @@ class QueryBuilder {
         if (left === right) return 0;
         if (left === undefined || left === null) return -1 * factor;
         if (right === undefined || right === null) return 1 * factor;
-        return String(left) > String(right) ? factor : -1 * factor;
+        return JSON.stringify(left) > JSON.stringify(right) ? factor : -1 * factor;
       });
     }
 
-    if (this.pickedColumns) {
+    const pickedColumns = this.pickedColumns;
+    if (pickedColumns) {
       rows = rows.map((row) => {
         const next: Row = {};
-        this.pickedColumns!.forEach((column) => {
+        pickedColumns.forEach((column) => {
           next[column] = row[column];
         });
         return next;
@@ -103,8 +106,8 @@ class QueryBuilder {
     return clone ? rows.map((row) => ({ ...row })) : rows;
   }
 
-  private async execute(): Promise<Row[]> {
-    return this.executeSync();
+  private execute(): Promise<Row[]> {
+    return Promise.resolve(this.executeSync());
   }
 }
 
@@ -136,7 +139,7 @@ function createStore(): DataStore {
 let dataStore = createStore();
 let shortIdSeq = 0;
 
-const authenticateMock = mock(async (req: Request & { currentUser?: unknown }) => {
+const authenticateMock = mock((req: Request & { currentUser?: unknown }) => {
   const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization') ?? '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
   if (token === 'hf_admin_token') {
@@ -146,28 +149,28 @@ const authenticateMock = mock(async (req: Request & { currentUser?: unknown }) =
   return Response.json({ error: { code: 'unauthorized', message: 'Invalid API token' } }, { status: 401 });
 });
 
-mock.module('../../../../auth/middlewares/authentication', () => ({ authenticate: authenticateMock }));
-mock.module('../../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../../common/db').db,
+void mock.module('../../../../auth/middlewares/authentication', () => ({ authenticate: authenticateMock }));
+void mock.module('../../../../../common/db', () => ({
+  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof database,
 }));
-mock.module('../../../../../common/ids/shortId', () => ({
-  generateUniqueShortId: async () => {
+void mock.module('../../../../../common/ids/shortId', () => ({
+  generateUniqueShortId: () => {
     shortIdSeq += 1;
-    return `short${String(shortIdSeq).padStart(4, '0')}`;
+    return Promise.resolve(`short${String(shortIdSeq).padStart(4, '0')}`);
   },
 }));
-mock.module('../../../../../common/ids/resolveEntityId', () => ({
-  resolveCardId: async (identifier: string) => {
+void mock.module('../../../../../common/ids/resolveEntityId', () => ({
+  resolveCardId: (identifier: string) => {
     const found = dataStore.cards.find((row) => row.id === identifier || row.short_id === identifier);
-    return (found?.id as string | undefined) ?? null;
+    return Promise.resolve((found?.id as string | undefined) ?? null);
   },
-  resolveListId: async (identifier: string) => {
+  resolveListId: (identifier: string) => {
     const found = dataStore.lists.find((row) => row.id === identifier || row.short_id === identifier);
-    return (found?.id as string | undefined) ?? null;
+    return Promise.resolve((found?.id as string | undefined) ?? null);
   },
-  resolveBoardId: async (identifier: string) => {
+  resolveBoardId: (identifier: string) => {
     const found = dataStore.boards.find((row) => row.id === identifier || row.short_id === identifier);
-    return (found?.id as string | undefined) ?? null;
+    return Promise.resolve((found?.id as string | undefined) ?? null);
   },
 }));
 
@@ -189,7 +192,8 @@ describe('trelloCompat card actions', () => {
     });
     const res = await trelloCompatRouter(req, '/trello/1/cards/card-1/actions/comments');
     expect(res?.status).toBe(200);
-    const body = await res!.json() as { type: string; data: { text: string } };
+    if (!res) throw new Error('Expected a Trello compatibility response');
+    const body = await res.json() as { type: string; data: { text: string } };
     expect(body.type).toBe('commentCard');
     expect(body.data.text).toBe('hello world');
   });
@@ -201,7 +205,8 @@ describe('trelloCompat card actions', () => {
     });
     const res = await trelloCompatRouter(req, '/trello/1/cards/card-1/actions');
     expect(res?.status).toBe(200);
-    const body = await res!.json() as Array<{ type: string }>;
+    if (!res) throw new Error('Expected a Trello compatibility response');
+    const body = await res.json() as Array<{ type: string }>;
     expect(body.some((item) => item.type === 'commentCard')).toBe(true);
     expect(body.some((item) => item.type === 'updateCard')).toBe(true);
   });

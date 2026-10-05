@@ -52,14 +52,19 @@ export async function offlineDraftsRouter(
   // Match /api/v1/cards/:cardId/drafts
   const draftListMatch = pathname.match(/^\/api\/v1\/cards\/([^/]+)\/drafts$/);
   if (draftListMatch && req.method === 'GET') {
-    return handleListDrafts(req, draftListMatch[1]!);
+    const cardId = draftListMatch[1];
+    // [why] The regex guarantees a capture group when it matches; guard for the type system.
+    if (cardId === undefined) return null;
+    return handleListDrafts(req, cardId);
   }
 
   // Match /api/v1/cards/:cardId/drafts/:type (PUT or DELETE)
   const draftTypeMatch = pathname.match(/^\/api\/v1\/cards\/([^/]+)\/drafts\/([^/]+)$/);
   if (draftTypeMatch) {
-    const cardId = draftTypeMatch[1]!;
-    const draftType = draftTypeMatch[2]!;
+    const cardId = draftTypeMatch[1];
+    const draftType = draftTypeMatch[2];
+    // [why] The regex guarantees both captures when it matches; guard for the type system.
+    if (cardId === undefined || draftType === undefined) return null;
 
     if (req.method === 'PUT') {
       return handleUpsertDraft(req, cardId, draftType);
@@ -76,7 +81,14 @@ async function handleListDrafts(req: Request, cardId: string): Promise<Response>
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const currentUser = (req as AuthenticatedRequest).currentUser;
+  if (!currentUser) {
+    return Response.json(
+      { name: 'unauthorized', data: { message: 'Not authenticated' } },
+      { status: 401 },
+    );
+  }
+  const userId = currentUser.id;
 
   const cardResult = await resolveCard({ cardId, userId });
   if (cardResult instanceof Response) return cardResult;
@@ -106,7 +118,14 @@ async function handleUpsertDraft(
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const currentUser = (req as AuthenticatedRequest).currentUser;
+  if (!currentUser) {
+    return Response.json(
+      { name: 'unauthorized', data: { message: 'Not authenticated' } },
+      { status: 401 },
+    );
+  }
+  const userId = currentUser.id;
 
   if (!VALID_DRAFT_TYPES.has(draftType as DraftType)) {
     return Response.json(
@@ -182,7 +201,14 @@ async function handleDeleteDraft(
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const currentUser = (req as AuthenticatedRequest).currentUser;
+  if (!currentUser) {
+    return Response.json(
+      { name: 'unauthorized', data: { message: 'Not authenticated' } },
+      { status: 401 },
+    );
+  }
+  const userId = currentUser.id;
 
   if (!VALID_DRAFT_TYPES.has(draftType as DraftType)) {
     return Response.json(

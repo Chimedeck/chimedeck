@@ -4,7 +4,6 @@ import { useAppSelector } from '~/hooks/useAppSelector';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import {
   fetchBoardPluginsThunk,
-  fetchAvailablePluginsThunk,
   fetchDiscoverablePluginsThunk,
   enablePluginThunk,
   disablePluginThunk,
@@ -25,9 +24,9 @@ export function useBoardPlugins({ boardId }: { boardId: string }) {
   const error = useAppSelector(selectPluginsError);
 
   const loadPlugins = useCallback(() => {
-    dispatch(fetchBoardPluginsThunk({ boardId })).then(() => {
+    void dispatch(fetchBoardPluginsThunk({ boardId })).then(() => {
       // [why] Use board-specific /available endpoint so the Discover list is pre-filtered
-      dispatch(fetchDiscoverablePluginsThunk({ boardId }));
+      void dispatch(fetchDiscoverablePluginsThunk({ boardId }));
     });
   }, [dispatch, boardId]);
 

@@ -866,7 +866,6 @@ const CommentEditor = ({
       if (insertMarkdownRef.current) insertMarkdownRef.current = null;
     };
   // [why] insertMarkdownRef identity is stable (ref object), so this runs once on mount/unmount.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [insertMarkdownRef]);
 
   useEffect(() => {
@@ -903,7 +902,6 @@ const CommentEditor = ({
     if (!restoredDraft) return;
     pendingHydratedContentRef.current = restoredDraft;
   // [why] Only restore when the draft first becomes available — not on every render
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restoredDraft]);
 
   const handleSubmit = useCallback(async () => {
@@ -989,7 +987,7 @@ const CommentEditor = ({
         // the insert-attachment picker without waiting for comment submit.
         void flushUploads()
           .then(() => loadCardAttachments())
-          .catch(() => setError(translations['comment.editor.error.uploadFailed']));
+          .catch(() => { setError(translations['comment.editor.error.uploadFailed']); });
       }
       e.target.value = '';
     },
@@ -1241,7 +1239,7 @@ const CommentEditor = ({
           <OneLineToolbar
             editor={editor}
             overflowOpen={overflowOpen}
-            onToggleOverflow={() => setOverflowOpen((o) => !o)}
+            onToggleOverflow={() => { setOverflowOpen((o) => !o); }}
             linkPopoverOpen={linkPopoverOpen}
             onToggleLinkPopover={() => {
               setAssetPickerOpen(false);
@@ -1253,7 +1251,7 @@ const CommentEditor = ({
           {linkPopoverOpen && (
             <LinkInsertPopover
               editor={editor}
-              onClose={() => setLinkPopoverOpen(false)}
+              onClose={() => { setLinkPopoverOpen(false); }}
             />
           )}
           {assetPickerOpen && cardId && (
@@ -1261,7 +1259,7 @@ const CommentEditor = ({
               attachments={cardAttachments}
               onUploadNew={() => fileInputRef.current?.click()}
               onInsert={handleInsertExisting}
-              onClose={() => setAssetPickerOpen(false)}
+              onClose={() => { setAssetPickerOpen(false); }}
             />
           )}
         </div>
@@ -1535,7 +1533,7 @@ const CommentEditor = ({
               <button
                 type="button"
                 className="text-indigo-400 hover:text-indigo-300 underline transition-colors"
-                onClick={() => retrySync(currentMarkdown)}
+                onClick={() => { retrySync(currentMarkdown); }}
                 data-testid="comment-draft-retry-sync"
               >
                 {/* [why] "Retry Post" clarifies the user's pending action vs a background sync retry */}
@@ -1564,7 +1562,7 @@ const CommentEditor = ({
         <Button
           variant="primary"
           size="sm"
-          onClick={handleSubmit}
+          onClick={() => { void handleSubmit(); }}
           disabled={submitting}
         >
           {submitting ? translations['comment.editor.submitting'] : submitLabel}

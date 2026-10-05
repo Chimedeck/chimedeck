@@ -5,6 +5,23 @@ import { randomUUID } from 'crypto';
 import { db } from '../../../../common/db';
 import { boardMemberGuard, type BoardAdminRequest } from '../../middlewares/board-admin-guard';
 
+type PluginRow = {
+  id: string;
+  api_key: string | null;
+  name: string;
+  slug: string;
+  description: string | null;
+  icon_url: string | null;
+  connector_url: string | null;
+  author: string | null;
+  categories: unknown;
+  capabilities: unknown;
+  is_active: boolean;
+};
+
+type ExistingBoardPluginRow = { id: string; disabled_at: string | Date | null };
+type PersistedBoardPluginRow = { enabled_at: string | Date | null };
+
 export async function handleEnableBoardPlugin(req: Request, boardId: string): Promise<Response> {
   const guardError = await boardMemberGuard(req as BoardAdminRequest, boardId);
   if (guardError) return guardError;
@@ -26,7 +43,7 @@ export async function handleEnableBoardPlugin(req: Request, boardId: string): Pr
     );
   }
 
-  const plugin = await db('plugins').where({ id: body.pluginId }).first();
+  const plugin = (await db('plugins').where({ id: body.pluginId }).first()) as PluginRow | undefined;
   if (!plugin || !plugin.is_active) {
     return Response.json(
       { error: { code: 'plugin-not-active', message: 'Plugin not found or not active in registry' } },
@@ -34,9 +51,9 @@ export async function handleEnableBoardPlugin(req: Request, boardId: string): Pr
     );
   }
 
-  const existing = await db('board_plugins')
+  const existing = (await db('board_plugins')
     .where({ board_id: boardId, plugin_id: body.pluginId })
-    .first();
+    .first()) as ExistingBoardPluginRow | undefined;
 
   if (existing && !existing.disabled_at) {
     return Response.json(
@@ -45,7 +62,8 @@ export async function handleEnableBoardPlugin(req: Request, boardId: string): Pr
     );
   }
 
-  const currentUserId = (req as BoardAdminRequest).currentUser!.id;
+  const authenticatedRequest = req as BoardAdminRequest & { currentUser: { id: string } };
+  const currentUserId = authenticatedRequest.currentUser.id;
 
   let boardPluginId: string;
 
@@ -67,7 +85,7 @@ export async function handleEnableBoardPlugin(req: Request, boardId: string): Pr
   }
 
   // Fetch the freshly persisted row to return accurate timestamps.
-  const bp = await db('board_plugins').where({ id: boardPluginId }).first();
+  const bp = (await db('board_plugins').where({ id: boardPluginId }).first()) as PersistedBoardPluginRow;
 
   // Return BoardPlugin shape matching what the client expects.
   // [why] apiKey must be included here so Redux state has it available immediately

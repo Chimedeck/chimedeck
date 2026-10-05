@@ -35,7 +35,7 @@ const MONTH_NAMES = [
 function ordinal(n: number): string {
   const s = ['th', 'st', 'nd', 'rd'];
   const v = n % 100;
-  return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`;
+  return `${String(n)}${s[(v - 20) % 10] ?? s[v] ?? s[0] ?? ''}`;
 }
 
 function pad(n: number): string {
@@ -68,7 +68,7 @@ export function scheduleSummary(config: ScheduleConfig): string {
 
     case 'weekly': {
       const dayName = config.dayOfWeek !== undefined ? DAY_NAMES[config.dayOfWeek] : 'day';
-      return `Every ${dayName} at ${time}`;
+      return `Every ${dayName ?? ''} at ${time}`;
     }
 
     case 'monthly': {
@@ -82,10 +82,10 @@ export function scheduleSummary(config: ScheduleConfig): string {
     case 'yearly': {
       const monthName = config.month !== undefined ? MONTH_NAMES[config.month - 1] : 'year';
       if (config.dayOfMonth === 'last') {
-        return `Last day of ${monthName} every year at ${time}`;
+        return `Last day of ${monthName ?? ''} every year at ${time}`;
       }
       const day = config.dayOfMonth ?? 1;
-      return `${ordinal(day)} of ${monthName} every year at ${time}`;
+      return `${ordinal(day)} of ${monthName ?? ''} every year at ${time}`;
     }
 
     default:
@@ -117,5 +117,5 @@ export function dueDateSummary(config: DueDateConfig): string {
   const unitLabel = value === 1 ? unit.replace(/s$/, '') : unit;
   const direction = config.triggerMoment === 'before' ? 'before' : 'after';
 
-  return `${value} ${unitLabel} ${direction} due date`;
+  return `${String(value)} ${unitLabel} ${direction} due date`;
 }

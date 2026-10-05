@@ -34,7 +34,6 @@ import ApiKeyRevealModal from '../../modals/ApiKeyRevealModal';
 import { updatePlugin } from '../../api';
 import type { Plugin, UpdatePluginBody, RegisterPluginBody } from '../../api';
 import translations from '../../translations/en.json';
-import { PuzzlePieceIcon } from '@heroicons/react/24/solid';
 
 const PluginRegistryPage = () => {
   const dispatch = useAppDispatch();
@@ -80,9 +79,9 @@ const PluginRegistryPage = () => {
       const params: Parameters<typeof fetchPluginsThunk>[0] = { status: statusFilter };
       if (searchQuery) params.q = searchQuery;
       if (selectedCategory) params.category = selectedCategory;
-      dispatch(fetchPluginsThunk(params));
+      void dispatch(fetchPluginsThunk(params));
     }
-  }, [isAdmin, dispatch]); // eslint-disable-line react-hooks/exhaustive-deps — fetch once on mount
+  }, [isAdmin, dispatch]);
 
   // Re-fetch when filters change
   const dispatchFetch = useCallback(
@@ -98,7 +97,7 @@ const PluginRegistryPage = () => {
       const params: Parameters<typeof fetchPluginsThunk>[0] = { status: s ?? statusFilter };
       if (q) params.q = q;
       if (category) params.category = category;
-      dispatch(fetchPluginsThunk(params));
+      void dispatch(fetchPluginsThunk(params));
     },
     [dispatch, statusFilter]
   );
@@ -118,7 +117,7 @@ const PluginRegistryPage = () => {
     const params: Parameters<typeof fetchPluginsThunk>[0] = { status: s };
     if (searchQuery) params.q = searchQuery;
     if (selectedCategory) params.category = selectedCategory;
-    dispatch(fetchPluginsThunk(params));
+    void dispatch(fetchPluginsThunk(params));
   };
 
   const handleRegisterSubmit = async (body: RegisterPluginBody) => {
@@ -148,7 +147,7 @@ const PluginRegistryPage = () => {
       const params: Parameters<typeof fetchPluginsThunk>[0] = { status: statusFilter };
       if (searchQuery) params.q = searchQuery;
       if (selectedCategory) params.category = selectedCategory;
-      dispatch(fetchPluginsThunk(params));
+      void dispatch(fetchPluginsThunk(params));
     }
     setRevealApiKey(null);
   };
@@ -169,7 +168,7 @@ const PluginRegistryPage = () => {
       const params: Parameters<typeof fetchPluginsThunk>[0] = { status: statusFilter };
       if (searchQuery) params.q = searchQuery;
       if (selectedCategory) params.category = selectedCategory;
-      dispatch(fetchPluginsThunk(params));
+      void dispatch(fetchPluginsThunk(params));
     }
     setReactivatingId(null);
   };
@@ -261,8 +260,8 @@ const PluginRegistryPage = () => {
           deactivatingId={deactivatingId}
           reactivatingId={reactivatingId}
           onEdit={setEditingPlugin}
-          onDeactivate={handleDeactivate}
-          onReactivate={handleReactivate}
+          onDeactivate={(id) => void handleDeactivate(id)}
+          onReactivate={(id) => void handleReactivate(id)}
         />
       )}
 
@@ -276,7 +275,7 @@ const PluginRegistryPage = () => {
           setEditingPlugin(null);
           setEditServerError(null);
         }}
-        onSubmit={handleEditSubmit}
+        onSubmit={(pluginId, body) => void handleEditSubmit(pluginId, body)}
       />
 
       {/* Register plugin modal — step 1: fill in the form */}
@@ -284,8 +283,8 @@ const PluginRegistryPage = () => {
         open={registerOpen}
         isSubmitting={isSubmittingRegister}
         serverError={registerServerError}
-        onClose={() => setRegisterOpen(false)}
-        onSubmit={handleRegisterSubmit}
+        onClose={() => { setRegisterOpen(false); }}
+        onSubmit={(body) => void handleRegisterSubmit(body)}
       />
 
       {/* API key reveal modal — step 2: shown once after successful registration */}

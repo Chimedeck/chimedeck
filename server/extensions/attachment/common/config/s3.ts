@@ -1,7 +1,7 @@
 // S3-compatible storage client configuration.
 // All values sourced from env via the central config module.
 import { env } from '../../../../config/env';
-import { S3Client, CreateBucketCommand, HeadBucketCommand } from '@aws-sdk/client-s3';
+import { S3Client, CreateBucketCommand, HeadBucketCommand, type BucketLocationConstraint } from '@aws-sdk/client-s3';
 
 export const s3Config = {
   bucket: env.S3_BUCKET,
@@ -33,6 +33,12 @@ const clientOptions = {
     accessKeyId: s3AccessKeyId,
     secretAccessKey: s3SecretAccessKey,
   },
+  // Newer @aws-sdk versions add a default CRC32 checksum to uploads, which
+  // S3-compatible stores (LocalStack 3.x, older MinIO) reject with
+  // "Checksum Type mismatch". Only compute checksums when the operation
+  // requires them, so presigned PUTs and multipart parts work against them.
+  requestChecksumCalculation: 'WHEN_REQUIRED' as const,
+  responseChecksumValidation: 'WHEN_REQUIRED' as const,
 };
 
 // Public-facing S3 client — used ONLY to generate presigned URLs handed to the
@@ -78,7 +84,7 @@ export async function ensureBucketExists(): Promise<void> {
           Bucket: s3Config.bucket,
           // CreateBucketConfiguration is required for regions other than us-east-1
           ...(s3Config.region !== 'us-east-1' && {
-            CreateBucketConfiguration: { LocationConstraint: s3Config.region as any },
+            CreateBucketConfiguration: { LocationConstraint: s3Config.region as BucketLocationConstraint },
           }),
         })
       );

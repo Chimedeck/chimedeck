@@ -7,6 +7,12 @@ import { writeEvent } from '../../../mods/events/write';
 import { publishToUser } from '../../realtime/userChannel';
 import { pubsub } from '../../../mods/pubsub/index';
 
+// Both columns are NOT NULL strings in db/migrations/0003_workspace.ts.
+interface MembershipRecipientRow {
+  user_id: string;
+  workspace_id: string;
+}
+
 export interface PublishBoardDeletedInput {
   boardId: string;
   workspaceId: string;
@@ -52,7 +58,7 @@ export async function publishBoardDeleted({
 
   // Fan out directly to connected workspace member sockets so the event is
   // received immediately regardless of whether the client is watching a board.
-  const members = await db('memberships')
+  const members = await db<MembershipRecipientRow>('memberships')
     .where({ workspace_id: workspaceId })
     .select('user_id');
 

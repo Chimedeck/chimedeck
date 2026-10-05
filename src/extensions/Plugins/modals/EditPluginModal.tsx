@@ -135,7 +135,6 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
       isPublic,
       whitelistedDomains: finalDomains,
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plugin, name, description, connectorUrl, manifestUrl, iconUrl, author, authorEmail, supportEmail, categories, categoryInput, isPublic, whitelistedDomains, domainInput, onSubmit]);
 
   if (!open || !plugin) return null;
@@ -192,7 +191,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
               className={inputCls(errors.name)}
               placeholder={translations['plugins.editModal.placeholder.pluginName']}
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); }}
               disabled={isSubmitting}
             />,
             errors.name,
@@ -204,7 +203,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
               rows={3}
               placeholder={translations['plugins.editModal.placeholder.description']}
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => { setDescription(e.target.value); }}
               disabled={isSubmitting}
             />,
             errors.description,
@@ -215,7 +214,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
               className={inputCls(errors.connectorUrl)}
               placeholder={translations['plugins.editModal.placeholder.connectorUrl']}
               value={connectorUrl}
-              onChange={(e) => setConnectorUrl(e.target.value)}
+              onChange={(e) => { setConnectorUrl(e.target.value); }}
               disabled={isSubmitting}
             />,
             errors.connectorUrl,
@@ -226,7 +225,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
               className={inputCls()}
               placeholder={translations['plugins.editModal.placeholder.manifestUrl']}
               value={manifestUrl}
-              onChange={(e) => setManifestUrl(e.target.value)}
+              onChange={(e) => { setManifestUrl(e.target.value); }}
               disabled={isSubmitting}
             />,
           )}
@@ -237,7 +236,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
                 className={`${inputCls()} flex-1`}
                 placeholder={translations['plugins.editModal.placeholder.iconUrl']}
                 value={iconUrl}
-                onChange={(e) => setIconUrl(e.target.value)}
+                onChange={(e) => { setIconUrl(e.target.value); }}
                 disabled={isSubmitting}
               />
               {iconUrl && (
@@ -256,7 +255,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
               className={inputCls(errors.author)}
               placeholder={translations['plugins.editModal.placeholder.author']}
               value={author}
-              onChange={(e) => setAuthor(e.target.value)}
+              onChange={(e) => { setAuthor(e.target.value); }}
               disabled={isSubmitting}
             />,
             errors.author,
@@ -268,7 +267,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
               className={inputCls(errors.authorEmail)}
               placeholder={translations['plugins.editModal.placeholder.authorEmail']}
               value={authorEmail}
-              onChange={(e) => setAuthorEmail(e.target.value)}
+              onChange={(e) => { setAuthorEmail(e.target.value); }}
               disabled={isSubmitting}
             />,
             errors.authorEmail,
@@ -280,7 +279,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
               className={inputCls(errors.supportEmail)}
               placeholder={translations['plugins.editModal.placeholder.supportEmail']}
               value={supportEmail}
-              onChange={(e) => setSupportEmail(e.target.value)}
+              onChange={(e) => { setSupportEmail(e.target.value); }}
               disabled={isSubmitting}
             />,
             errors.supportEmail,
@@ -295,7 +294,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
                     <IconButton
                       icon={<span aria-hidden className="leading-none">×</span>}
                       aria-label={`Remove ${tag}`}
-                      onClick={() => removeCategory(tag)}
+                      onClick={() => { removeCategory(tag); }}
                       className="h-auto w-auto p-0 hover:text-base"
                     />
                   </span>
@@ -305,7 +304,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
                 className={inputCls()}
                 placeholder={translations['plugins.editModal.placeholder.categories']}
                 value={categoryInput}
-                onChange={(e) => setCategoryInput(e.target.value)}
+                onChange={(e) => { setCategoryInput(e.target.value); }}
                 onKeyDown={handleCategoryKeyDown}
                 onBlur={() => { if (categoryInput.trim()) addCategory(categoryInput); }}
                 disabled={isSubmitting}
@@ -325,7 +324,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
                     <IconButton
                       icon={<span aria-hidden className="leading-none">×</span>}
                       aria-label={`Remove ${domain}`}
-                      onClick={() => removeDomain(domain)}
+                      onClick={() => { removeDomain(domain); }}
                       className="h-auto w-auto p-0 hover:text-base"
                     />
                   </span>
@@ -335,7 +334,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
                 className={inputCls(errors.whitelistedDomains)}
                 placeholder={translations['plugins.editModal.placeholder.whitelistedDomains']}
                 value={domainInput}
-                onChange={(e) => setDomainInput(e.target.value)}
+                onChange={(e) => { setDomainInput(e.target.value); }}
                 onKeyDown={handleDomainKeyDown}
                 onBlur={() => { if (domainInput.trim()) addDomain(domainInput); }}
                 disabled={isSubmitting}
@@ -349,7 +348,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
               type="checkbox"
               id="editIsPublic"
               checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
+              onChange={(e) => { setIsPublic(e.target.checked); }}
               disabled={isSubmitting}
               className="w-4 h-4 accent-blue-500"
             />

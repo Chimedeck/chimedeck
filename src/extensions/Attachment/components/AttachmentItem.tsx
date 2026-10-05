@@ -39,7 +39,7 @@ export function AttachmentItem({ attachment, onDelete, onDownload }: Props): Rea
         </Button>
       )}
       <IconButton
-        onClick={() => onDelete(attachment.id)}
+        onClick={() => { onDelete(attachment.id); }}
         aria-label={translations['attachment.item.action.delete.ariaLabel']}
         icon={<XMarkIcon className="h-4 w-4" aria-hidden="true" />}
         variant="ghost"

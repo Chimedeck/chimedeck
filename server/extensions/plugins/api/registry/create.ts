@@ -27,7 +27,13 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
   const guardError = await platformAdminGuard(req as AuthenticatedRequest);
   if (guardError) return guardError;
 
-  const currentUser = (req as AuthenticatedRequest).currentUser!;
+  const currentUser = (req as AuthenticatedRequest).currentUser;
+  if (!currentUser) {
+    return Response.json(
+      { error: { code: 'unauthorized', message: 'Unauthorized' } },
+      { status: 401 },
+    );
+  }
 
   let body: {
     name?: unknown;
@@ -98,7 +104,7 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
         {
           name: 'too-many-whitelisted-domains',
           data: {
-            message: `whitelistedDomains may contain at most ${MAX_WHITELISTED_DOMAINS} entries`,
+            message: `whitelistedDomains may contain at most ${String(MAX_WHITELISTED_DOMAINS)} entries`,
           },
         },
         { status: 422 }
@@ -109,7 +115,7 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
         return Response.json(
           {
             name: 'invalid-whitelisted-domain',
-            data: { message: `'${domain}' is not a valid HTTPS origin` },
+            data: { message: `'${String(domain)}' is not a valid HTTPS origin` },
           },
           { status: 422 }
         );
@@ -142,11 +148,11 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
 
   await db('plugins').insert({
     id,
-    name: name as string,
-    slug: slug as string,
+    name,
+    slug,
     description: description && typeof description === 'string' ? description : null,
     icon_url: iconUrl && typeof iconUrl === 'string' ? iconUrl : null,
-    connector_url: connectorUrl as string,
+    connector_url: connectorUrl,
     manifest_url: manifestUrl && typeof manifestUrl === 'string' ? manifestUrl : null,
     author: body.author && typeof body.author === 'string' ? body.author : null,
     author_email:

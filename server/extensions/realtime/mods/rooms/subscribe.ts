@@ -13,14 +13,16 @@ export async function subscribeToBoard({
   ws: ServerWebSocket<WsData>;
   boardId: string;
 }): Promise<void> {
-  if (!rooms.has(boardId)) {
+  let room = rooms.get(boardId);
+  if (!room) {
     // [why] Only create the room registry after the pubsub subscription succeeds.
     // This avoids a half-initialized room if subscribeBoard throws.
     await subscriber.subscribeBoard(boardId);
-    rooms.set(boardId, new Set());
+    room = new Set();
+    rooms.set(boardId, room);
   }
 
-  rooms.get(boardId)!.add(ws);
+  room.add(ws);
   ws.data.subscribedBoards.add(boardId);
 
   const key = `presence:${boardId}:${ws.data.userId}`;

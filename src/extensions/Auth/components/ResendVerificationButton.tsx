@@ -9,7 +9,7 @@ export default function ResendVerificationButton() {
   const status = useAppSelector(selectResendStatus);
 
   const handleClick = () => {
-    dispatch(resendVerificationThunk());
+    void dispatch(resendVerificationThunk());
   };
 
   if (status === 'sent') {

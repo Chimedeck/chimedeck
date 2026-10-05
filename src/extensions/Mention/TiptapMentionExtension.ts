@@ -26,15 +26,17 @@ function buildSuggestion(boardId: string): Partial<SuggestionOptions<MentionSugg
     items: ({ query }): Promise<MentionSuggestion[]> =>
       new Promise((resolve) => {
         if (debounceTimer) clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(async () => {
-          try {
-            const result = (await apiClient.get(
-              `/boards/${boardId}/members/suggestions?q=${encodeURIComponent(query)}`,
-            )) as { data: MentionSuggestion[] };
-            resolve(result.data);
-          } catch {
-            resolve([]);
-          }
+        debounceTimer = setTimeout(() => {
+          void (async () => {
+            try {
+              const result = (await apiClient.get(
+                `/boards/${boardId}/members/suggestions?q=${encodeURIComponent(query)}`,
+              )) as { data: MentionSuggestion[] };
+              resolve(result.data);
+            } catch {
+              resolve([]);
+            }
+          })();
         }, DEBOUNCE_MS);
       }),
 
@@ -108,7 +110,7 @@ export function buildMentionExtension(boardId: string) {
       class: 'rounded bg-blue-100 dark:bg-blue-900/60 px-1 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300',
     },
     renderText({ node }) {
-      return `@${node.attrs.label ?? node.attrs.id ?? ''}`;
+      return `@${String(node.attrs.label ?? node.attrs.id ?? '')}`;
     },
     suggestion: buildSuggestion(boardId),
   });

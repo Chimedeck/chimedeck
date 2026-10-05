@@ -209,7 +209,7 @@ describe('UI CRUD — modal exclusivity', () => {
 
 describe('UI CRUD — delete API payload', () => {
   it('deleteWebhook is called with the webhook id', () => {
-    const deleteWebhook = mock((_id: string) => Promise.resolve({ data: undefined }));
+    const deleteWebhook = mock(() => Promise.resolve({ data: undefined }));
 
     deleteWebhook(FIXTURE_WEBHOOK.id);
 
@@ -223,7 +223,7 @@ describe('UI CRUD — delete API payload', () => {
 
 describe('UI CRUD — update API payload', () => {
   it('updateWebhook payload includes id and changed fields', () => {
-    const updateWebhook = mock((_payload: Record<string, unknown>) =>
+    const updateWebhook = mock(() =>
       Promise.resolve({ data: {} })
     );
 

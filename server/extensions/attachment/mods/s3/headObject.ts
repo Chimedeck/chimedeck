@@ -7,8 +7,9 @@ export async function headObject({ s3Key }: { s3Key: string }): Promise<boolean>
   try {
     await s3ServerClient.send(new HeadObjectCommand({ Bucket: s3Config.bucket, Key: s3Key }));
     return true;
-  } catch (err: any) {
-    if (err?.name === 'NotFound' || err?.$metadata?.httpStatusCode === 404) {
+  } catch (err: unknown) {
+    const e = err as { name?: string; $metadata?: { httpStatusCode?: number } };
+    if (e.name === 'NotFound' || e.$metadata?.httpStatusCode === 404) {
       return false;
     }
     throw err;

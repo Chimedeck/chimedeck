@@ -8,7 +8,7 @@ const ROLES: BoardMemberRole[] = ['ADMIN', 'MEMBER', 'VIEWER'];
 function initials(member: BoardMember): string {
   const name = member.display_name ?? member.email;
   const parts = name.split(' ').filter(Boolean);
-  if (parts.length >= 2) return `${parts[0]![0]}${parts[1]![0]}`.toUpperCase();
+  if (parts.length >= 2) return `${parts[0]?.[0] ?? ''}${parts[1]?.[0] ?? ''}`.toUpperCase();
   return name.slice(0, 2).toUpperCase();
 }
 
@@ -61,7 +61,7 @@ const MemberRow = ({ member, isLastAdmin, canEdit, onRoleChange, onRemove }: Pro
       {canEdit ? (
         <select
           value={member.role}
-          onChange={(e) => onRoleChange(member.user_id, e.target.value as BoardMemberRole)}
+          onChange={(e) => { onRoleChange(member.user_id, e.target.value as BoardMemberRole); }}
           className="rounded border border-border bg-bg-overlay px-2 py-1 text-xs text-base focus:outline-none focus:ring-2 focus:ring-primary"
           aria-label={`Change role for ${label}`}
         >
@@ -81,7 +81,7 @@ const MemberRow = ({ member, isLastAdmin, canEdit, onRoleChange, onRemove }: Pro
           type="button"
           disabled={isLastAdmin}
           title={removeTitle}
-          onClick={() => !isLastAdmin && onRemove(member.user_id)}
+          onClick={() => { if (!isLastAdmin) { onRemove(member.user_id); } }}
           className={`ml-1 rounded p-1 text-muted transition-colors ${
             isLastAdmin
               ? 'cursor-not-allowed opacity-40'

@@ -42,7 +42,7 @@ const AddMemberInput = ({ candidates, onAdd, onFocusInput }: Props) => {
       }
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    return () => { document.removeEventListener('mousedown', handler); };
   }, []);
 
   const handleSelect = async (member: WorkspaceMember) => {
@@ -87,7 +87,7 @@ const AddMemberInput = ({ candidates, onAdd, onFocusInput }: Props) => {
                     type="button"
                     role="option"
                     aria-selected={false}
-                    onClick={() => handleSelect(m)}
+                    onClick={() => { void handleSelect(m); }}
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-subtle hover:bg-bg-overlay"
                   >
                     <span className="font-medium">{m.name ?? m.email}</span>
@@ -108,7 +108,7 @@ const AddMemberInput = ({ candidates, onAdd, onFocusInput }: Props) => {
 
         <select
           value={selectedRole}
-          onChange={(e) => setSelectedRole(e.target.value as BoardMemberRole)}
+          onChange={(e) => { setSelectedRole(e.target.value as BoardMemberRole); }}
           className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
           aria-label="Role for new board member"
         >

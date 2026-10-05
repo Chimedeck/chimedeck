@@ -59,7 +59,7 @@ export function useSearch({ workspaceId, token, type }: UseSearchOptions): UseSe
     const timer = setTimeout(() => {
       doSearch(query).catch(() => {});
     }, DEBOUNCE_MS);
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); };
   }, [query, type, doSearch]);
 
   return { query, setQuery, results, loading, error };

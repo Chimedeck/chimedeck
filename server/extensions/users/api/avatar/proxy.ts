@@ -11,11 +11,17 @@ import { presignGetUrl } from '../../../attachment/common/presign';
 
 const PROXY_TTL_SECONDS = 60;
 
+// db/migrations/0002_auth.ts: primary string ID and nullable avatar URL.
+interface AvatarUserRow {
+  id: string;
+  avatar_url: string | null;
+}
+
 export async function handleAvatarProxy(req: Request, userId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const user = await db('users').where({ id: userId }).select('id', 'avatar_url').first();
+  const user = await db<AvatarUserRow>('users').where({ id: userId }).select('id', 'avatar_url').first();
   if (!user) {
     return Response.json(
       { name: 'user-not-found', data: { message: 'User not found' } },
@@ -30,11 +36,11 @@ export async function handleAvatarProxy(req: Request, userId: string): Promise<R
     );
   }
 
-  const s3Key = extractS3KeyFromAvatarUrl({ avatarUrl: user.avatar_url as string });
+  const s3Key = extractS3KeyFromAvatarUrl({ avatarUrl: user.avatar_url });
 
   if (!s3Key) {
     // External avatar URL (e.g. GitHub OAuth) — proxy as a direct redirect
-    return Response.redirect(user.avatar_url as string, 302);
+    return Response.redirect(user.avatar_url, 302);
   }
 
   const { url } = await presignGetUrl({ s3Key, ttlSeconds: PROXY_TTL_SECONDS });

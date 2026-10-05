@@ -15,7 +15,9 @@ export default function TokenCreatedModal({ rawToken, onDone }: Props) {
   const handleCopy = async () => {
     await navigator.clipboard.writeText(rawToken);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
   };
 
   return (
@@ -37,7 +39,7 @@ export default function TokenCreatedModal({ rawToken, onDone }: Props) {
           <Button
             variant="primary"
             size="md"
-            onClick={handleCopy}
+            onClick={() => { void handleCopy(); }}
             className="min-w-[80px]"
           >
             {copied

@@ -59,7 +59,7 @@ const DiscoverPluginSearch = ({
       {categories.length > 0 && (
         <select
           value={selectedCategory ?? ''}
-          onChange={(e) => onCategoryChange(e.target.value || null)}
+          onChange={(e) => { onCategoryChange(e.target.value || null); }}
           className="bg-bg-overlay border border-border text-base text-sm rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary sm:w-44"
         >
           <option value="">{translations['plugins.searchBar.allCategories']}</option>

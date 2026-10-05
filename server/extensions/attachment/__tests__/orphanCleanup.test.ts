@@ -1,6 +1,6 @@
 // Unit tests for orphan cleanup TTL logic.
 // We test the TTL boundary condition without hitting a real database.
-import { describe, expect, test, mock, beforeEach } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 
 const ORPHAN_TTL_MS = 60 * 60 * 1000; // 1 hour — must match orphanCleanup.ts
 

@@ -52,22 +52,24 @@ export function useMentionInput({
   const fetchSuggestions = useCallback(
     (query: string) => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(async () => {
-        try {
-          // apiClient auto-attaches the Bearer token and unwraps response.data
-          const result = (await apiClient.get(
-            `/boards/${boardId}/members/suggestions?q=${encodeURIComponent(query)}`,
-          )) as { data: MentionSuggestion[] };
-          if (result.data.length === 0) {
+      debounceRef.current = setTimeout(() => {
+        void (async () => {
+          try {
+            // apiClient auto-attaches the Bearer token and unwraps response.data
+            const result = (await apiClient.get(
+              `/boards/${boardId}/members/suggestions?q=${encodeURIComponent(query)}`,
+            )) as { data: MentionSuggestion[] };
+            if (result.data.length === 0) {
+              dismissSuggestions();
+            } else {
+              setSuggestions(result.data);
+              setShowSuggestions(true);
+              setHighlightedIndex(0);
+            }
+          } catch {
             dismissSuggestions();
-          } else {
-            setSuggestions(result.data);
-            setShowSuggestions(true);
-            setHighlightedIndex(0);
           }
-        } catch {
-          dismissSuggestions();
-        }
+        })();
       }, DEBOUNCE_MS);
     },
     [boardId, dismissSuggestions],

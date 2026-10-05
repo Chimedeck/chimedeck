@@ -18,6 +18,15 @@ const RATE_LIMIT_WINDOW_SECONDS = 60;
 const VERIFICATION_RESEND_RATE_LIMIT = 3;
 const VERIFICATION_RESEND_WINDOW_SECONDS = 3600;
 
+type LoginUserRow = {
+  id: string;
+  email: string;
+  password_hash: string | null;
+  email_verified: boolean;
+  name: string | null;
+  avatar_url: string | null;
+};
+
 function checkRateLimit(ip: string): boolean {
   const key = `rl:login:${ip}`;
   const count = memCache.incr(key, RATE_LIMIT_WINDOW_SECONDS);
@@ -71,7 +80,7 @@ export async function handleLogin(req: Request): Promise<Response> {
     );
   }
 
-  const user = await db('users').where({ email: body.email }).first();
+  const user = (await db('users').where({ email: body.email }).first()) as LoginUserRow | undefined;
 
   if (!user?.password_hash) {
     return Response.json(
@@ -130,14 +139,14 @@ export async function handleLogin(req: Request): Promise<Response> {
   // httpOnly Secure cookie for refresh token.
   responseHeaders.append(
     'Set-Cookie',
-    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
+    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${String(jwtConfig.refreshTokenTtlDays * 86400)}`,
   );
   // [why] access_token cookie lets <img> tags and other browser resource
   // requests authenticate without an Authorization header. HttpOnly prevents
   // JS from reading it; Path=/ ensures it is sent with all API calls.
   responseHeaders.append(
     'Set-Cookie',
-    `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${jwtConfig.accessTokenTtlSeconds}`,
+    `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${String(jwtConfig.accessTokenTtlSeconds)}`,
   );
 
   const avatarUrl = buildAvatarProxyUrl({ userId: user.id, avatarUrl: user.avatar_url ?? null });

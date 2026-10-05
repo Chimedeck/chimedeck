@@ -23,16 +23,15 @@ export default function ConfirmEmailChangePage() {
     if (token) {
       dispatch(confirmEmailChangeThunk({ token }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (status === 'success') {
       const timer = setTimeout(
-        () => navigate('/login', { replace: true, state: { toast: translations.changeEmail.confirmed } }),
+        () => { navigate('/login', { replace: true, state: { toast: translations.changeEmail.confirmed } }); },
         1500,
       );
-      return () => clearTimeout(timer);
+      return () => { clearTimeout(timer); };
     }
   }, [status, navigate]);
 

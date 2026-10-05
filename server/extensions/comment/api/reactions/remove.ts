@@ -8,6 +8,11 @@ import {
 import { publisher } from '../../../../mods/pubsub/publisher';
 import { writeActivity } from '../../../activity/mods/write';
 
+type CommentRow = { card_id: string };
+type CardRow = { list_id: string; title: string | null };
+type ListRow = { board_id: string };
+type BoardRow = { id: string; workspace_id: string };
+
 export async function handleRemoveReaction(
   req: Request,
   commentId: string,
@@ -16,7 +21,7 @@ export async function handleRemoveReaction(
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const comment = await db('comments').where({ id: commentId }).first();
+  const comment = (await db('comments').where({ id: commentId }).first()) as CommentRow | undefined;
   if (!comment) {
     return Response.json(
       { error: { code: 'comment-not-found', message: 'Comment not found' } },
@@ -24,10 +29,14 @@ export async function handleRemoveReaction(
     );
   }
 
-  const card = await db('cards').where({ id: comment.card_id }).first();
-  const list = card ? await db('lists').where({ id: card.list_id }).first() : null;
-  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
-  if (!board) {
+  const card = (await db('cards').where({ id: comment.card_id }).first()) as CardRow | undefined;
+  const list = card
+    ? (await db('lists').where({ id: card.list_id }).first()) as ListRow | undefined
+    : null;
+  const board = list
+    ? (await db('boards').where({ id: list.board_id }).first()) as BoardRow | undefined
+    : null;
+  if (!card || !board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
       { status: 404 },
@@ -40,7 +49,8 @@ export async function handleRemoveReaction(
   );
   if (membershipError) return membershipError;
 
-  const actorId = (req as AuthenticatedRequest).currentUser!.id;
+  const authenticatedRequest = req as AuthenticatedRequest & { currentUser: { id: string } };
+  const actorId = authenticatedRequest.currentUser.id;
 
   // Idempotent — delete returns 0 rows if the reaction didn't exist; still 200.
   const deleted = await db('comment_reactions')

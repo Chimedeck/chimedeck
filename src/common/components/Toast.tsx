@@ -20,8 +20,8 @@ interface Props {
 const Toast = ({ toast, onDismiss }: Props) => {
   useEffect(() => {
     const ms = toast.durationMs ?? (toast.variant === 'error' ? 6000 : 4000);
-    const timer = setTimeout(() => onDismiss(toast.id), ms);
-    return () => clearTimeout(timer);
+    const timer = setTimeout(() => { onDismiss(toast.id); }, ms);
+    return () => { clearTimeout(timer); };
   }, [toast, onDismiss]);
 
   const borderClass =
@@ -54,7 +54,7 @@ const Toast = ({ toast, onDismiss }: Props) => {
       <p className="flex-1 text-sm text-base">{toast.message}</p>
       <button
         className="ml-auto shrink-0 text-subtle hover:text-muted transition-colors"
-        onClick={() => onDismiss(toast.id)}
+        onClick={() => { onDismiss(toast.id); }}
         aria-label={translations['Common.dismissNotification']}
       >
         <XMarkIcon className="h-4 w-4" aria-hidden="true" />

@@ -75,7 +75,7 @@ const EmojiPickerPopover = ({ anchorRef, onSelect, onClose }: Props) => {
       }
     };
     document.addEventListener('mousedown', handleMouseDown);
-    return () => document.removeEventListener('mousedown', handleMouseDown);
+    return () => { document.removeEventListener('mousedown', handleMouseDown); };
   }, [anchorRef, onClose]);
 
   // Close on Escape key
@@ -84,7 +84,7 @@ const EmojiPickerPopover = ({ anchorRef, onSelect, onClose }: Props) => {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return () => { document.removeEventListener('keydown', handleKeyDown); };
   }, [onClose]);
 
   // Position on mount and whenever viewport/scroll context changes.
@@ -93,7 +93,7 @@ const EmojiPickerPopover = ({ anchorRef, onSelect, onClose }: Props) => {
   }, [updatePosition]);
 
   useEffect(() => {
-    const onReposition = () => updatePosition();
+    const onReposition = () => { updatePosition(); };
     window.addEventListener('resize', onReposition);
     // capture=true catches scroll from nested containers (e.g. modal body)
     window.addEventListener('scroll', onReposition, true);

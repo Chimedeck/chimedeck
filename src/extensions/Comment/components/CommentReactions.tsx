@@ -28,11 +28,11 @@ const CommentReactions = ({ reactions, onAdd, onRemove, className }: Props) => {
   /** Build the tooltip label showing who reacted. */
   const buildTooltip = (reaction: ReactionSummary): string => {
     const reactors = reaction.reactors ?? [];
-    if (reactors.length === 0) return `${reaction.count} reaction${reaction.count === 1 ? '' : 's'}`;
+    if (reactors.length === 0) return `${String(reaction.count)} reaction${reaction.count === 1 ? '' : 's'}`;
     const names = reactors.map((r) => r.name ?? 'Someone');
     if (names.length <= 3) return names.join(', ');
     const shown = names.slice(0, 3).join(', ');
-    return `${shown} and ${names.length - 3} more`;
+    return `${shown} and ${String(names.length - 3)} more`;
   };
 
   return (
@@ -45,8 +45,8 @@ const CommentReactions = ({ reactions, onAdd, onRemove, className }: Props) => {
           <button
             type="button"
             onClick={() => void handlePillClick(reaction)}
-            onMouseEnter={() => setHoveredEmoji(reaction.emoji)}
-            onMouseLeave={() => setHoveredEmoji(null)}
+            onMouseEnter={() => { setHoveredEmoji(reaction.emoji); }}
+            onMouseLeave={() => { setHoveredEmoji(null); }}
             aria-label={translations['comment.reactions.aria.pill']
               .replace('{{emoji}}', reaction.emoji)
               .replace('{{count}}', String(reaction.count))
@@ -80,7 +80,7 @@ const CommentReactions = ({ reactions, onAdd, onRemove, className }: Props) => {
       <button
         ref={addButtonRef}
         type="button"
-        onClick={() => setPickerOpen((v) => !v)}
+        onClick={() => { setPickerOpen((v) => !v); }}
         aria-label={translations['comment.reactions.add']}
         className="inline-flex items-center gap-0.5 rounded-full border border-border bg-bg-overlay px-2 py-0.5 text-muted hover:text-base hover:bg-bg-sunken transition-colors cursor-pointer"
       >
@@ -92,7 +92,7 @@ const CommentReactions = ({ reactions, onAdd, onRemove, className }: Props) => {
         <EmojiPickerPopover
           anchorRef={addButtonRef as React.RefObject<HTMLElement | null>}
           onSelect={(emoji) => { void onAdd(emoji); }}
-          onClose={() => setPickerOpen(false)}
+          onClose={() => { setPickerOpen(false); }}
         />
       )}
     </div>

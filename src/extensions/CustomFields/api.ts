@@ -224,7 +224,7 @@ export function useBoardCardFieldValues(
       .then((map) => { if (!cancelled) setValuesMap(map); })
       .catch(() => { /* silently degrade — card badges just won't show */ });
     return () => { cancelled = true; };
-  }, [boardId, cardIdsKey, tick]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [boardId, cardIdsKey, tick]);
 
   return valuesMap;
 }
@@ -362,7 +362,7 @@ export function useCardCustomFieldValues(cardId: string | undefined): UseCardCus
   const [loading, setLoading] = useState(false);
   const [tick, setTick] = useState(0);
 
-  const refetch = useCallback(() => setTick((t) => t + 1), []);
+  const refetch = useCallback(() => { setTick((t) => t + 1); }, []);
 
   useEffect(() => {
     if (!cardId) return;
