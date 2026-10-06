@@ -805,9 +805,16 @@ Each scenario below is mapped in `specs/bdd/bdd-playwright-map.json`.
 - Type: AUTO (Playwright)
 - Evidence: `tests/e2e/timeline-view.spec.ts:221`
 
-#### Scenario BDD-AUTO-0187 — Clicking an unscheduled chip opens the card detail modal
+#### Scenario BDD-AUTO-0187 — Clicking a scheduled bar opens the card detail modal
 - Type: AUTO (Playwright)
-- Evidence: `tests/e2e/timeline-view.spec.ts:248`
+- Evidence: `tests/e2e/timeline-view.spec.ts:259`
+- [2026-10-06 rebind] Source scenario was originally titled "Clicking an unscheduled chip opens
+  the card detail modal" (timeline shipped unscheduled-card chips, tests/e2e/timeline-view.ts:248).
+  The delivered UI opens the detail modal from the scheduled bar; unscheduled-card presentation
+  remains covered by BDD-AUTO-0183/0184 spec items (their mapped titles pending re-sync in the
+  portback PR-H spec-regen lane). Scenario renamed and re-pointed; coverage intent (card detail
+  modal opens from a timeline element) unchanged. Flagged by Copilot review on the promotion-fix
+  PR thread; see specs/bdd/bdd-playwright-map.json note on this entry.
 
 
 ### Feature: member_joined event

@@ -25,7 +25,7 @@ if (!entries.length) {
 // contract. Playwright -g matches against the FULL title (describe chain +
 // test name); the map's title field stores exactly the leaf test title, so
 // build the filter from describe blocks + leaf title.
-function fullTitlesFor(file, leafTitles) {
+function fileSourceAndPrefix(file) {
   const src = fs.readFileSync(path.join(repo, file), 'utf8');
   const describes = [];
   const re = /test\.describe\(\s*['"`]([^'"`]+)['"`]/g;
@@ -33,26 +33,42 @@ function fullTitlesFor(file, leafTitles) {
   while ((m = re.exec(src)) !== null) describes.push(m[1]);
   // Single describe chain per spec file in this repo; full title = describe + ' ' + leaf.
   const prefix = describes.length ? describes.join(' ') + ' ' : '';
-  return leafTitles.map((t) => prefix + t);
+  return { src, prefix };
+}
+
+function hasMappedTitle(src, leafTitle) {
+  // Same literal check as scripts/bdd/validate-bdd.mjs (`test('${e.title}'`).
+  return src.includes(`test('${leafTitle}'`);
 }
 
 const fullTitles = [];
 const files = [];
 const stale = [];
+const srcCache = new Map();
 for (const e of entries) {
   if (!files.includes(e.file)) files.push(e.file);
-  const full = fullTitlesFor(e.file, [e.title]);
-  if (!full[0]) {
+  if (!srcCache.has(e.file)) {
+    srcCache.set(e.file, fileSourceAndPrefix(e.file).src);
+  }
+  const src = srcCache.get(e.file);
+  // [why] Copilot round-4 on PR #348: `prefix + title` is always truthy, so an
+  // empty title check never catches a renamed/removed test — Playwright would
+  // run the other matches and SILENTLY omit this daily scenario. Only add a
+  // grep alternative when the mapped declaration actually exists; otherwise
+  // fail loudly below.
+  if (!hasMappedTitle(src, e.title)) {
     stale.push(e);
     continue;
   }
-  fullTitles.push(full[0]);
+  const { prefix } = fileSourceAndPrefix(e.file);
+  fullTitles.push(prefix + e.title);
 }
 
 if (stale.length) {
   console.error(
-    `BDD daily map stale: ${stale.length} daily=true entr${stale.length === 1 ? 'y' : 'ies'} ` +
-      'have titles/does not match current spec files. Run scripts/bdd/validate-bdd.mjs and re-sync: ' +
+    `BDD daily map stale: ${stale.length} of ${entries.length} daily=true ${
+      stale.length === 1 ? 'entry does' : 'entries do'
+    } not match any test('...') declaration in its spec file — ` +
       stale.map((e) => `${e.id} "${e.title}" in ${e.file}`).join('; ')
   );
   process.exit(1);

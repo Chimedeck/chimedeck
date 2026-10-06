@@ -1274,6 +1274,7 @@
       "type": "playwright",
       "file": "tests/e2e/timeline-view.spec.ts",
       "title": "Clicking a scheduled bar opens the card detail modal",
+      "note": "BDD-AUTO-0187: source scenario \"Clicking an unscheduled chip opens the card detail modal\" (specs/bdd/chimedeck-bdd-spec-generated.md:808) was superseded when the timeline shipped scheduled-bar opens; the unscheduled-card paths remain covered by BDD-AUTO-0183/0184 spec items pending the portback PR-H spec-regen. ID intentionally kept bound to the live scheduled-bar test.",
       "daily": false
     }
   ]
