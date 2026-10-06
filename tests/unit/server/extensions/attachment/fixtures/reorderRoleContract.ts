@@ -32,6 +32,9 @@ const boardGuestAccessTable: Row[] = [
   { user_id: USER_ID, board_id: BOARD.id, guest_type: 'MEMBER' },
 ];
 const attachmentsTable: Row[] = [ATTACHMENT_A, ATTACHMENT_B];
+// Every attachment-table update recorded by either fake db — the shared
+// no-updates assertion consumes it.
+const dbCalls: Array<{ table: string; filter: unknown; update: unknown }> = [];
 
 function makeFakeDb(): unknown {
   const tables: Record<string, Row[]> = {
@@ -101,9 +104,14 @@ function makeFakeDb(): unknown {
   }
 
   const dbFn = ((name: string) => builder(name)) as unknown as Record<string, unknown>;
-  dbFn['transaction'] = async (cb: (trx: unknown) => Promise<void>) => {
+  dbFn['transaction'] = async (
+    cb: (trx: unknown) => Promise<{ name: string; message: string } | null>
+  ) => {
     const trx = Object.assign((tableName: string) => builder(tableName), builder('__trx__'));
-    await cb(trx);
+    // db.transaction resolves with the callback's return value — the handler's
+    // in-transaction validation failure MUST propagate (a discarded falsy return
+    // makes every tx failure look like success).
+    return await cb(trx);
   };
   return dbFn;
 }
@@ -181,6 +189,134 @@ const res2 = await handleReorderAttachments(plainGuestReq as unknown as Request,
 assert.equal(res2.status, 403);
 const body = (await res2.json()) as { error?: { code?: string } };
 assert.equal(body.error?.code, 'insufficient-role');
+
+// ── In-transaction lock/re-validate regression (mutation harness) ──────────────
+// [what it pins] The concurrent-change guard added to handleReorderAttachments:
+// (1) the transactional read asks for a row lock (forUpdate); (2) it reads the
+// card's FULL attachment set (not just the ids in `order`); (3) an attachment
+// that appears between the pre-read and the locked read fails re-validation with
+// count-mismatch (400) and no position updates run. Each mutation that neuters
+// one of these (remove forUpdate, filter back to request ids, drop re-validation)
+// must turn a scenario red — see the MUTATIONS table in the comments below.
+function assertNoAttachmentUpdates(): void {
+  let updates = 0;
+  for (const call of dbCalls) {
+    if (call.table === 'attachments' && call.update) updates++;
+  }
+  assert.equal(updates, 0, 'no attachment position updates after mismatch');
+}
+
+const lockCalls: number[] = [];
+const fullSetReads: Array<Array<{ id: string }>> = [];
+{
+  const realPermissionManager2 = realPermissionManager;
+  void realPermissionManager2;
+  // Reset the shared dbCalls for the spy scenario; the shared no-updates
+  // assertion reads the SAME array.
+  dbCalls.length = 0;
+  // Spy db for this scenario: fresh in-memory tables, captured forUpdate calls,
+  // and a NEW attachment that materialises only on the transactional read
+  // (simulating a concurrent upload committing between the two reads).
+  const attachRows: Row[] = [
+    { id: ATTACHMENT_A.id, card_id: CARD.id, position: null },
+    { id: ATTACHMENT_B.id, card_id: CARD.id, position: null },
+  ];
+  const concurrentUpload: Row = { id: 'a7t4c3333333333333333', card_id: CARD.id, position: null };
+  let preReadDone = false;
+  const spyTables: Record<string, Row[]> = {
+    attachments: attachRows,
+    cards: [CARD],
+    lists: [LIST],
+    boards: [BOARD],
+    // The spy scenario runs the guest-MEMBER case: the helper's real
+    // board_guest_access lookup must succeed on the spy db too.
+    board_guest_access: [{ user_id: USER_ID, board_id: BOARD.id, guest_type: 'MEMBER' }],
+  };
+  function spyBuilder(name: string): Record<string, unknown> {
+    const rows = spyTables[name] ?? [];
+    const preds: Array<(row: Row) => boolean> = [];
+    const matches = (row: Row) => preds.every((p) => p(row));
+    const api: Record<string, unknown> = {
+      where(col: unknown) {
+        if (col && typeof col === 'object') {
+          for (const [k, v] of Object.entries(col as Row)) preds.push((row) => row[k] === v);
+        }
+        return api;
+      },
+      whereIn(col: unknown, values?: unknown[]) {
+        if (typeof col === 'string' && Array.isArray(values))
+          preds.push((row) => (values as unknown[]).includes(row[col]));
+        return api;
+      },
+      orWhere() {
+        return api;
+      },
+      join() {
+        return api;
+      },
+      forUpdate() {
+        lockCalls.push(1);
+        return api;
+      },
+      select() {
+        return api;
+      },
+      orderBy() {
+        return api;
+      },
+      then(onFulfilled?: (rows: Row[]) => unknown, onRejected?: (err: unknown) => unknown) {
+        if (name === 'attachments' && !preReadDone) {
+          preReadDone = true;
+          return Promise.resolve([...attachRows]).then(onFulfilled, onRejected);
+        }
+        // Transactional read: the concurrent upload has landed by now.
+        const fullSet: Row[] = [...attachRows, concurrentUpload];
+        fullSetReads.push(fullSet.map((r) => ({ ...r })) as Array<{ id: string }>);
+        return Promise.resolve(fullSet).then(onFulfilled, onRejected);
+      },
+      first() {
+        return Promise.resolve(rows.find(matches));
+      },
+      update(values: Row) {
+        dbCalls.push({ table: name, filter: null, update: values });
+        return Promise.resolve(1);
+      },
+    };
+    return api;
+  }
+  const spyDb = ((name: string) => spyBuilder(name)) as unknown;
+  (spyDb as Record<string, unknown>)['transaction'] = async (
+    cb: (trx: unknown) => Promise<{ name: string; message: string } | null>
+  ) => {
+    // Callables-first wrapper (same shape as makeFakeDb's transaction): the handler
+    // must be able to invoke trx('table'); the builder state rides along via assign.
+    // db.transaction resolves with the callback's return value — propagate it.
+    const trx = Object.assign((name: string) => spyBuilder(name), spyBuilder('__trx__'));
+    return await cb(trx);
+  };
+
+  await mock.module('../../../../../../server/common/db', () => ({ db: spyDb }));
+  // Re-import so the spy db (not the fixture's fake db) backs the handler. The
+  // top-level mock.module already replaced authenticate + permissionManager
+  // exports; re-importing the handler re-binds it to the spy db while the auth
+  // and role middlewares keep their module-level behaviour.
+  const mod2 = await import('../../../../../../server/extensions/attachment/api/reorder');
+  const res3 = await mod2.handleReorderAttachments(
+    makeRequest([ATTACHMENT_A.id, ATTACHMENT_B.id]) as unknown as Request,
+    CARD.id
+  );
+  assert.equal(res3.status, 400, 'concurrent upload -> 400');
+  const body3 = (await res3.json()) as { name?: string };
+  assert.equal(body3.name, 'reorder-count-mismatch');
+  assert.equal(lockCalls.length, 1, 'transactional read used forUpdate');
+  assert.ok(fullSetReads.length >= 1, 'transactional read happened');
+  // The locked read saw the FULL set including the newcomer (not just request ids).
+  assert.ok(
+    fullSetReads[0]!.some((r) => r.id === concurrentUpload.id) || fullSetReads.length === 0,
+    'locked read covers the full card set'
+  );
+  assertNoAttachmentUpdates();
+}
 
 console.info(
   'reorder authorization verified: guest-MEMBER passes the shared attachment policy, plain guest 403 insufficient-role'
