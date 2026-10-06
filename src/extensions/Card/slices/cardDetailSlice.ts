@@ -249,6 +249,7 @@ const cardDetailSlice = createSlice({
             | 'cover_color'
             | 'cover_size'
             | 'cover_image_url'
+            | 'is_template'
           >
         >;
       }>

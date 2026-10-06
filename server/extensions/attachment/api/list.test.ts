@@ -21,6 +21,7 @@ describe('serializeAttachment', () => {
         created_at: '2026-09-07T00:00:00.000Z',
         updated_at: '2026-09-07T00:00:00.000Z',
         referenced_card_id: 'card-2',
+        position: null,
       },
       {
         'card-2': {
@@ -48,6 +49,7 @@ describe('serializeAttachment', () => {
         status: 'READY', thumbnail_key: null, width: null, height: null,
         created_at: '2026-09-07T00:00:00.000Z', updated_at: '2026-09-07T00:00:00.000Z',
         referenced_card_id: null,
+        position: null,
       },
       {},
     );

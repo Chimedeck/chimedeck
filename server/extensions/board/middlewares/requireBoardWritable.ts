@@ -8,6 +8,8 @@ export interface ScopedBoardRow {
   workspace_id: string;
   title: string;
   state: 'ACTIVE' | 'ARCHIVED';
+  github_project_url?: string | null;
+  github_branch?: string | null;
   created_at: Date | string | null;
 }
 

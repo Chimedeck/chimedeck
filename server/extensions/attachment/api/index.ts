@@ -4,6 +4,7 @@ import { handleConfirmUpload } from './confirmUpload';
 import { handleAddUrl } from './addUrl';
 import { handleDeleteAttachment } from './delete';
 import { handleListAttachments } from './list';
+import { handleReorderAttachments } from './reorder';
 import { handleViewAttachment } from './view';
 import { handleThumbnailAttachment } from './thumbnail';
 import { handlePatchAttachment } from './patch';
@@ -67,6 +68,12 @@ export async function attachmentRouter(req: Request, pathname: string): Promise<
   const listMatch = pathname.match(/^\/api\/v1\/cards\/([^/]+)\/attachments$/);
   if (listMatch && req.method === 'GET') {
     return handleListAttachments(req, listMatch[1] as string);
+  }
+
+  // POST /api/v1/cards/:id/attachments/reorder — batch position update
+  const reorderMatch = pathname.match(/^\/api\/v1\/cards\/([^/]+)\/attachments\/reorder$/);
+  if (reorderMatch && req.method === 'POST') {
+    return handleReorderAttachments(req, reorderMatch[1] as string);
   }
 
   // POST /api/v1/cards/:id/attachments  (confirm upload — must come after specific paths above)

@@ -37,6 +37,7 @@ export async function patchCard({
         | 'cover_attachment_id'
         | 'cover_color'
         | 'cover_size'
+        | 'is_template'
       >,
       'amount'
     >

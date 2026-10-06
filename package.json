@@ -49,7 +49,8 @@
     "test:mcp": "bash run-all-tests-full.sh",
     "test:deploy": "bash scripts/test-deploy-on-instance.sh",
     "test:load": "k6 run tests/load/board-load.js && k6 run tests/load/drag-latency.js && k6 run tests/load/ws-broadcast.js",
-    "clean": "rm -rf dist .vite node_modules/.cache"
+    "clean": "rm -rf dist .vite node_modules/.cache",
+    "db:migrate:admin": "bun run db/seeds/0131_admin_owner.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",

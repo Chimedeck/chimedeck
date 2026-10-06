@@ -262,6 +262,39 @@ describe('PATCH /api/v1/boards/:boardId/settings/integrations', () => {
     expect(guestRes.status).toBe(403);
   });
 
+  it('persists a branch change and emits a branch audit activity', async () => {
+    const res = await handlePatchBoardIntegrations(
+      new Request('http://localhost/api/v1/boards/board-1/settings/integrations', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'User-Agent': 'bun-test' },
+        body: JSON.stringify({ github_branch: 'develop' }),
+      }),
+      'board-1'
+    );
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { data: { github_branch: string | null } };
+    expect(body.data.github_branch).toBe('develop');
+    expect(dataStore.boards[0]!.github_branch).toBe('develop');
+    expect(writeActivityCalls).toHaveLength(1);
+    expect(writeActivityCalls[0]!.action).toBe('board_github_branch_updated');
+  });
+
+  it('rejects invalid branch names with 422 and no DB write', async () => {
+    const res = await handlePatchBoardIntegrations(
+      new Request('http://localhost/api/v1/boards/board-1/settings/integrations', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ github_branch: 'bad branch..name' }),
+      }),
+      'board-1'
+    );
+
+    expect(res.status).toBe(422);
+    expect(dataStore.boards[0]!.github_branch).toBeUndefined();
+    expect(writeActivityCalls).toHaveLength(0);
+  });
+
   it('does not emit activity when the normalized URL is unchanged', async () => {
     dataStore.boards[0]!.github_project_url = 'https://github.com/users/demo/projects/1';
 

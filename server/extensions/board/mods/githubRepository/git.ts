@@ -43,7 +43,7 @@ function hasRepositoryCheckout(repoPath: string): boolean {
   return existsSync(join(repoPath, '.git'));
 }
 
-async function removeRepositoryCheckout(repoPath: string): Promise<void> {
+export async function removeRepositoryCheckout(repoPath: string): Promise<void> {
   await rm(repoPath, { recursive: true, force: true });
 }
 
