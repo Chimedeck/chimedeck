@@ -152,10 +152,15 @@ export async function handleReorderAttachments(req: Request, cardId: string): Pr
     async (trx): Promise<{ name: string; message: string } | null> => {
       const locked = (await trx('attachments')
         .where({ card_id: resolvedCardId })
-        .whereIn('id', order)
         .forUpdate()
         .orderBy('id', 'asc')) as Array<{ id: string }>;
 
+      // Lock + re-validate against the card's FULL attachment set (not just the
+      // ids in `order`): an attachment uploaded between the pre-transaction read
+      // and this query must be seen here, or the permutation would be validated
+      // against a set that no longer matches what the update loop leaves behind
+      // (a concurrent upload would end up position-less). validateReorderOrder
+      // then rejects with count-mismatch — the caller re-lists and retries.
       const validationInside = validateReorderOrder(order, locked);
       if (!validationInside.ok) {
         return { name: validationInside.name, message: validationInside.message };
