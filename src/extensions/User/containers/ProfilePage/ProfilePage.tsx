@@ -28,7 +28,7 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    dispatch(fetchProfileThunk());
+    void dispatch(fetchProfileThunk());
   }, [dispatch]);
 
   useEffect(() => {

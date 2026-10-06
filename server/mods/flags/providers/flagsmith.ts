@@ -19,13 +19,13 @@ export class FlagsmithProvider implements FlagProvider {
     }
   }
 
-  async isEnabled(flagKey: string, _context?: FlagContext): Promise<boolean> {
+  async isEnabled(_flagKey: string, _context?: FlagContext): Promise<boolean> {
     if (!this.initialized) return false;
     // TODO: return flagsmith.hasFeature(flagKey)
     return false;
   }
 
-  async getValue<T>(flagKey: string, defaultValue: T, _context?: FlagContext): Promise<T> {
+  async getValue<T>(_flagKey: string, defaultValue: T, _context?: FlagContext): Promise<T> {
     if (!this.initialized) return defaultValue;
     // TODO: return flagsmith.getValue(flagKey) ?? defaultValue
     return defaultValue;

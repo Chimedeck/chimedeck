@@ -49,12 +49,13 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     cover_attachment_id?: string | null;
     cover_color?: string | null;
     cover_size?: 'SMALL' | 'FULL';
+    is_template?: boolean;
   };
   try {
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
+      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
       { status: 400 }
     );
   }
@@ -66,13 +67,13 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   if (body.title !== undefined) {
     if (typeof body.title !== 'string' || body.title.trim() === '') {
       return Response.json(
-        { error: { code: 'bad-request', message: 'title must be a non-empty string' } },
+        { name: 'bad-request', data: { message: 'title must be a non-empty string' } },
         { status: 400 }
       );
     }
     if (body.title.trim().length > 512) {
       return Response.json(
-        { error: { code: 'card-title-too-long', message: 'title must be ≤ 512 characters' } },
+        { name: 'card-title-too-long', data: { message: 'title must be ≤ 512 characters' } },
         { status: 400 }
       );
     }
@@ -92,7 +93,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   if (body.due_complete !== undefined) {
     if (typeof body.due_complete !== 'boolean') {
       return Response.json(
-        { error: { code: 'bad-request', message: 'due_complete must be a boolean' } },
+        { name: 'bad-request', data: { message: 'due_complete must be a boolean' } },
         { status: 400 }
       );
     }
@@ -105,10 +106,8 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
       if (Number.isNaN(parsed.getTime())) {
         return Response.json(
           {
-            error: {
-              code: 'bad-request',
-              message: 'start_date must be a valid ISO 8601 date string or null',
-            },
+            name: 'bad-request',
+            data: { message: 'start_date must be a valid ISO 8601 date string or null' },
           },
           { status: 400 }
         );
@@ -124,13 +123,13 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     } else {
       if (typeof body.amount !== 'number' || Number.isNaN(body.amount)) {
         return Response.json(
-          { error: { code: 'bad-request', message: 'amount must be a number or null' } },
+          { name: 'bad-request', data: { message: 'amount must be a number or null' } },
           { status: 400 }
         );
       }
       if (body.amount < 0) {
         return Response.json(
-          { error: { code: 'bad-request', message: 'amount must be non-negative' } },
+          { name: 'bad-request', data: { message: 'amount must be non-negative' } },
           { status: 400 }
         );
       }
@@ -145,10 +144,8 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
       if (typeof body.currency !== 'string' || !CURRENCY_RE.test(body.currency)) {
         return Response.json(
           {
-            error: {
-              code: 'bad-request',
-              message: 'currency must be a 3-letter ISO 4217 code (e.g. USD)',
-            },
+            name: 'bad-request',
+            data: { message: 'currency must be a 3-letter ISO 4217 code (e.g. USD)' },
           },
           { status: 400 }
         );
@@ -164,10 +161,8 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
       if (typeof body.cover_attachment_id !== 'string' || body.cover_attachment_id.trim() === '') {
         return Response.json(
           {
-            error: {
-              code: 'bad-request',
-              message: 'cover_attachment_id must be a non-empty string or null',
-            },
+            name: 'bad-request',
+            data: { message: 'cover_attachment_id must be a non-empty string or null' },
           },
           { status: 400 }
         );
@@ -184,10 +179,8 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
       ) {
         return Response.json(
           {
-            error: {
-              code: 'invalid-cover-attachment',
-              message: 'cover_attachment_id must reference an image attachment on this card',
-            },
+            name: 'invalid-cover-attachment',
+            data: { message: 'cover_attachment_id must reference an image attachment on this card' },
           },
           { status: 400 }
         );
@@ -204,10 +197,8 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
       if (typeof body.cover_color !== 'string' || !HEX_COLOR_RE.test(body.cover_color)) {
         return Response.json(
           {
-            error: {
-              code: 'bad-request',
-              message: 'cover_color must be a hex color string like #1D4ED8 or null',
-            },
+            name: 'bad-request',
+            data: { message: 'cover_color must be a hex color string like #1D4ED8 or null' },
           },
           { status: 400 }
         );
@@ -219,11 +210,21 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   if (body.cover_size !== undefined) {
     if (!CARD_COVER_SIZES.has(body.cover_size)) {
       return Response.json(
-        { error: { code: 'bad-request', message: 'cover_size must be SMALL or FULL' } },
+        { name: 'bad-request', data: { message: 'cover_size must be SMALL or FULL' } },
         { status: 400 }
       );
     }
     updates.cover_size = body.cover_size;
+  }
+
+  if (body.is_template !== undefined) {
+    if (typeof body.is_template !== 'boolean') {
+      return Response.json(
+        { name: 'bad-request', data: { message: 'is_template must be a boolean' } },
+        { status: 400 }
+      );
+    }
+    updates.is_template = body.is_template;
   }
 
   // Default currency to USD when amount is set but no currency provided or stored
@@ -348,6 +349,29 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
       },
     });
     publishCardActivityEvent({ activity, boardId: board.id }).catch(() => {});
+  }
+
+  // Emit activity event when template flag changes
+  if (body.is_template !== undefined) {
+    const previousIsTemplate = (existingCard?.is_template ?? false) as boolean;
+    if (previousIsTemplate !== body.is_template) {
+      const templateAction = body.is_template
+        ? 'card.template.enabled'
+        : 'card.template.disabled';
+
+      const activity = await writeActivity({
+        entityType: 'card',
+        entityId: cardId,
+        boardId: board.id,
+        action: templateAction,
+        actorId,
+        payload: {
+          cardId,
+          cardTitle: (cardRow.title as string) ?? '',
+        },
+      });
+      publishCardActivityEvent({ activity, boardId: board.id }).catch(() => {});
+    }
   }
 
   return Response.json({ data: cardWithCover });

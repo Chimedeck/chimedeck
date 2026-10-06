@@ -127,7 +127,6 @@ export function useOfflineCommentDraft({
       cancelled = true;
     };
     // [why] Only re-run when the card changes — not on every token change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cardId, userId, workspaceId, token]);
 
   // ---------- Debounced local + server persistence on content change ----------

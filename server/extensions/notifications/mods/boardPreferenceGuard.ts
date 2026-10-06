@@ -2,6 +2,28 @@
 // Missing row means notifications are enabled (opt-out model per Sprint 95).
 import { db } from '../../../common/db';
 
+// Migrations 0030/0040: non-null participant user/board keys.
+interface BoardScopeRow {
+  user_id: string;
+  board_id: string;
+}
+
+// Migrations 0086/0117: non-null board preference flags.
+interface BoardPreferenceRow extends BoardScopeRow {
+  notifications_enabled: boolean;
+  only_related_to_me: boolean;
+}
+
+// Migrations 0037/0092: non-null user/type keys and channel flags.
+interface ChannelPreferenceRow {
+  user_id: string;
+  type: string;
+  in_app_enabled: boolean;
+  email_enabled: boolean;
+}
+
+interface BoardChannelPreferenceRow extends ChannelPreferenceRow, BoardScopeRow {}
+
 export interface BoardNotificationPreferenceSettings {
   notificationsEnabled: boolean;
   onlyRelatedToMe: boolean;
@@ -14,7 +36,7 @@ export async function resolveBoardNotificationPreference({
   userId: string;
   boardId: string;
 }): Promise<BoardNotificationPreferenceSettings> {
-  const row = await db('board_notification_preferences')
+  const row = await db<BoardPreferenceRow>('board_notification_preferences')
     .where({ user_id: userId, board_id: boardId })
     .select('notifications_enabled', 'only_related_to_me')
     .first();
@@ -30,8 +52,8 @@ export async function resolveBoardNotificationPreference({
   // Default ON for board participants (joined members OR board guests), but keep
   // default OFF for workspace/admin users who can view a board without joining it.
   const [isMember, hasGuestAccess] = await Promise.all([
-    db('board_members').where({ user_id: userId, board_id: boardId }).first(),
-    db('board_guest_access').where({ user_id: userId, board_id: boardId }).first(),
+    db<BoardScopeRow>('board_members').where({ user_id: userId, board_id: boardId }).first(),
+    db<BoardScopeRow>('board_guest_access').where({ user_id: userId, board_id: boardId }).first(),
   ]);
 
   return {
@@ -83,7 +105,7 @@ export async function resolveNotificationChannels({
   type: string;
 }): Promise<{ inApp: boolean; email: boolean }> {
   // 1. Board-type-pref takes highest precedence.
-  const boardRow = await db('board_notification_type_preferences')
+  const boardRow = await db<BoardChannelPreferenceRow>('board_notification_type_preferences')
     .where({ user_id: userId, board_id: boardId, type })
     .select('in_app_enabled', 'email_enabled')
     .first();
@@ -91,7 +113,7 @@ export async function resolveNotificationChannels({
   // 2. User-level preference is the next fallback.
   const userRow = boardRow
     ? null
-    : await db('notification_preferences')
+    : await db<ChannelPreferenceRow>('notification_preferences')
         .where({ user_id: userId, type })
         .select('in_app_enabled', 'email_enabled')
         .first();

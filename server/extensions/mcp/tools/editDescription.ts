@@ -3,12 +3,14 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { apiCall } from '../apiClient';
 
 export function registerEditDescription(server: McpServer, token: string): void {
-  server.tool(
+  server.registerTool(
     'edit_card_description',
-    'Update the description of an existing card.',
     {
+      description: 'Update the description of an existing card.',
+      inputSchema: {
       cardId: z.string().describe('ID of the card to update'),
       description: z.string().describe('New description text for the card'),
+      },
     },
     async ({ cardId, description }) => {
       const result = await apiCall<{ data: unknown }>({

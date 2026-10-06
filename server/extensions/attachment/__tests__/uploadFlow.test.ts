@@ -1,22 +1,33 @@
 // Integration tests for the full upload flow, external URL creation, and delete.
 // These tests mock S3 and DB to verify the API handler logic end-to-end.
-import { describe, expect, test, mock, beforeEach } from 'bun:test';
+// [why subprocess fixture] The virus-scan-disabled contract needs process-global
+// mock.module on the shared db and pubsub modules; it lives in
+// ./fixtures/uploadFlowVirusScan.ts (spawned as a subprocess) so the mocks cannot
+// leak into — or be replaced by — adjacent suites that mock the same modules
+// differently. Only that contract runs inside the fixture subprocess; this file
+// itself holds plain tests (SSRF validator, delete wiring) with ordinary static
+// and dynamic imports and no module mocking.
+import { describe, expect, test } from 'bun:test';
 
 // We test SSRF validator inline since it has no external dependencies
 import { isForbiddenUrl } from '../api/addUrl';
 
 describe('upload flow (unit/logic)', () => {
-  test('VIRUS_SCAN_ENABLED=false: enqueueScan is a no-op', async () => {
-    // Temporarily set env flag to false
-    const originalFlag = process.env['VIRUS_SCAN_ENABLED'];
-    process.env['VIRUS_SCAN_ENABLED'] = 'false';
-
-    // Import with current env
-    const { enqueueScan } = await import('../mods/virusScan/enqueue');
-    // Should resolve without error (no-op path)
-    await expect(enqueueScan({ attachmentId: 'test-id' })).resolves.toBeUndefined();
-
-    process.env['VIRUS_SCAN_ENABLED'] = originalFlag ?? '';
+  test('VIRUS_SCAN_ENABLED=false: enqueueScan is a no-op (subprocess fixture)', async () => {
+    const child = Bun.spawn(
+      [process.execPath, new URL('./fixtures/uploadFlowVirusScan.ts', import.meta.url).pathname],
+      { stdout: 'pipe', stderr: 'pipe' },
+    );
+    const [stdout, stderr, exitCode] = await Promise.all([
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+      child.exited,
+    ]);
+    expect(stderr).toBe('');
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain(
+      'enqueueScan no-op verified: resolves undefined, promotes attachment READY via db, never publishes to the scan queue'
+    );
   });
 });
 

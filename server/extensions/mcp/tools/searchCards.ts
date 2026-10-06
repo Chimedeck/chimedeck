@@ -3,14 +3,16 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { apiCall } from '../apiClient';
 
 export function registerSearchCards(server: McpServer, token: string): void {
-  server.tool(
+  server.registerTool(
     'search_cards',
-    'Full-text search over cards within a workspace.',
     {
+      description: 'Full-text search over cards within a workspace.',
+      inputSchema: {
       workspaceId: z.string().describe('ID of the workspace to search within'),
       query: z.string().optional().describe('Full-text search query'),
       q: z.string().optional().describe('Deprecated alias for full-text search query'),
       limit: z.number().optional().describe('Maximum number of results to return (default: 20)'),
+      },
     },
     async ({ workspaceId, query, q, limit }) => {
       const resolvedQuery = query ?? q;

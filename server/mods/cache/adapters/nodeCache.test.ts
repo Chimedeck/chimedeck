@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'bun:test';
+import { describe, it, expect } from 'bun:test';
 import { NodeCacheAdapter, memCache } from './nodeCache';
 
 describe('NodeCacheAdapter', () => {
@@ -30,7 +30,7 @@ describe('NodeCacheAdapter', () => {
   });
 
   it('incr increments a counter', async () => {
-    const key = `counter-${Date.now()}`;
+    const key = `counter-${String(Date.now())}`;
     expect(await adapter.incr(key, 60)).toBe(1);
     expect(await adapter.incr(key, 60)).toBe(2);
     expect(await adapter.incr(key, 60)).toBe(3);
@@ -50,7 +50,7 @@ describe('memCache (legacy sync API)', () => {
   });
 
   it('incr increments', () => {
-    const key = `sync-counter-${Date.now()}`;
+    const key = `sync-counter-${String(Date.now())}`;
     expect(memCache.incr(key, 60)).toBe(1);
     expect(memCache.incr(key, 60)).toBe(2);
   });

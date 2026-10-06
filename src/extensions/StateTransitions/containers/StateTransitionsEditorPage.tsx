@@ -20,7 +20,7 @@ const StateTransitionsEditorPage = () => {
 
   useEffect(() => {
     if (!boardId) return;
-    dispatch(fetchBoardDataThunk({ boardId }));
+    void dispatch(fetchBoardDataThunk({ boardId }));
   }, [boardId, dispatch]);
 
   if (!boardId || boardStatus === 'loading') {

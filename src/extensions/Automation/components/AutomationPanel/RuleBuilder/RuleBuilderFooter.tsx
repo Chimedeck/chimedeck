@@ -1,5 +1,4 @@
 // RuleBuilderFooter — Save / Cancel bar at the bottom of the RuleBuilder.
-import { useState } from 'react';
 import Button from '../../../../../common/components/Button';
 import translations from '../../../translations/en.json';
 

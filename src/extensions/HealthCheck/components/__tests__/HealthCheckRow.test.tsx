@@ -12,6 +12,7 @@ const baseEntry: HealthCheck = {
   type: 'preset',
   presetKey: 'stripe',
   isActive: true,
+  expectedStatus: 200,
   createdAt: new Date().toISOString(),
   latestResult: null,
 };

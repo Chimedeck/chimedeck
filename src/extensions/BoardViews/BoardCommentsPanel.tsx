@@ -88,7 +88,7 @@ const BoardCommentsPanel = ({ boardId, onCardClick }: Props) => {
       )}
 
       {hasMore && !loading && (
-        <Button variant="link" size="sm" onClick={() => loadPage(cursor)}>
+        <Button variant="link" size="sm" onClick={() => { void loadPage(cursor); }}>
           {translations['BoardViews.loadMoreComments']}
         </Button>
       )}

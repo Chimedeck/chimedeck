@@ -1,8 +1,6 @@
-// Encapsulates invite validation: check cache first, fall back to DB.
+// Encapsulates invite validation against the authoritative database record.
 // Returns the invite record or an error descriptor.
 import { db } from '../../../../common/db';
-import { memCache } from '../../../../mods/cache/index';
-import { inviteConfig } from '../../common/config/invite';
 
 export type InviteRecord = {
   id: string;
@@ -18,11 +16,8 @@ export type ValidateInviteResult =
   | { ok: false; reason: 'not-found' | 'invite-expired' | 'invite-already-used' };
 
 export async function validateInvite({ token }: { token: string }): Promise<ValidateInviteResult> {
-  // Fast path — cache miss falls through to DB.
-  const cached = memCache.get(`${inviteConfig.cacheKeyPrefix}${token}`);
-
   // DB is authoritative for accepted_at and final expiry.
-  const invite: InviteRecord | undefined = await db('invites').where({ token }).first();
+  const invite = await db('invites').where({ token }).first<InviteRecord | undefined>();
 
   if (!invite) {
     return { ok: false, reason: 'not-found' };

@@ -1,6 +1,5 @@
 // Syncs the mentions table for a given source (card_description or comment).
 // Diffs old vs new mentions and returns newly added user IDs (for notification dispatch).
-import { db } from '../db';
 import { extractMentions } from './parse';
 import { resolveNicknames } from './resolve';
 import type { Knex } from 'knex';

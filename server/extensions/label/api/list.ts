@@ -6,11 +6,13 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 
+type WorkspaceRow = { id: string };
+
 export async function handleListLabels(req: Request, workspaceId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const workspace = await db('workspaces').where({ id: workspaceId }).first();
+  const workspace = await db<WorkspaceRow>('workspaces').where({ id: workspaceId }).first();
   if (!workspace) {
     return Response.json(
       { error: { code: 'workspace-not-found', message: 'Workspace not found' } },

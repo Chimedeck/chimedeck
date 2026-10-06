@@ -1,8 +1,19 @@
 // GET /api/v1/invites/:token — inspect invite status; no authentication required.
 import { db } from '../../../../common/db';
 
+type InviteInspectionRow = {
+  id: string;
+  workspace_id: string;
+  invited_email: string;
+  role: string;
+  expires_at: Date;
+  accepted_at: Date | null;
+};
+
 export async function handleInspectInvite(req: Request, token: string): Promise<Response> {
-  const invite = await db('invites').where({ token }).first();
+  const invite = (await db('invites')
+    .where({ token })
+    .first()) as InviteInspectionRow | undefined;
 
   if (!invite) {
     return Response.json(

@@ -1,8 +1,6 @@
 // Returns a stable proxy path for a board background, or the raw value for non-S3 backgrounds.
 import { s3Config } from '../../attachment/common/config/s3';
 
-const BACKGROUND_URL_TTL_SECONDS = 15 * 60; // 15 minutes — kept for reference, no longer used here
-
 export function extractS3KeyFromBackgroundUrl(url: string): string | null {
   try {
     const parsed = new URL(url);

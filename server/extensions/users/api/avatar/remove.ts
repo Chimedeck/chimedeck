@@ -9,8 +9,14 @@ export async function handleRemoveAvatar(req: Request): Promise<Response> {
   if (authError) return authError;
 
   const { currentUser } = req as AuthenticatedRequest;
+  if (!currentUser) {
+    return Response.json(
+      { error: { code: 'unauthorized', message: 'Not authenticated' } },
+      { status: 401 },
+    );
+  }
 
-  const user = await db('users').where({ id: currentUser!.id }).first();
+  const user = await db('users').where({ id: currentUser.id }).first();
 
   if (!user) {
     return Response.json(
@@ -30,7 +36,7 @@ export async function handleRemoveAvatar(req: Request): Promise<Response> {
     }
   }
 
-  await db('users').where({ id: currentUser!.id }).update({ avatar_url: null });
+  await db('users').where({ id: currentUser.id }).update({ avatar_url: null });
 
   return new Response(null, { status: 204 });
 }

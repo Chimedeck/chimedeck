@@ -51,7 +51,9 @@ services:
 
   localstack:
     profiles: [local-s3]
-    image: localstack/localstack:latest
+    # Pin to a community (non-pro) tag: the latest tag now requires a licence
+    # token and exits 55. Keep in step with docker-compose.yml.
+    image: localstack/localstack:3.8.1
     ports:
       - "6401:4566"
     environment:

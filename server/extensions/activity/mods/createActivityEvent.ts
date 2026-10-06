@@ -17,22 +17,25 @@ async function fireCardMemberWebhook({
   cardId,
   actorId,
   eventType,
+  eventId,
   payload,
 }: {
   boardId: string;
   cardId: string;
   actorId: string;
   eventType: WebhookEventType;
+  // Persisted activities.id — one logical member action, stable across retries.
+  eventId: string;
   payload: Record<string, unknown>;
 }): Promise<void> {
   if (!env.WEBHOOKS_ENABLED) return;
   const webhooks = await getActiveWebhooksForEvent({ knex: db, eventType });
   for (const wh of webhooks) {
-    dispatchWebhook({
+    void dispatchWebhook({
       endpoint: wh.endpoint_url,
       signingSecret: wh.signing_secret,
       eventType,
-      payload: { ...payload, boardId, cardId, actorId },
+      payload: { ...payload, boardId, cardId, actorId, eventId },
       webhookId: wh.id,
       knex: db,
     });
@@ -158,6 +161,7 @@ export async function emitCardMemberAssigned({
     boardId: payload.boardId,
     cardId: payload.cardId,
     actorId,
+    eventId: activity.id,
     eventType: 'card.member_assigned',
     payload: {
       userId: payload.userId,
@@ -203,6 +207,7 @@ export async function emitCardMemberUnassigned({
     boardId: payload.boardId,
     cardId: payload.cardId,
     actorId,
+    eventId: activity.id,
     eventType: 'card.member_removed',
     payload: {
       userId: payload.userId,

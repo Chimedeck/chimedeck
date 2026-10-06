@@ -37,7 +37,7 @@ export function useClipboardPaste({ enabled, onFiles, onLink }: UseClipboardPast
         const blob = item.getAsFile();
         if (!blob) continue;
         const timestamp = Date.now();
-        imageFiles.push(new File([blob], `pasted-image-${timestamp}.png`, { type: 'image/png' }));
+        imageFiles.push(new File([blob], `pasted-image-${String(timestamp)}.png`, { type: 'image/png' }));
       }
 
       if (imageFiles.length > 0 && !isTextInputFocused()) {

@@ -15,7 +15,7 @@ interface Props {
 
 // Renders nothing — purely side-effect component.
 export function PasteListener({ enabled, onFiles, onLink }: Props): null {
-  const stableOnFiles = useCallback(onFiles, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const stableOnFiles = useCallback(onFiles, []);
   useClipboardPaste({ enabled, onFiles: stableOnFiles, onLink });
   return null;
 }

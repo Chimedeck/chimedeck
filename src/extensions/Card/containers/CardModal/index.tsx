@@ -1047,6 +1047,35 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
     [api, card, dispatch]
   );
 
+  const handleMakeTemplate = useCallback(async () => {
+    if (!card) return;
+    // [why] Template toggling is a card write — deny-first for VIEWER guests.
+    if (isViewerGuest) return;
+    const mutationId = nextMutationId();
+    const newValue = !(card.is_template ?? false);
+    dispatch(
+      cardDetailSliceActions.applyOptimisticCardUpdate({
+        mutationId,
+        fields: { is_template: newValue },
+      })
+    );
+    patchCard({ api, cardId: card.id, fields: { is_template: newValue } })
+      .then((updatedCard) => {
+        dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard }));
+        dispatch(boardSliceActions.updateCard({ card: updatedCard }));
+      })
+      .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
+  }, [api, card, dispatch, isViewerGuest]);
+
+  // [why] Reuse the existing CopyCardModal flow — the copy endpoint does not
+  // propagate is_template, so the new card will be a regular card.
+  const handleCreateFromTemplate = useCallback(() => {
+    // [why] Creating a card from a template is a write (copy endpoint) — deny-first
+    // for VIEWER guests; the write controls stay hidden from them entirely.
+    if (isViewerGuest) return;
+    setCopyModalOpen(true);
+  }, [isViewerGuest]);
+
   const handleCoverColorChange = useCallback(
     (cover_color: string | null) => {
       if (!card) return;
@@ -1349,6 +1378,9 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         onApprove={handleEditRunApprove}
         onRerun={handleEditRunRerun}
         onEdit={handleEditRunEdit}
+        isTemplate={card?.is_template ?? false}
+        onMakeTemplate={handleMakeTemplate}
+        onCreateFromTemplate={handleCreateFromTemplate}
       />
       {copyModalOpen && card && activeWorkspaceId && (
         <CopyCardModal

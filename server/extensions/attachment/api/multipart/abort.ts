@@ -8,8 +8,30 @@ import {
   requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
-import { s3Client, s3Config } from '../../common/config/s3';
+import { s3ServerClient, s3Config } from '../../common/config/s3';
 import { resolveCardId } from '../../../../common/ids/resolveEntityId';
+
+interface CardRow {
+  id: string;
+  list_id: string;
+}
+
+interface ListRow {
+  id: string;
+  board_id: string;
+}
+
+interface BoardRow {
+  id: string;
+  workspace_id: string;
+}
+
+interface PendingAttachmentRow {
+  id: string;
+  card_id: string;
+  s3_key: string;
+  status: 'PENDING';
+}
 
 export async function handleMultipartAbort(
   req: Request,
@@ -34,13 +56,13 @@ export async function handleMultipartAbort(
     );
   }
 
-  const card = await db('cards').where({ id: resolvedCardId }).first();
+  const card = await db<CardRow>('cards').where({ id: resolvedCardId }).first();
   if (!card) {
     return Response.json({ name: 'card-not-found', data: { cardId } }, { status: 404 });
   }
 
-  const list = await db('lists').where({ id: card.list_id }).first();
-  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
+  const list = await db<ListRow>('lists').where({ id: card.list_id }).first();
+  const board = list ? await db<BoardRow>('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
     return Response.json({ name: 'board-not-found', data: {} }, { status: 404 });
   }
@@ -52,7 +74,7 @@ export async function handleMultipartAbort(
   if (roleError) return roleError;
 
   // Verify the S3 key belongs to a pending attachment on this card
-  const attachment = await db('attachments')
+  const attachment = await db<PendingAttachmentRow>('attachments')
     .where({ card_id: resolvedCardId, s3_key: s3Key, status: 'PENDING' })
     .first();
   if (!attachment) {
@@ -67,7 +89,7 @@ export async function handleMultipartAbort(
 
   // Best-effort: abort the S3 multipart upload (may already be expired or completed)
   try {
-    await s3Client.send(
+    await s3ServerClient.send(
       new AbortMultipartUploadCommand({
         Bucket: s3Config.bucket,
         Key: s3Key,
@@ -80,7 +102,7 @@ export async function handleMultipartAbort(
   }
 
   // Remove the PENDING attachment row so it does not accumulate as an orphan
-  await db('attachments').where({ id: attachment.id }).delete();
+  await db<PendingAttachmentRow>('attachments').where({ id: attachment.id }).delete();
 
   return new Response(null, { status: 204 });
 }

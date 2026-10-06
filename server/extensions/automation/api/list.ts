@@ -12,7 +12,10 @@ export async function handleListAutomations(req: Request, boardId: string): Prom
 
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
-  const currentUser = (req as AuthenticatedRequest).currentUser!;
+  const currentUser = (req as AuthenticatedRequest).currentUser;
+  if (!currentUser) {
+    return Response.json({ error: { name: 'unauthorized' } }, { status: 401 });
+  }
 
   // Automations are private to their creator — each user only sees their own.
   const automations = await db('automations')

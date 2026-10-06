@@ -12,12 +12,14 @@ import {
 import { requireBoardAccess, type BoardScopedRequest } from '../../middlewares/requireBoardAccess';
 import { guestDeniedError } from '../../mods/guestPermissions';
 import { downloadRepositoryFromProjectUrl } from '../../mods/githubRepository/downloadRepositoryFromProjectUrl';
+import { getGithubInstallationAccessToken } from '../../mods/githubRepository/githubApp';
 import { writeSpecsFile } from '../../mods/specs/write';
 import { commitSpecsChanges } from '../../mods/specs/commit';
 import { normalizeGithubProjectUrl } from '../../mods/githubProjectUrl';
 import { dispatchEvent } from '../../../../mods/events/dispatch';
 import { invalidateSpecsCachesForBoard } from '../../mods/specs';
 import { verifySessionInstance } from '../../mods/chat/assist/multiInstanceSessionTracker';
+import { githubRepositoryConfig } from '../../common/config/githubRepository';
 import { env } from '../../../../config/env';
 import type { BoardChatAssistActionCard, BoardChatAssistCommitProposal } from '../../types';
 
@@ -27,6 +29,7 @@ export const commitDocumentProposalsDeps = {
   requireWorkspaceMembership,
   requireRole,
   downloadRepositoryFromProjectUrl,
+  getGithubInstallationAccessToken,
   writeSpecsFile,
   commitSpecsChanges,
   normalizeGithubProjectUrl,
@@ -75,6 +78,9 @@ interface CommitBoard {
   state: string;
   created_at: string;
   github_project_url?: string | null;
+  // [why] Board-configured branch for specs work. When set, commits target
+  // this branch instead of the repo's default branch.
+  github_branch?: string | null;
 }
 
 // [why] Parse and validate the proposals array from the request body.
@@ -261,9 +267,14 @@ export async function handleCommitDocumentProposals(
   if (!currentUser) return Response.json({ error: { code: 'auth-missing' } }, { status: 401 });
   const actorId = currentUser.id;
 
+  // [why] Read the board's configured branch so commits target the correct
+  // branch instead of always defaulting to the repo's default branch.
+  const githubBranch = board.github_branch ?? null;
+
   const repo = await commitDocumentProposalsDeps.downloadRepositoryFromProjectUrl({
     projectUrl: board.github_project_url,
     boardId: board.id,
+    branch: githubBranch,
   });
 
   const errors: CommitError[] = [];
@@ -280,6 +291,21 @@ export async function handleCommitDocumentProposals(
     .filter((p) => changedFiles.includes(p.path.replace(/^\/+/, '')))
     .map((p) => p.commitMessage)
     .join('; ');
+
+  // [why] Resolve a GitHub installation access token so the commit can be
+  // pushed to the remote repository. Without this, commitSpecsChanges only
+  // commits locally and the user has to manually trigger a push (e.g. by
+  // committing something else from the Documentation tab).
+  let pushToken: string | null = null;
+  try {
+    pushToken = await commitDocumentProposalsDeps.getGithubInstallationAccessToken({
+      reference: urlResult.value.reference,
+    });
+  } catch {
+    // [why] If token resolution fails, still commit locally — the user
+    // can push later from the Documentation tab.
+  }
+
   const commitResult = await commitDocumentProposalsDeps.commitSpecsChanges({
     repoPath: repo.repoPath,
     branch: repo.ref,
@@ -287,7 +313,18 @@ export async function handleCommitDocumentProposals(
     message: commitMessage || 'chore: update specs via board chat',
     actorId,
     boardId: board.id,
-    botAlias: 'board-chat-assist',
+    botAlias: githubRepositoryConfig.appBotAlias,
+    pushToken,
+  });
+
+  // [why] Invalidate cached manifests after a chat-assist commit lands, or the
+  // manifest API serves the pre-commit file list for up to TTL. Branch-scoped
+  // because manifest cache keys include the branch (specs/load.ts).
+  commitDocumentProposalsDeps.invalidateSpecsCachesForBoard({
+    boardId: board.id,
+    projectUrl: board.github_project_url,
+    repoPath: repo.repoPath,
+    branch: githubBranch,
   });
 
   const { committed } = finalizeCommit(

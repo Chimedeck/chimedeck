@@ -24,7 +24,7 @@ const CardMoneyBadge = ({ amount, currency }: Props) => {
     }).format(numericAmount);
   } catch {
     // Fallback if currency code is unrecognised at render time
-    formatted = `${currencyCode} ${numericAmount}`;
+    formatted = `${currencyCode} ${String(numericAmount)}`;
   }
 
   return (

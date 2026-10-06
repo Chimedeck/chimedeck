@@ -7,4 +7,3 @@ output "state_bucket_arn" {
   description = "ARN of the state S3 bucket."
   value       = aws_s3_bucket.state.arn
 }
-

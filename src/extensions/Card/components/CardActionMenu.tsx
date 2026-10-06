@@ -29,7 +29,7 @@ const CardActionMenu = ({
       <button
         type="button"
         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-base hover:bg-bg-overlay rounded-lg transition-colors disabled:opacity-40"
-        onClick={onArchive}
+        onClick={() => { void onArchive(); }}
         disabled={disabled}
       >
         {archived ? (

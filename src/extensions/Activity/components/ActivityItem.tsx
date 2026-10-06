@@ -23,7 +23,7 @@ interface Props {
 
 // Replaces {placeholders} in a translation template with values from a record.
 function interpolate(template: string, vars: Record<string, string>): string {
-  return template.replaceAll(/\{(\w+)\}/g, (_, key) => vars[key] ?? `{${key}}`);
+  return template.replaceAll(/\{(\w+)\}/g, (_, key) => vars[key] ?? `{${String(key)}}`);
 }
 
 function textValue(value: unknown): string {
@@ -74,6 +74,15 @@ function describeAction(
   const linkUrl = textValue(payload.linkUrl);
   const linkTarget = referencedCardTitle || name || linkUrl || 'a link';
   const { dueDate, dueTime } = formatDueDateParts(payload.dueDate);
+  let next = textValue(payload.next);
+  const previous = textValue(payload.previous);
+  // [why] Clearing the GitHub branch override persists `next: null` (PATCH
+  // /settings/integrations) — textValue(null) is '' which rendered
+  // "changed the GitHub branch scope to " with an empty label. Surface an
+  // explicit default-branch label for this valid reset case instead.
+  if (action === 'board_github_branch_updated' && payload.next == null) {
+    next = translations['activity.action.board_github_branch_updated.defaultNext'];
+  }
 
   const key = `activity.action.${action}` as keyof typeof translations;
   const template = translations[key] ?? translations['activity.action.unknown'];
@@ -98,6 +107,8 @@ function describeAction(
     emoji,
     dueDate,
     dueTime,
+    next,
+    previous,
   });
 }
 

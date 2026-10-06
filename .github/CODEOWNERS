@@ -1,0 +1,13 @@
+# Ownership rules. GitHub matches only the LAST pattern that touches a file
+# (later rules replace earlier ones), and one approval from any owner listed on
+# that rule satisfies a required CODEOWNERS review.
+#
+# Default: Matt or the hermesrobinson review account approves every file —
+# mirrors the convention that hermesrobinson-dev reviews every PR.
+*       @matthewvryanjh @hermesrobinson-dev
+
+# Workflow/CI files: last matching rule, so this REPLACES the default above.
+# Any approval from Matt or the workflow-review account satisfies a required
+# CODEOWNERS review on these files — GitHub cannot require both. The separate
+# copilot-review-gate required check still applies on every PR.
+/.github/workflows/     @matthewvryanjh @hermesrobinson-dev

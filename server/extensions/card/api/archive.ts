@@ -11,12 +11,31 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 
+type CardRow = {
+  id: string;
+  list_id: string;
+  title: string;
+  archived: boolean;
+  updated_at: string | Date;
+};
+
+type ListRow = {
+  id: string;
+  board_id: string;
+};
+
+type BoardRow = {
+  id: string;
+  workspace_id: string;
+  state: string;
+};
+
 export async function handleArchiveCard(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
   // Load card directly (not via requireCardWritable — archive must work on archived cards too)
-  const card = await db('cards').where({ id: cardId }).first();
+  const card = await db<CardRow>('cards').where({ id: cardId }).first();
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
@@ -24,8 +43,8 @@ export async function handleArchiveCard(req: Request, cardId: string): Promise<R
     );
   }
 
-  const list = await db('lists').where({ id: card.list_id }).first();
-  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
+  const list = await db<ListRow>('lists').where({ id: card.list_id }).first();
+  const board = list ? await db<BoardRow>('boards').where({ id: list.board_id }).first() : null;
 
   if (!list || !board) {
     return Response.json(
@@ -49,9 +68,9 @@ export async function handleArchiveCard(req: Request, cardId: string): Promise<R
   if (roleError) return roleError;
 
   const newArchived = !card.archived;
-  const updated = await db('cards')
+  const updated = (await db<CardRow>('cards')
     .where({ id: cardId })
-    .update({ archived: newArchived, updated_at: new Date().toISOString() }, ['*']);
+    .update({ archived: newArchived, updated_at: new Date().toISOString() }, ['*'])) as CardRow[];
 
   const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
 

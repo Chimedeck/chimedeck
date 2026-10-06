@@ -18,7 +18,13 @@ export async function handleListPlugins(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const currentUser = (req as AuthenticatedRequest).currentUser!;
+  const currentUser = (req as AuthenticatedRequest).currentUser;
+  if (!currentUser) {
+    return Response.json(
+      { error: { code: 'unauthorized', message: 'Unauthorized' } },
+      { status: 401 },
+    );
+  }
   const admin = await isRegistryAdmin(currentUser.id);
 
   const url = new URL(req.url);
@@ -54,7 +60,7 @@ export async function handleListPlugins(req: Request): Promise<Response> {
   }
 
   const countResult = await query.clone().count('id as count').first();
-  const total = parseInt(String((countResult as any)?.count ?? '0'), 10);
+  const total = parseInt(String((countResult as { count?: number | string } | undefined)?.count ?? '0'), 10);
   const totalPage = Math.ceil(total / perPage);
 
   const plugins = await query
@@ -82,7 +88,7 @@ export async function handleListPlugins(req: Request): Promise<Response> {
       // api_key is never returned in list responses
     );
 
-  const normalised = plugins.map((p: any) => normalizePlugin(p));
+  const normalised = plugins.map((p: Record<string, unknown>) => normalizePlugin(p));
 
   return Response.json({
     data: normalised,

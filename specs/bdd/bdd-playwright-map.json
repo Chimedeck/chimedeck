@@ -1,0 +1,1285 @@
+{
+  "version": 1,
+  "source_spec": "specs/bdd/chimedeck-bdd-spec-generated.md",
+  "entries": [
+    {
+      "id": "BDD-AUTO-0001",
+      "type": "playwright",
+      "file": "tests/e2e/attachment-upload.spec.ts",
+      "title": "Test 1 \u2014 Initiate multipart upload returns 201 with uploadId and key",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0002",
+      "type": "playwright",
+      "file": "tests/e2e/attachment-upload.spec.ts",
+      "title": "Test 2 \u2014 Full multipart upload flow returns READY attachment",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0003",
+      "type": "playwright",
+      "file": "tests/e2e/attachment-upload.spec.ts",
+      "title": "Test 3 \u2014 Add attachment via URL returns 201 with URL type",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0004",
+      "type": "playwright",
+      "file": "tests/e2e/attachment-upload.spec.ts",
+      "title": "Test 4 \u2014 Reject disallowed MIME type returns 400 mime-type-not-allowed",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0005",
+      "type": "playwright",
+      "file": "tests/e2e/attachment-upload.spec.ts",
+      "title": "Test 5 \u2014 Reject file exceeding size limit returns 413 file-too-large",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0006",
+      "type": "playwright",
+      "file": "tests/e2e/attachment-upload.spec.ts",
+      "title": "Test 6 \u2014 Reject unauthenticated request returns 401",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0007",
+      "type": "playwright",
+      "file": "tests/e2e/attachment-upload.spec.ts",
+      "title": "Test 7 \u2014 UI displays attachment thumbnail after upload",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0008",
+      "type": "playwright",
+      "file": "tests/e2e/attachment-upload.spec.ts",
+      "title": "Test 8 \u2014 UI shows download link for URL attachment",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0014",
+      "type": "playwright",
+      "file": "tests/e2e/board-members.spec.ts",
+      "title": "GET /boards/:id/members returns explicit board members",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0015",
+      "type": "playwright",
+      "file": "tests/e2e/board-members.spec.ts",
+      "title": "POST /boards/:id/members adds/updates member idempotently",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0016",
+      "type": "playwright",
+      "file": "tests/e2e/board-members.spec.ts",
+      "title": "PATCH /boards/:id/members/:userId changes role, rejects demotion of last ADMIN",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0017",
+      "type": "playwright",
+      "file": "tests/e2e/board-members.spec.ts",
+      "title": "DELETE /boards/:id/members/:userId removes member, rejects removal of last ADMIN",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0018",
+      "type": "playwright",
+      "file": "tests/e2e/board-members.spec.ts",
+      "title": "Board visibility: GUESTs see only boards with guest access",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0019",
+      "type": "playwright",
+      "file": "tests/e2e/board-view-preference.spec.ts",
+      "title": "User logs in and gets default view preference",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0020",
+      "type": "playwright",
+      "file": "tests/e2e/board-view-preference.spec.ts",
+      "title": "User changes view and it persists",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0021",
+      "type": "playwright",
+      "file": "tests/e2e/board-view-preference.spec.ts",
+      "title": "Access denied without authentication",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0022",
+      "type": "playwright",
+      "file": "tests/e2e/board-view-preference.spec.ts",
+      "title": "Invalid view type returns error",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0023",
+      "type": "playwright",
+      "file": "tests/e2e/board-view-preference.spec.ts",
+      "title": "Multiple boards have independent preferences",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0024",
+      "type": "playwright",
+      "file": "tests/e2e/board-visibility.spec.ts",
+      "title": "PRIVATE board \u2014 unauthenticated request is rejected (401)",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0025",
+      "type": "playwright",
+      "file": "tests/e2e/board-visibility.spec.ts",
+      "title": "PRIVATE board \u2014 non-member authenticated request returns 403",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0026",
+      "type": "playwright",
+      "file": "tests/e2e/board-visibility.spec.ts",
+      "title": "PUBLIC board \u2014 accessible without an auth token",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0027",
+      "type": "playwright",
+      "file": "tests/e2e/board-visibility.spec.ts",
+      "title": "UI \u2014 PATCH visibility updates board and new visibility is applied",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0028",
+      "type": "playwright",
+      "file": "tests/e2e/business-logic-invariants.spec.ts",
+      "title": "PATCH /cards/:id returns 403 board-is-archived",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0029",
+      "type": "playwright",
+      "file": "tests/e2e/business-logic-invariants.spec.ts",
+      "title": "POST /lists/:listId/cards returns 403 board-is-archived",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0030",
+      "type": "playwright",
+      "file": "tests/e2e/business-logic-invariants.spec.ts",
+      "title": "POST /cards/:id/comments returns 403 board-is-archived",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0031",
+      "type": "playwright",
+      "file": "tests/e2e/business-logic-invariants.spec.ts",
+      "title": "GET /boards/:boardId/lists still works on archived board (200)",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0032",
+      "type": "playwright",
+      "file": "tests/e2e/business-logic-invariants.spec.ts",
+      "title": "DELETE last owner returns 422 workspace-must-have-one-owner",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0033",
+      "type": "playwright",
+      "file": "tests/e2e/business-logic-invariants.spec.ts",
+      "title": "PATCH role change for last owner returns 422",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0034",
+      "type": "playwright",
+      "file": "tests/e2e/business-logic-invariants.spec.ts",
+      "title": "Role change succeeds when a second OWNER is promoted first",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0035",
+      "type": "playwright",
+      "file": "tests/e2e/calendar-view.spec.ts",
+      "title": "Switching to Calendar renders the monthly grid with current month title",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0036",
+      "type": "playwright",
+      "file": "tests/e2e/calendar-view.spec.ts",
+      "title": "Cards with due_date appear on correct day cells",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0037",
+      "type": "playwright",
+      "file": "tests/e2e/calendar-view.spec.ts",
+      "title": "\"Cards without a due date\" toolbar note is visible",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0038",
+      "type": "playwright",
+      "file": "tests/e2e/calendar-view.spec.ts",
+      "title": "Prev/next month navigation changes the month title",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0039",
+      "type": "playwright",
+      "file": "tests/e2e/calendar-view.spec.ts",
+      "title": "\"+N more\" overflow chip shown when day has > 3 cards",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0040",
+      "type": "playwright",
+      "file": "tests/e2e/calendar-view.spec.ts",
+      "title": "Toggling to weekly view renders the 7-column week grid",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0041",
+      "type": "playwright",
+      "file": "tests/e2e/calendar-view.spec.ts",
+      "title": "Prev/next week navigation changes the week title",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0042",
+      "type": "playwright",
+      "file": "tests/e2e/calendar-view.spec.ts",
+      "title": "Cards with due_date appear in the weekly view on correct day",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0043",
+      "type": "playwright",
+      "file": "tests/e2e/calendar-view.spec.ts",
+      "title": "Drag card to another day updates due_date via PATCH (monthly view)",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0044",
+      "type": "playwright",
+      "file": "tests/e2e/calendar-view.spec.ts",
+      "title": "Failed PATCH on drag reverts card and shows error toast",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0045",
+      "type": "playwright",
+      "file": "tests/e2e/card-description-inline-edit.spec.ts",
+      "title": "Test 1 \u2014 Enter edit mode by clicking description area",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0046",
+      "type": "playwright",
+      "file": "tests/e2e/card-description-inline-edit.spec.ts",
+      "title": "Test 2 \u2014 Save with Ctrl+Enter",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0047",
+      "type": "playwright",
+      "file": "tests/e2e/card-description-inline-edit.spec.ts",
+      "title": "Test 3 \u2014 Cancel with Escape restores original text",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0048",
+      "type": "playwright",
+      "file": "tests/e2e/card-description-inline-edit.spec.ts",
+      "title": "Test 4 \u2014 Save with Save button",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0049",
+      "type": "playwright",
+      "file": "tests/e2e/card-description-inline-edit.spec.ts",
+      "title": "Test 5 \u2014 Cancel with Cancel button",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0050",
+      "type": "playwright",
+      "file": "tests/e2e/card-description-inline-edit.spec.ts",
+      "title": "Test 6 \u2014 Empty description shows placeholder",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0051",
+      "type": "playwright",
+      "file": "tests/e2e/card-description-inline-edit.spec.ts",
+      "title": "Test 7 \u2014 Keyboard accessibility: Enter on view element enters edit mode",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0052",
+      "type": "playwright",
+      "file": "tests/e2e/csrf-guard.spec.ts",
+      "title": "Test 1 \u2014 Mutating request with correct Origin passes",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0053",
+      "type": "playwright",
+      "file": "tests/e2e/csrf-guard.spec.ts",
+      "title": "Test 2 \u2014 Mutating request with mismatched Origin is blocked (403)",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0054",
+      "type": "playwright",
+      "file": "tests/e2e/csrf-guard.spec.ts",
+      "title": "Test 3 \u2014 Mutating request with mismatched Referer is blocked (403)",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0055",
+      "type": "playwright",
+      "file": "tests/e2e/csrf-guard.spec.ts",
+      "title": "Test 4 \u2014 Mutating request with no Origin/Referer is allowed (non-browser client)",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0056",
+      "type": "playwright",
+      "file": "tests/e2e/csrf-guard.spec.ts",
+      "title": "Test 5 \u2014 Safe (GET) request with mismatched Origin is NOT blocked",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0057",
+      "type": "playwright",
+      "file": "tests/e2e/csrf-guard.spec.ts",
+      "title": "Test 6 \u2014 Auth cookies contain SameSite=Strict; Secure; HttpOnly flags",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0058",
+      "type": "playwright",
+      "file": "tests/e2e/custom-field-values-api.spec.ts",
+      "title": "PUT \u2014 upsert TEXT value creates new record (201)",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0059",
+      "type": "playwright",
+      "file": "tests/e2e/custom-field-values-api.spec.ts",
+      "title": "PUT \u2014 upsert TEXT value again updates record (200)",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0060",
+      "type": "playwright",
+      "file": "tests/e2e/custom-field-values-api.spec.ts",
+      "title": "GET \u2014 retrieve custom field value directly",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0061",
+      "type": "playwright",
+      "file": "tests/e2e/custom-field-values-api.spec.ts",
+      "title": "GET card \u2014 includes customFieldValues",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0062",
+      "type": "playwright",
+      "file": "tests/e2e/custom-field-values-api.spec.ts",
+      "title": "POST board batch custom-field-values \u2014 accepts cardIds in request body",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0063",
+      "type": "playwright",
+      "file": "tests/e2e/custom-field-values-api.spec.ts",
+      "title": "PUT \u2014 NUMBER value creates record",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0064",
+      "type": "playwright",
+      "file": "tests/e2e/custom-field-values-api.spec.ts",
+      "title": "PUT \u2014 NUMBER value wrong type returns 400",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0065",
+      "type": "playwright",
+      "file": "tests/e2e/custom-field-values-api.spec.ts",
+      "title": "PUT \u2014 CHECKBOX value creates record",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0066",
+      "type": "playwright",
+      "file": "tests/e2e/custom-field-values-api.spec.ts",
+      "title": "PUT \u2014 CHECKBOX wrong type returns 400",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0067",
+      "type": "playwright",
+      "file": "tests/e2e/custom-field-values-api.spec.ts",
+      "title": "PUT \u2014 DATE value creates record",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0068",
+      "type": "playwright",
+      "file": "tests/e2e/custom-field-values-api.spec.ts",
+      "title": "PUT \u2014 DATE invalid value returns 400",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0069",
+      "type": "playwright",
+      "file": "tests/e2e/custom-field-values-api.spec.ts",
+      "title": "PUT \u2014 DROPDOWN value creates record",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0070",
+      "type": "playwright",
+      "file": "tests/e2e/custom-field-values-api.spec.ts",
+      "title": "DELETE \u2014 removes a custom field value",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0071",
+      "type": "playwright",
+      "file": "tests/e2e/custom-field-values-api.spec.ts",
+      "title": "GET card \u2014 deleted value not in includes",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0072",
+      "type": "playwright",
+      "file": "tests/e2e/custom-field-values-api.spec.ts",
+      "title": "PUT \u2014 field from different board returns 422",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0073",
+      "type": "playwright",
+      "file": "tests/e2e/custom-field-values-api.spec.ts",
+      "title": "PUT \u2014 unauthenticated request returns 401",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0074",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-api.spec.ts",
+      "title": "POST \u2014 create a TEXT field",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0075",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-api.spec.ts",
+      "title": "POST \u2014 create a DROPDOWN field with options",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0076",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-api.spec.ts",
+      "title": "POST \u2014 create DATE, NUMBER, CHECKBOX fields",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0077",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-api.spec.ts",
+      "title": "GET \u2014 list all fields returns at least 5 items",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0078",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-api.spec.ts",
+      "title": "PATCH \u2014 rename a field",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0079",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-api.spec.ts",
+      "title": "PATCH \u2014 update show_on_card",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0080",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-api.spec.ts",
+      "title": "PATCH \u2014 update DROPDOWN options",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0081",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-api.spec.ts",
+      "title": "POST \u2014 validation error: missing name",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0082",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-api.spec.ts",
+      "title": "POST \u2014 validation error: invalid field_type",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0083",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-api.spec.ts",
+      "title": "POST \u2014 validation error: options not array",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0084",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-api.spec.ts",
+      "title": "PATCH \u2014 404 for unknown field",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0085",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-api.spec.ts",
+      "title": "DELETE \u2014 removes a field",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0086",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-api.spec.ts",
+      "title": "DELETE \u2014 404 for already-deleted field",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0087",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-api.spec.ts",
+      "title": "Permission guard \u2014 non-ADMIN cannot create fields",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0088",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-board-panel.spec.ts",
+      "title": "Open Board Settings and verify Custom Fields section is visible",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0089",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-board-panel.spec.ts",
+      "title": "Create a TEXT custom field",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0090",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-board-panel.spec.ts",
+      "title": "Create a DROPDOWN custom field with options",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0091",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-board-panel.spec.ts",
+      "title": "Rename a custom field",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0092",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-board-panel.spec.ts",
+      "title": "Toggle show_on_card checkbox",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0093",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-board-panel.spec.ts",
+      "title": "Delete a custom field",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0094",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-board-panel.spec.ts",
+      "title": "Close the Board Settings panel",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0095",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-ui.spec.ts",
+      "title": "TEXT field \u2014 edit and save value in card modal, badge on tile",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0096",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-ui.spec.ts",
+      "title": "NUMBER field \u2014 edit value in card modal, badge on tile",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0097",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-ui.spec.ts",
+      "title": "CHECKBOX field \u2014 toggle value in card modal",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0098",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-ui.spec.ts",
+      "title": "DROPDOWN field \u2014 select option in card modal",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0099",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-ui.spec.ts",
+      "title": "Clear a field value removes badge from tile",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0100",
+      "type": "playwright",
+      "file": "tests/e2e/custom-fields-ui.spec.ts",
+      "title": "show_on_card=false \u2014 no badge on tile",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0101",
+      "type": "playwright",
+      "file": "tests/e2e/delete-confirmation.spec.ts",
+      "title": "Test 1 \u2014 Board DELETE without confirm returns 409 when board has lists",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0102",
+      "type": "playwright",
+      "file": "tests/e2e/delete-confirmation.spec.ts",
+      "title": "Test 2 \u2014 Board DELETE with confirm:true succeeds when board has lists",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0103",
+      "type": "playwright",
+      "file": "tests/e2e/delete-confirmation.spec.ts",
+      "title": "Test 3 \u2014 Empty board DELETE proceeds without confirmation (204)",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0104",
+      "type": "playwright",
+      "file": "tests/e2e/delete-confirmation.spec.ts",
+      "title": "Test 4 \u2014 List DELETE without confirm returns 409 when list has cards",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0105",
+      "type": "playwright",
+      "file": "tests/e2e/delete-confirmation.spec.ts",
+      "title": "Test 5 \u2014 List DELETE with confirm:true succeeds when list has cards",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0106",
+      "type": "playwright",
+      "file": "tests/e2e/delete-confirmation.spec.ts",
+      "title": "Test 6 \u2014 Empty list DELETE proceeds without confirmation (204)",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0107",
+      "type": "playwright",
+      "file": "tests/e2e/delete-confirmation.spec.ts",
+      "title": "Test 7 \u2014 UI shows confirmation dialog for board with lists",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0108",
+      "type": "playwright",
+      "file": "tests/e2e/delete-confirmation.spec.ts",
+      "title": "Test 8 \u2014 UI confirms and deletes board, redirects to workspace list",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0109",
+      "type": "playwright",
+      "file": "tests/e2e/delete-confirmation.spec.ts",
+      "title": "Test 9 \u2014 UI shows confirmation dialog for list with cards",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0110",
+      "type": "playwright",
+      "file": "tests/e2e/delete-confirmation.spec.ts",
+      "title": "Test 10 \u2014 UI confirms and deletes list",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0111",
+      "type": "playwright",
+      "file": "tests/e2e/input-sanitization.spec.ts",
+      "title": "Test 1 \u2014 XSS payload in card title is stripped to plain text",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0112",
+      "type": "playwright",
+      "file": "tests/e2e/input-sanitization.spec.ts",
+      "title": "Test 2 \u2014 HTML injection in card title is stripped",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0113",
+      "type": "playwright",
+      "file": "tests/e2e/input-sanitization.spec.ts",
+      "title": "Test 3 \u2014 XSS in card description stripped; safe Markdown HTML preserved",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0114",
+      "type": "playwright",
+      "file": "tests/e2e/input-sanitization.spec.ts",
+      "title": "Test 4 \u2014 javascript: href in description link is stripped",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0115",
+      "type": "playwright",
+      "file": "tests/e2e/input-sanitization.spec.ts",
+      "title": "Test 5 \u2014 XSS payload in board name is stripped",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0116",
+      "type": "playwright",
+      "file": "tests/e2e/input-sanitization.spec.ts",
+      "title": "Test 6 \u2014 Board description: safe HTML preserved, script stripped",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0117",
+      "type": "playwright",
+      "file": "tests/e2e/input-sanitization.spec.ts",
+      "title": "Test 7 \u2014 XSS payload in list name is stripped",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0118",
+      "type": "playwright",
+      "file": "tests/e2e/input-sanitization.spec.ts",
+      "title": "Test 8 \u2014 XSS payload in list name update is stripped",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0119",
+      "type": "playwright",
+      "file": "tests/e2e/input-sanitization.spec.ts",
+      "title": "Test 9 \u2014 XSS in comment content stripped; safe Markdown preserved",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0120",
+      "type": "playwright",
+      "file": "tests/e2e/input-sanitization.spec.ts",
+      "title": "Test 10 \u2014 XSS payload in custom field value_text is stripped",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0121",
+      "type": "playwright",
+      "file": "tests/e2e/input-sanitization.spec.ts",
+      "title": "Test 11 \u2014 Normal plain text input is stored unchanged",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0122",
+      "type": "playwright",
+      "file": "tests/e2e/list-management.spec.ts",
+      "title": "Test 1 \u2014 Create list returns 201 with id and title",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0123",
+      "type": "playwright",
+      "file": "tests/e2e/list-management.spec.ts",
+      "title": "Test 2 \u2014 Rename list returns 200 with updated title",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0124",
+      "type": "playwright",
+      "file": "tests/e2e/list-management.spec.ts",
+      "title": "Test 3 \u2014 Reorder lists returns 200 with updated positions",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0125",
+      "type": "playwright",
+      "file": "tests/e2e/list-management.spec.ts",
+      "title": "Test 4 \u2014 Archive list returns 200 and list is excluded from active lists",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0126",
+      "type": "playwright",
+      "file": "tests/e2e/list-management.spec.ts",
+      "title": "Test 5 \u2014 Create list without auth returns 401",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0127",
+      "type": "playwright",
+      "file": "tests/e2e/list-management.spec.ts",
+      "title": "Test 6 \u2014 UI: Add list button creates a new list on the board",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0128",
+      "type": "playwright",
+      "file": "tests/e2e/list-management.spec.ts",
+      "title": "Test 7 \u2014 UI: Renaming a list via its header updates the name",
+      "daily": true,
+      "note": "BDD-AUTO-0128: original scenario \"Double-clicking list header allows renaming\" superseded \u2014 the delivered UI renames via a header button that opens an inline edit input (single click). Source scenario re-scoped 2026-10-06; flagged by Copilot review on PR #348."
+    },
+    {
+      "id": "BDD-AUTO-0129",
+      "type": "playwright",
+      "file": "tests/e2e/list-management.spec.ts",
+      "title": "Test 8 \u2014 UI: Dragging a list changes its position",
+      "daily": true
+    },
+    {
+      "id": "BDD-AUTO-0130",
+      "type": "playwright",
+      "file": "tests/e2e/mcp-http-init.spec.ts",
+      "title": "Unauthenticated POST returns 401",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0131",
+      "type": "playwright",
+      "file": "tests/e2e/mcp-http-init.spec.ts",
+      "title": "Valid POST initializes session and returns mcp-session-id",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0132",
+      "type": "playwright",
+      "file": "tests/e2e/member-joined-event.spec.ts",
+      "title": "inviting a board guest emits member_joined with scope:board and version field",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0133",
+      "type": "playwright",
+      "file": "tests/e2e/member-joined-event.spec.ts",
+      "title": "all board events include a version field",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0134",
+      "type": "playwright",
+      "file": "tests/e2e/notification-type-prefs.spec.ts",
+      "title": "notification type preferences component works correctly",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0135",
+      "type": "playwright",
+      "file": "tests/e2e/offline-queue-persistence.spec.ts",
+      "title": "mutation seeded in IndexedDB before page load is hydrated into queue on boot",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0136",
+      "type": "playwright",
+      "file": "tests/e2e/offline-queue-persistence.spec.ts",
+      "title": "mutation is removed from IndexedDB after successful replay",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0137",
+      "type": "playwright",
+      "file": "tests/e2e/otel-metrics.spec.ts",
+      "title": "returns 204 with a valid delayMs payload",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0138",
+      "type": "playwright",
+      "file": "tests/e2e/otel-metrics.spec.ts",
+      "title": "returns 400 when delayMs is missing (OTEL enabled)",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0139",
+      "type": "playwright",
+      "file": "tests/e2e/otel-metrics.spec.ts",
+      "title": "returns 400 when delayMs is negative (OTEL enabled)",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0140",
+      "type": "playwright",
+      "file": "tests/e2e/otel-metrics.spec.ts",
+      "title": "returns 400 when body is invalid JSON text",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0141",
+      "type": "playwright",
+      "file": "tests/e2e/otel-metrics.spec.ts",
+      "title": "returns 204 with zero delayMs (no-error boundary)",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0142",
+      "type": "playwright",
+      "file": "tests/e2e/otel-metrics.spec.ts",
+      "title": "card move succeeds and board state is consistent",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0143",
+      "type": "playwright",
+      "file": "tests/e2e/payment-card-price.spec.ts",
+      "title": "Test 1 \u2014 Set card money fields returns 200 with persisted values",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0144",
+      "type": "playwright",
+      "file": "tests/e2e/payment-card-price.spec.ts",
+      "title": "Test 2 \u2014 Partial update (label only) preserves amount and currency",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0145",
+      "type": "playwright",
+      "file": "tests/e2e/payment-card-price.spec.ts",
+      "title": "Test 3 \u2014 Partial update (amount only) preserves currency",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0146",
+      "type": "playwright",
+      "file": "tests/e2e/payment-card-price.spec.ts",
+      "title": "Test 4 \u2014 Clear amount (null) also clears currency",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0147",
+      "type": "playwright",
+      "file": "tests/e2e/payment-card-price.spec.ts",
+      "title": "Test 5 \u2014 JWT token is accepted for money PATCH",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0148",
+      "type": "playwright",
+      "file": "tests/e2e/payment-card-price.spec.ts",
+      "title": "Test 6 \u2014 Reject negative amount returns 400 bad-request",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0149",
+      "type": "playwright",
+      "file": "tests/e2e/payment-card-price.spec.ts",
+      "title": "Test 7 \u2014 Reject lowercase currency returns 400 bad-request",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0150",
+      "type": "playwright",
+      "file": "tests/e2e/payment-card-price.spec.ts",
+      "title": "Test 8 \u2014 Reject empty body returns 400 bad-request",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0151",
+      "type": "playwright",
+      "file": "tests/e2e/payment-card-price.spec.ts",
+      "title": "Test 9 \u2014 Reject unauthenticated request returns 401",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0152",
+      "type": "playwright",
+      "file": "tests/e2e/payment-card-price.spec.ts",
+      "title": "Test 10 \u2014 Board monetisation flag can be toggled via PATCH",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0153",
+      "type": "playwright",
+      "file": "tests/e2e/payment-card-price.spec.ts",
+      "title": "Test 11 \u2014 UI displays price badge on card after money is set",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0154",
+      "type": "playwright",
+      "file": "tests/e2e/payment-card-price.spec.ts",
+      "title": "Test 12 \u2014 UI hides price badge when monetisation is disabled on board",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0155",
+      "type": "playwright",
+      "file": "tests/e2e/presence-board.spec.ts",
+      "title": "Test 1 \u2014 GET /boards/:id/presence returns active viewer list",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0156",
+      "type": "playwright",
+      "file": "tests/e2e/presence-board.spec.ts",
+      "title": "Test 2 \u2014 POST /boards/:id/presence registers the current user as a viewer",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0157",
+      "type": "playwright",
+      "file": "tests/e2e/presence-board.spec.ts",
+      "title": "Test 3 \u2014 DELETE /boards/:id/presence deregisters the current user",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0158",
+      "type": "playwright",
+      "file": "tests/e2e/presence-board.spec.ts",
+      "title": "Test 2 \u2014 Second user joining the board is reflected in the presence list",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0159",
+      "type": "playwright",
+      "file": "tests/e2e/presence-board.spec.ts",
+      "title": "Test 4 \u2014 Unauthenticated presence request returns 401",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0160",
+      "type": "playwright",
+      "file": "tests/e2e/presence-board.spec.ts",
+      "title": "Test 6 \u2014 UI: Second user avatar appears in board header of first user",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0161",
+      "type": "playwright",
+      "file": "tests/e2e/search-filters.spec.ts",
+      "title": "Test 1 \u2014 Search returns cards matching the query term",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0162",
+      "type": "playwright",
+      "file": "tests/e2e/search-filters.spec.ts",
+      "title": "Test 2 \u2014 Search with type=card filter returns only card results",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0163",
+      "type": "playwright",
+      "file": "tests/e2e/search-filters.spec.ts",
+      "title": "Test 3 \u2014 Search scoped to a specific board excludes other-board cards",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0164",
+      "type": "playwright",
+      "file": "tests/e2e/search-filters.spec.ts",
+      "title": "Test 4 \u2014 Unauthenticated search returns 401",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0165",
+      "type": "playwright",
+      "file": "tests/e2e/search-filters.spec.ts",
+      "title": "Test 5 \u2014 UI search palette finds a card by keyword",
+      "daily": false,
+      "note": "BDD-AUTO-0165: original scenario \"UI search box filters visible cards by keyword\" superseded \u2014 the board has no inline search input; search is a modal palette (header button / Cmd+K) whose offered results filter by keyword. Source scenario re-scoped 2026-10-06; flagged by Copilot review on PR #348."
+    },
+    {
+      "id": "BDD-AUTO-0166",
+      "type": "playwright",
+      "file": "tests/e2e/search-filters.spec.ts",
+      "title": "Test 6 \u2014 UI type filter narrows results to cards",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0167",
+      "type": "playwright",
+      "file": "tests/e2e/table-view.spec.ts",
+      "title": "Table view renders column headers after switching to TABLE",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0168",
+      "type": "playwright",
+      "file": "tests/e2e/table-view.spec.ts",
+      "title": "Table view renders card rows",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0169",
+      "type": "playwright",
+      "file": "tests/e2e/table-view.spec.ts",
+      "title": "Clicking a column header changes sort order",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0170",
+      "type": "playwright",
+      "file": "tests/e2e/table-view.spec.ts",
+      "title": "Clicking card title opens card detail modal",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0171",
+      "type": "playwright",
+      "file": "tests/e2e/timeline-bar.spec.ts",
+      "title": "Card with start_date and due_date renders as a bar in its swimlane",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0172",
+      "type": "playwright",
+      "file": "tests/e2e/timeline-bar.spec.ts",
+      "title": "Bar has left and right resize handles",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0173",
+      "type": "playwright",
+      "file": "tests/e2e/timeline-bar.spec.ts",
+      "title": "Bar title matches the card title",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0174",
+      "type": "playwright",
+      "file": "tests/e2e/timeline-bar.spec.ts",
+      "title": "Cards in different swimlanes render in their respective bar areas",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0175",
+      "type": "playwright",
+      "file": "tests/e2e/timeline-bar.spec.ts",
+      "title": "Card without dates is NOT rendered as a bar",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0176",
+      "type": "playwright",
+      "file": "tests/e2e/timeline-drag.spec.ts",
+      "title": "Dragging the right handle extends due_date via PATCH",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0177",
+      "type": "playwright",
+      "file": "tests/e2e/timeline-drag.spec.ts",
+      "title": "Dragging the left handle moves start_date via PATCH",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0178",
+      "type": "playwright",
+      "file": "tests/e2e/timeline-drag.spec.ts",
+      "title": "Dragging the bar body shifts both dates via PATCH",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0179",
+      "type": "playwright",
+      "file": "tests/e2e/timeline-drag.spec.ts",
+      "title": "PATCH failure reverts bar dates and shows error toast",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0180",
+      "type": "playwright",
+      "file": "tests/e2e/timeline-view.spec.ts",
+      "title": "Switching to Timeline renders the timeline container",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0181",
+      "type": "playwright",
+      "file": "tests/e2e/timeline-view.spec.ts",
+      "title": "One swimlane row renders per list in the board",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0182",
+      "type": "playwright",
+      "file": "tests/e2e/timeline-view.spec.ts",
+      "title": "Card with both start_date and due_date is scheduled (bar area visible)",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0183",
+      "type": "playwright",
+      "file": "tests/e2e/timeline-view.spec.ts",
+      "title": "Card missing start_date still renders as a scheduled bar",
+      "daily": false,
+      "note": "BDD-AUTO-0183: original scenario \"appears as unscheduled chip below its swimlane\" was superseded \u2014 TimelineView intentionally renders every due-date-carrying card as a scheduled bar (start_date defaults to today; src/extensions/TimelineView/TimelineView.tsx L71-L76: unscheduledCards: [], cards with no due_date hidden). Re-scoped 2026-10-06 to the delivered behaviour; flagged by Copilot review on PR #348."
+    },
+    {
+      "id": "BDD-AUTO-0184",
+      "type": "playwright",
+      "file": "tests/e2e/timeline-view.spec.ts",
+      "title": "Card with no dates is not rendered on the timeline",
+      "daily": false,
+      "note": "BDD-AUTO-0184: original scenario \"appears as unscheduled chip\" superseded \u2014 cards with no due_date are intentionally not displayed (TimelineView.tsx L64/L75-76). Re-scoped 2026-10-06 to the delivered behaviour; flagged by Copilot review on PR #348."
+    },
+    {
+      "id": "BDD-AUTO-0185",
+      "type": "playwright",
+      "file": "tests/e2e/timeline-view.spec.ts",
+      "title": "Today button is clickable and does not throw",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0186",
+      "type": "playwright",
+      "file": "tests/e2e/timeline-view.spec.ts",
+      "title": "Zoom controls change axis granularity (day zoom renders wider columns)",
+      "daily": false
+    },
+    {
+      "id": "BDD-AUTO-0187",
+      "type": "playwright",
+      "file": "tests/e2e/timeline-view.spec.ts",
+      "title": "Clicking a scheduled bar opens the card detail modal",
+      "note": "BDD-AUTO-0187: source scenario \"Clicking an unscheduled chip opens the card detail modal\" was superseded when the timeline shipped scheduled-bar opens; the unscheduled-card paths were re-scoped as BDD-AUTO-0183 (still renders as scheduled bar) and BDD-AUTO-0184 (not rendered). ID intentionally kept bound to the live scheduled-bar test.",
+      "daily": false
+    }
+  ]
+}

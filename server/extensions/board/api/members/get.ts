@@ -11,8 +11,10 @@ import {
 import { buildAvatarProxyUrl } from '../../../../common/avatar/resolveAvatarUrl';
 
 export async function handleGetBoardMembers(req: Request, boardId: string): Promise<Response> {
-  const scopedReq = req as BoardVisibilityScopedRequest;
-  const board = scopedReq.board!;
+  const scopedReq = req as BoardVisibilityScopedRequest & {
+    board: NonNullable<BoardVisibilityScopedRequest['board']>;
+  };
+  const board = scopedReq.board;
 
   // [why] Board guests should be able to see board participants, but still cannot
   // manage membership (POST/PATCH/DELETE remain ADMIN-restricted).

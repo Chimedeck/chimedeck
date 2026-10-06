@@ -3,13 +3,16 @@
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 
+type BoardRow = { id: string };
+type AuthenticatedUserRequest = AuthenticatedRequest & { currentUser: { id: string } };
+
 export async function handleStarBoard(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const userId = (req as AuthenticatedUserRequest).currentUser.id;
 
-  const board = await db('boards').where({ id: boardId }).first();
+  const board = await db<BoardRow>('boards').where({ id: boardId }).first();
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
@@ -30,9 +33,9 @@ export async function handleUnstarBoard(req: Request, boardId: string): Promise<
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const userId = (req as AuthenticatedUserRequest).currentUser.id;
 
-  const board = await db('boards').where({ id: boardId }).first();
+  const board = await db<BoardRow>('boards').where({ id: boardId }).first();
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },

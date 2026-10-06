@@ -5,10 +5,28 @@
 // External links are shown in a separate "Links" section.
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { PaperClipIcon, LinkIcon } from '@heroicons/react/24/outline';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import Button from '../../../common/components/Button';
 import ToastRegion from '../../../common/components/ToastRegion';
 import type { ToastItem } from '../../../common/components/ToastRegion';
 import { useAttachmentUpload } from '../hooks/useAttachmentUpload';
+import { useReorderPersistence } from '../hooks/useReorderPersistence';
 import {
   listAttachments,
   deleteAttachment,
@@ -43,6 +61,66 @@ interface Props {
   refreshSignal?: number;
 }
 
+// SortableAttachmentItem — wraps AttachmentItem with @dnd-kit/sortable drag-and-drop.
+interface SortableAttachmentItemProps {
+  readonly attachment: Attachment;
+  readonly uploadProgress?: number | null | undefined;
+  readonly onDelete: (id: string) => void;
+  readonly onRename?: (id: string, alias: string) => void;
+  readonly onInsertComment?: (markdown: string) => void;
+  readonly disabled?: boolean;
+}
+
+function SortableAttachmentItem({
+  attachment,
+  uploadProgress,
+  onDelete,
+  onRename,
+  onInsertComment,
+  disabled = false,
+}: Readonly<SortableAttachmentItemProps>): React.ReactElement {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: attachment.id,
+    data: { type: 'attachment', attachmentId: attachment.id },
+    disabled,
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+  };
+
+  // [why] setActivatorNodeRef and listeners need to be passed to the drag handle
+  // button inside AttachmentItem. We spread them as a combined object and the
+  // AttachmentItem applies them to the Bars3Icon button.
+  const dragHandleProps = {
+    ref: setActivatorNodeRef as React.Ref<HTMLButtonElement>,
+    ...listeners,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <AttachmentItem
+        attachment={attachment}
+        uploadProgress={uploadProgress ?? null}
+        onDelete={onDelete}
+        {...(onRename ? { onRename } : {})}
+        {...(onInsertComment ? { onInsertComment } : {})}
+        dragHandleProps={dragHandleProps}
+      />
+    </div>
+  );
+}
+
 export function AttachmentPanel({
   cardId,
   canWrite = true,
@@ -55,6 +133,17 @@ export function AttachmentPanel({
 
   // Server-persisted attachments
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  // Mirror of `attachments` for callbacks that must read the latest order without
+  // re-subscribing on every render (drag-end reads it outside state updaters).
+  const attachmentsRef = useRef<Attachment[]>([]);
+  useEffect(() => { attachmentsRef.current = attachments; }, [attachments]);
+  // [why] Monotonic generation counter for reorder mutations, bumped synchronously
+  // at persistReorder call time. loadAttachments snapshots it when its fetch starts
+  // and refuses to apply the snapshot if a reorder was issued meanwhile — otherwise
+  // a failed reorder's unawaited rollback reload can land AFTER a newer queued
+  // reorder succeeded and overwrite the latest order with a pre-reorder server
+  // snapshot (UI stale even though the server saved the newest order).
+  const reorderEpochRef = useRef(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
@@ -85,21 +174,52 @@ export function AttachmentPanel({
   }, []);
 
   // Load attachments from the server
-  const loadAttachments = useCallback(async () => {
-    try {
-      const res = await listAttachments({ cardId });
-      // Sort newest-first
-      const sorted = [...res.data].sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      setAttachments(sorted);
-      const fileCount = sorted.filter((a) => a.referenced_card_id == null).length;
-      const linkedCardCount = sorted.filter((a) => a.referenced_card_id != null).length;
-      onCountChange?.({ fileCount, linkedCardCount });
-    } catch {
-      setLoadError('Failed to load attachments');
-    }
-  }, [cardId, onCountChange]);
+  const loadAttachments = useCallback(
+    async (newAttachmentId?: string) => {
+      // [why] Snapshot the reorder generation when the fetch STARTS. If any
+      // persistReorder is issued while this request is in flight, our response is a
+      // pre-reorder snapshot for the list's ORDER — applying it would clobber the
+      // newer committed order (a failed reorder's rollback reload landing after a
+      // newer reorder succeeded left the UI stale even though the server saved the
+      // newest order). A reorder cannot change membership or counts, only order, so
+      // dropping the whole snapshot is safe; the newer reorder's own path owns the list.
+      const reorderEpochAtStart = reorderEpochRef.current;
+      try {
+        const res = await listAttachments({ cardId });
+        if (reorderEpochRef.current !== reorderEpochAtStart) {
+          // A reorder raced this fetch — discard the pre-reorder snapshot. For an
+          // add-triggered load, re-fetch so the new attachment still appears: the
+          // fresh GET snapshots the current epoch and applies unless ANOTHER reorder
+          // races it again (terminates: each retry requires a new real epoch bump).
+          if (newAttachmentId) void loadAttachments(newAttachmentId);
+          return;
+        }
+        // [why] Server returns attachments ordered by position ASC — no client-side
+        // sort needed. When a new attachment is added, we reorder it to the top.
+        let sorted = res.data;
+        if (newAttachmentId) {
+          const newIdx = sorted.findIndex((a) => a.id === newAttachmentId);
+          if (newIdx > 0) {
+            // Move the new attachment to the front
+            const newItem = sorted[newIdx];
+            if (newItem) {
+              sorted = [newItem, ...sorted.filter((_, i) => i !== newIdx)];
+              // Persist the new order — handled outside state updaters so React
+              // replaying the updater can't re-fire the network call.
+              void persistReorder(sorted.map((a) => a.id));
+            }
+          }
+        }
+        setAttachments(sorted);
+        const fileCount = sorted.filter((a) => a.referenced_card_id == null).length;
+        const linkedCardCount = sorted.filter((a) => a.referenced_card_id != null).length;
+        onCountChange?.({ fileCount, linkedCardCount });
+      } catch {
+        setLoadError('Failed to load attachments');
+      }
+    },
+    [cardId, onCountChange]
+  );
 
   useEffect(() => {
     void loadAttachments();
@@ -116,11 +236,25 @@ export function AttachmentPanel({
     onAttachmentsChange?.(attachments);
   }, [attachments, onAttachmentsChange]);
 
+  // [why] Serialize reorder mutations + latest-wins failure handling live in
+  // useReorderPersistence (unit-tested in useReorderPersistence.test.ts): calls
+  // are serialized, only the latest failed reorder toasts + reloads, every call
+  // bumps reorderEpochRef so in-flight list fetches discard pre-reorder snapshots,
+  // and success reconciles state from the endpoint's returned list.
+  const persistReorder = useReorderPersistence({
+    cardId,
+    attachmentsRef: attachmentsRef as React.MutableRefObject<Attachment[]>,
+    setAttachments,
+    pushErrorToast,
+    loadAttachments,
+    reorderEpochRef: reorderEpochRef as React.MutableRefObject<number>,
+  });
+
   // Upload hook — refreshes the server list when a new upload completes
   const { uploads, upload, removeEntry } = useAttachmentUpload({
     cardId,
-    onSuccess: () => {
-      void loadAttachments();
+    onSuccess: (attachment) => {
+      void loadAttachments(attachment.id);
     },
     onError: (_clientId, message) => {
       pushErrorToast(message);
@@ -164,8 +298,8 @@ export function AttachmentPanel({
         }
       }
       try {
-        await createUrlAttachment({ cardId, url, name });
-        void loadAttachments();
+        const created = await createUrlAttachment({ cardId, url, name });
+        void loadAttachments(created.data.id);
       } catch {
         // silently ignore — user can still use the manual link form
       }
@@ -319,12 +453,12 @@ export function AttachmentPanel({
       // [why] For internal card links the name is auto-filled from the card title;
       // fall back to the URL string only for external links with no display name.
       const nameToSend = linkName.trim() || detectedCard?.title || linkUrl.trim();
-      await createUrlAttachment({
+      const created = await createUrlAttachment({
         cardId,
         url: linkUrl.trim(),
         name: nameToSend,
       });
-      void loadAttachments();
+      void loadAttachments(created.data.id);
       setLinkUrl('');
       setLinkName('');
       setDetectedCard(null);
@@ -353,6 +487,33 @@ export function AttachmentPanel({
     const entry = uploads.find((u) => u.attachmentId === id && u.phase === 'uploading');
     return entry ? entry.progress : null;
   };
+
+  // DnD sensors for attachment reorder
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  // Handle drag-end: reorder attachments optimistically, then persist
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      // [why] No network calls inside the functional updater: React may replay an
+      // updater (Strict Mode, interrupted renders), which would re-fire the request.
+      // Read current order, compute the move, update state, then persist outside.
+      const current = attachmentsRef.current;
+      const oldIndex = current.findIndex((a) => a.id === active.id);
+      const newIndex = current.findIndex((a) => a.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      const reordered = arrayMove(current, oldIndex, newIndex);
+      setAttachments(reordered);
+      void persistReorder(reordered.map((a) => a.id));
+    },
+    [persistReorder]
+  );
 
   return (
     <>
@@ -423,6 +584,7 @@ export function AttachmentPanel({
               external_url: null,
               referenced_card_id: null,
               referenced_card: null,
+              position: null,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             };
@@ -447,19 +609,31 @@ export function AttachmentPanel({
           </p>
         )}
 
-        {/* FILE attachments */}
-        <div className="space-y-0" data-testid="attachment-list">
-          {fileAttachments.map((attachment) => (
-            <AttachmentItem
-              key={attachment.id}
-              attachment={attachment}
-              uploadProgress={progressForAttachment(attachment.id)}
-              onDelete={handleDelete}
-              onRename={handleRename}
-              {...(insertMarkdownRef ? { onInsertComment: handleInsertComment } : {})}
-            />
-          ))}
-        </div>
+        {/* FILE attachments — sortable via drag-and-drop */}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext
+            items={fileAttachments.map((a) => a.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div
+              className="space-y-0"
+              data-testid="attachment-list"
+              data-upload-drop-exclude="true"
+            >
+              {fileAttachments.map((attachment) => (
+                <SortableAttachmentItem
+                  key={attachment.id}
+                  attachment={attachment}
+                  uploadProgress={progressForAttachment(attachment.id)}
+                  onDelete={handleDelete}
+                  onRename={handleRename}
+                  {...(insertMarkdownRef ? { onInsertComment: handleInsertComment } : {})}
+                  disabled={!canWrite}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
 
         {/* Cards section — internal card-link attachments */}
         {cardLinkAttachments.length > 0 && (

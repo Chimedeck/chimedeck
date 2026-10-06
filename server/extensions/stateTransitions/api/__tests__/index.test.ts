@@ -7,7 +7,7 @@ const getCalls: string[] = [];
 const putCalls: string[] = [];
 const rulesCalls: string[] = [];
 
-mock.module('../../../../config/featureFlags', () => ({
+await mock.module('../../../../config/featureFlags', () => ({
   featureFlags: {
     get STATE_TRANSITIONS_ENABLED() {
       return stateTransitionsEnabled;
@@ -15,29 +15,29 @@ mock.module('../../../../config/featureFlags', () => ({
   },
 }));
 
-mock.module('../../../../middlewares/boardVisibility', () => ({
+await mock.module('../../../../middlewares/boardVisibility', () => ({
   applyBoardVisibility: async () => visibilityError,
 }));
 
-mock.module('../../../../common/ids/resolveEntityId', () => ({
+await mock.module('../../../../common/ids/resolveEntityId', () => ({
   resolveBoardId: async () => resolvedBoardId,
 }));
 
-mock.module('../get', () => ({
+await mock.module('../get', () => ({
   handleGetStateTransitions: async (_req: Request, boardId: string) => {
     getCalls.push(boardId);
     return Response.json({ data: { boardId } }, { status: 200 });
   },
 }));
 
-mock.module('../put', () => ({
+await mock.module('../put', () => ({
   handlePutStateTransitions: async (_req: Request, boardId: string) => {
     putCalls.push(boardId);
     return Response.json({ data: { boardId } }, { status: 200 });
   },
 }));
 
-mock.module('../getRules', () => ({
+await mock.module('../getRules', () => ({
   handleGetStateTransitionRules: async (_req: Request, boardId: string) => {
     rulesCalls.push(boardId);
     return Response.json({ data: { boardId, rules: [] } }, { status: 200 });

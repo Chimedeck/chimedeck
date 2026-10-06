@@ -6,7 +6,6 @@
 
 import minimist from 'minimist';
 import { resolveConfig } from './config';
-import { print } from './output';
 import { runMoveCard } from './commands/moveCard';
 import { runComment } from './commands/comment';
 import { runCreateCard } from './commands/createCard';
