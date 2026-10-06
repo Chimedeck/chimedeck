@@ -589,9 +589,14 @@ Each scenario below is mapped in `specs/bdd/bdd-playwright-map.json`.
 - Type: AUTO (Playwright)
 - Evidence: `tests/e2e/list-management.spec.ts:149`
 
-#### Scenario BDD-AUTO-0128 — Test 7 — UI: Double-clicking list header allows renaming
+#### Scenario BDD-AUTO-0128 — Test 7 — UI: Renaming a list via its header updates the name
 - Type: AUTO (Playwright)
-- Evidence: `tests/e2e/list-management.spec.ts:194`
+- Evidence: `tests/e2e/list-management.spec.ts:200`
+- [2026-10-06 re-scope] Original scenario "Double-clicking list header allows renaming" was
+  superseded by the delivered UI: list rename is a header button ("Rename list <name>")
+  that opens an inline edit input — single click, not a double-click. Re-scoped to the
+  delivered behaviour; flagged by Copilot review on PR #348. The double-click interaction
+  is intentionally not kept (no deliverable path).
 
 #### Scenario BDD-AUTO-0129 — Test 8 — UI: Dragging a list changes its position
 - Type: AUTO (Playwright)
@@ -705,9 +710,15 @@ Each scenario below is mapped in `specs/bdd/bdd-playwright-map.json`.
 - Type: AUTO (Playwright)
 - Evidence: `tests/e2e/search-filters.spec.ts:104`
 
-#### Scenario BDD-AUTO-0165 — Test 5 — UI search box filters visible cards by keyword
+#### Scenario BDD-AUTO-0165 — Test 5 — UI search palette finds a card by keyword
 - Type: AUTO (Playwright)
 - Evidence: `tests/e2e/search-filters.spec.ts:117`
+- [2026-10-06 re-scope] Original scenario "UI search box filters visible cards by keyword"
+  described an inline search box on the board; the delivered UI has no inline search input —
+  search is a modal palette opened from the header Search button (or Cmd/Ctrl+K). The palette
+  filters its offered results by keyword, which is the same user capability re-scoped to the
+  delivered surface; flagged by Copilot review on PR #348. Inline board-level filtering is
+  intentionally superseded (no deliverable path).
 
 #### Scenario BDD-AUTO-0166 — Test 6 — UI type filter toggle shows only matching result type
 - Type: AUTO (Playwright)
@@ -789,13 +800,21 @@ Each scenario below is mapped in `specs/bdd/bdd-playwright-map.json`.
 - Type: AUTO (Playwright)
 - Evidence: `tests/e2e/timeline-view.spec.ts:149`
 
-#### Scenario BDD-AUTO-0183 — Card missing start_date appears as unscheduled chip below its swimlane
+#### Scenario BDD-AUTO-0183 — Card missing start_date still renders as a scheduled bar
 - Type: AUTO (Playwright)
-- Evidence: `tests/e2e/timeline-view.spec.ts:171`
+- Evidence: `tests/e2e/timeline-view.spec.ts:183`
+- [2026-10-06 re-scope] Original scenario "appears as unscheduled chip below its swimlane" was
+  superseded by the delivered timeline: every card with a due date (today or future) renders as a
+  scheduled bar — a missing start_date defaults to today (`src/extensions/TimelineView/TimelineView.tsx`
+  lines 71–76). The unscheduled-chip path is dormant (`unscheduledCards: []`); flagged by Copilot
+  review on the promotion-fix PR and re-scoped to the shipped behaviour.
 
-#### Scenario BDD-AUTO-0184 — Card with no dates at all appears as unscheduled chip
+#### Scenario BDD-AUTO-0184 — Card with no dates is not rendered on the timeline
 - Type: AUTO (Playwright)
-- Evidence: `tests/e2e/timeline-view.spec.ts:191`
+- Evidence: `tests/e2e/timeline-view.spec.ts:200`
+- [2026-10-06 re-scope] Original scenario "appears as unscheduled chip" superseded: cards with no
+  due_date are intentionally not displayed on the timeline (`TimelineView.tsx` lines 63–76).
+  Flagged by Copilot review on the promotion-fix PR and re-scoped to the shipped behaviour.
 
 #### Scenario BDD-AUTO-0185 — Today button is clickable and does not throw
 - Type: AUTO (Playwright)
@@ -805,9 +824,17 @@ Each scenario below is mapped in `specs/bdd/bdd-playwright-map.json`.
 - Type: AUTO (Playwright)
 - Evidence: `tests/e2e/timeline-view.spec.ts:221`
 
-#### Scenario BDD-AUTO-0187 — Clicking an unscheduled chip opens the card detail modal
+#### Scenario BDD-AUTO-0187 — Clicking a scheduled bar opens the card detail modal
 - Type: AUTO (Playwright)
-- Evidence: `tests/e2e/timeline-view.spec.ts:248`
+- Evidence: `tests/e2e/timeline-view.spec.ts:259`
+- [2026-10-06 rebind] Source scenario was originally titled "Clicking an unscheduled chip opens
+  the card detail modal" (timeline shipped unscheduled-card chips, superseded in repo history; no current file reference).
+  The delivered UI opens the detail modal from the scheduled bar; unscheduled-card presentation
+  is covered by BDD-AUTO-0183/0184, re-scoped on 2026-10-06 to the delivered behaviour
+  (a missing start_date still renders as a scheduled bar; a card with no dates is not rendered).
+  Scenario renamed and re-pointed; coverage intent (card detail
+  modal opens from a timeline element) unchanged. Flagged by Copilot review on the promotion-fix
+  PR thread; see specs/bdd/bdd-playwright-map.json note on this entry.
 
 
 ### Feature: member_joined event

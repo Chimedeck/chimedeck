@@ -1,11 +1,12 @@
-// POST /api/v1/cards/:cardId/attachments/reorder — batch position update; min role: MEMBER.
+// POST /api/v1/cards/:cardId/attachments/reorder — batch position update; min role:
+// workspace MEMBER, or board guest with MEMBER sub-type (shared attachment policy).
 // Validates that order.length === attachment count for the card, then assigns
 // fresh lexicographic positions to every attachment in the supplied order.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
-  requireRole,
+  requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import {
@@ -99,7 +100,12 @@ export async function handleReorderAttachments(req: Request, cardId: string): Pr
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  // [why] Shared attachment-authorization helper (requestUploadUrl/confirmUpload/addUrl
+  // use the same): workspace MEMBER/ADMIN/OWNER pass, and board guests whose
+  // board-level sub-type is MEMBER may reorder the attachments they can already
+  // upload/add — otherwise a guest MEMBER could add attachments but get 403 on
+  // reorder for no policy reason.
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
   let body: { order?: string[] };

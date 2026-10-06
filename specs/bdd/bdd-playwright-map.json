@@ -818,14 +818,14 @@
       "id": "BDD-AUTO-0122",
       "type": "playwright",
       "file": "tests/e2e/list-management.spec.ts",
-      "title": "Test 1 \u2014 Create list returns 201 with id and name",
+      "title": "Test 1 \u2014 Create list returns 201 with id and title",
       "daily": true
     },
     {
       "id": "BDD-AUTO-0123",
       "type": "playwright",
       "file": "tests/e2e/list-management.spec.ts",
-      "title": "Test 2 \u2014 Rename list returns 200 with updated name",
+      "title": "Test 2 \u2014 Rename list returns 200 with updated title",
       "daily": true
     },
     {
@@ -860,8 +860,9 @@
       "id": "BDD-AUTO-0128",
       "type": "playwright",
       "file": "tests/e2e/list-management.spec.ts",
-      "title": "Test 7 \u2014 UI: Double-clicking list header allows renaming",
-      "daily": true
+      "title": "Test 7 \u2014 UI: Renaming a list via its header updates the name",
+      "daily": true,
+      "note": "BDD-AUTO-0128: original scenario \"Double-clicking list header allows renaming\" superseded \u2014 the delivered UI renames via a header button that opens an inline edit input (single click). Source scenario re-scoped 2026-10-06; flagged by Copilot review on PR #348."
     },
     {
       "id": "BDD-AUTO-0129",
@@ -930,14 +931,14 @@
       "id": "BDD-AUTO-0138",
       "type": "playwright",
       "file": "tests/e2e/otel-metrics.spec.ts",
-      "title": "returns 400 when delayMs is missing",
+      "title": "returns 400 when delayMs is missing (OTEL enabled)",
       "daily": false
     },
     {
       "id": "BDD-AUTO-0139",
       "type": "playwright",
       "file": "tests/e2e/otel-metrics.spec.ts",
-      "title": "returns 400 when delayMs is negative",
+      "title": "returns 400 when delayMs is negative (OTEL enabled)",
       "daily": false
     },
     {
@@ -1070,14 +1071,14 @@
       "id": "BDD-AUTO-0158",
       "type": "playwright",
       "file": "tests/e2e/presence-board.spec.ts",
-      "title": "Test 4 \u2014 Second user joining the board is reflected in the presence list",
+      "title": "Test 2 \u2014 Second user joining the board is reflected in the presence list",
       "daily": false
     },
     {
       "id": "BDD-AUTO-0159",
       "type": "playwright",
       "file": "tests/e2e/presence-board.spec.ts",
-      "title": "Test 5 \u2014 Unauthenticated presence request returns 401",
+      "title": "Test 4 \u2014 Unauthenticated presence request returns 401",
       "daily": false
     },
     {
@@ -1119,14 +1120,15 @@
       "id": "BDD-AUTO-0165",
       "type": "playwright",
       "file": "tests/e2e/search-filters.spec.ts",
-      "title": "Test 5 \u2014 UI search box filters visible cards by keyword",
-      "daily": false
+      "title": "Test 5 \u2014 UI search palette finds a card by keyword",
+      "daily": false,
+      "note": "BDD-AUTO-0165: original scenario \"UI search box filters visible cards by keyword\" superseded \u2014 the board has no inline search input; search is a modal palette (header button / Cmd+K) whose offered results filter by keyword. Source scenario re-scoped 2026-10-06; flagged by Copilot review on PR #348."
     },
     {
       "id": "BDD-AUTO-0166",
       "type": "playwright",
       "file": "tests/e2e/search-filters.spec.ts",
-      "title": "Test 6 \u2014 UI type filter toggle shows only matching result type",
+      "title": "Test 6 \u2014 UI type filter narrows results to cards",
       "daily": false
     },
     {
@@ -1245,15 +1247,17 @@
       "id": "BDD-AUTO-0183",
       "type": "playwright",
       "file": "tests/e2e/timeline-view.spec.ts",
-      "title": "Card missing start_date appears as unscheduled chip below its swimlane",
-      "daily": false
+      "title": "Card missing start_date still renders as a scheduled bar",
+      "daily": false,
+      "note": "BDD-AUTO-0183: original scenario \"appears as unscheduled chip below its swimlane\" was superseded \u2014 TimelineView intentionally renders every due-date-carrying card as a scheduled bar (start_date defaults to today; src/extensions/TimelineView/TimelineView.tsx L71-L76: unscheduledCards: [], cards with no due_date hidden). Re-scoped 2026-10-06 to the delivered behaviour; flagged by Copilot review on PR #348."
     },
     {
       "id": "BDD-AUTO-0184",
       "type": "playwright",
       "file": "tests/e2e/timeline-view.spec.ts",
-      "title": "Card with no dates at all appears as unscheduled chip",
-      "daily": false
+      "title": "Card with no dates is not rendered on the timeline",
+      "daily": false,
+      "note": "BDD-AUTO-0184: original scenario \"appears as unscheduled chip\" superseded \u2014 cards with no due_date are intentionally not displayed (TimelineView.tsx L64/L75-76). Re-scoped 2026-10-06 to the delivered behaviour; flagged by Copilot review on PR #348."
     },
     {
       "id": "BDD-AUTO-0185",
@@ -1273,7 +1277,8 @@
       "id": "BDD-AUTO-0187",
       "type": "playwright",
       "file": "tests/e2e/timeline-view.spec.ts",
-      "title": "Clicking an unscheduled chip opens the card detail modal",
+      "title": "Clicking a scheduled bar opens the card detail modal",
+      "note": "BDD-AUTO-0187: source scenario \"Clicking an unscheduled chip opens the card detail modal\" was superseded when the timeline shipped scheduled-bar opens; the unscheduled-card paths were re-scoped as BDD-AUTO-0183 (still renders as scheduled bar) and BDD-AUTO-0184 (not rendered). ID intentionally kept bound to the live scheduled-bar test.",
       "daily": false
     }
   ]

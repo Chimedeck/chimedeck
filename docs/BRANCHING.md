@@ -1,8 +1,14 @@
-# Branch policy: main is always the PR target
+# Branch policy: main is the default PR target
 
 ## Rule
 Every PR — feature, fix, chore, Dependabot — targets `main`. Never open a PR against `stable`.
 
+**Sole PR-path exception:** promotion PRs (the shipping step, flow §5). The
+`stable-source-guard` workflow enforces the *mechanical* part of this exception: a promotion
+PR's head ref must be `main` or a `release/*` branch (name prefix checked by
+`.github/workflows/stable-source-guard.yml`). The guard does NOT verify that a `release/*`
+branch was actually cut from `main` — that part is procedural, covered by the human
+inspection gate in flow §4–5, not by CI.
 `stable` is the ship branch. It moves only by **promotion**: after a human inspects the merged
 change on `main`, a promotion carries it to `stable`. `main` merges deploy nowhere; the promotion
 to `stable` is what ships.
