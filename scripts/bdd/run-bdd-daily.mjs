@@ -7,16 +7,16 @@ const repo = process.cwd();
 const mapPath = path.join(repo, 'specs/bdd/bdd-playwright-map.json');
 const map = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
 
-const entries = map.entries.filter(e => e.type === 'playwright');
+const entries = map.entries.filter(e => e.type === 'playwright' && e.daily === true);
 const files = [...new Set(entries.map(e => e.file))];
 
 if (!files.length) {
-  console.error('No Playwright BDD scenarios configured in bdd-playwright-map.json');
+  console.error('No daily-flagged Playwright BDD scenarios in bdd-playwright-map.json');
   process.exit(1);
 }
 
-console.log(`Running full BDD regression pack: ${entries.length} mapped scenarios across ${files.length} Playwright files.`);
-console.log('Note: test:bdd-daily is retained for compatibility, but it now runs the full BDD regression pack.');
+console.log(`Running daily BDD subset: ${entries.length} daily=true scenarios across ${files.length} Playwright files.`);
+console.log('Note: test:bdd-regression is the full pack; this daily run covers only daily=true scenarios.');
 
 const args = ['playwright', 'test', ...files, '--project=e2e', ...process.argv.slice(2)];
 const env = {

@@ -1,8 +1,10 @@
 # Branch policy: main is always the PR target
 
 ## Rule
-Every PR — feature, fix, chore, Dependabot — targets `main`. Never open a PR against `stable`.
+Feature, fix, chore, and Dependabot PRs target `main`. Never open one against `stable`.
 
+**Sole exception:** promotion PRs — `main` → `stable` (head ref must be `main`, per the
+stable-source-guard). Promotion is the shipping step (flow §5) and is human-gated.
 `stable` is the ship branch. It moves only by **promotion**: after a human inspects the merged
 change on `main`, a promotion carries it to `stable`. `main` merges deploy nowhere; the promotion
 to `stable` is what ships.

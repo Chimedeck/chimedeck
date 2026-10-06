@@ -1,22 +1,61 @@
 // Integration tests for the full upload flow, external URL creation, and delete.
 // These tests mock S3 and DB to verify the API handler logic end-to-end.
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test, mock } from 'bun:test';
 
 // We test SSRF validator inline since it has no external dependencies
 import { isForbiddenUrl } from '../api/addUrl';
 
 describe('upload flow (unit/logic)', () => {
-  test('VIRUS_SCAN_ENABLED=false: enqueueScan is a no-op', async () => {
+  // [why fakes] With VIRUS_SCAN_ENABLED=false the real enqueueScan writes the READY
+  // promotion through the real db client — the fakes keep this test fully offline
+  // and make the no-op contract (resolves undefined, one READY update, no publish)
+  // actually assertable, per the copilot round-1 thread on the unawaited matcher.
+  mock.module('../../../common/db', () => {
+    const touch: { table: string; values?: Record<string, unknown> }[] = [];
+    const dbFn = ((table: string) => ({
+      where() {
+        return {
+          update(values: Record<string, unknown>) {
+            touch.push({ table, values });
+            return Promise.resolve(1);
+          },
+        };
+      },
+    })) as unknown as typeof import('../../../common/db').db;
+    (dbFn as unknown as { __touch: typeof touch }).__touch = touch;
+    return { db: dbFn };
+  });
+  const published: Array<{ channel: string; message: string }> = [];
+  mock.module('../../../mods/pubsub/index', () => ({
+    publisher: {
+      publish: (channel: string, message: string) => {
+        published.push({ channel, message });
+        return Promise.resolve();
+      },
+    },
+  }));
+
+  test('VIRUS_SCAN_ENABLED=false: enqueueScan is a no-op (READY promotion, no queue publish)', async () => {
     // Temporarily set env flag to false
     const originalFlag = process.env['VIRUS_SCAN_ENABLED'];
     process.env['VIRUS_SCAN_ENABLED'] = 'false';
 
-    // Import with current env
-    const { enqueueScan } = await import('../mods/virusScan/enqueue');
-    // Should resolve without error (no-op path)
-    expect(enqueueScan({ attachmentId: 'test-id' })).resolves.toBeUndefined();
+    const { env } = await import('../../../config/env');
+    const realEnabled = env.VIRUS_SCAN_ENABLED;
+    try {
+      (env as { VIRUS_SCAN_ENABLED: boolean }).VIRUS_SCAN_ENABLED = false;
 
-    process.env['VIRUS_SCAN_ENABLED'] = originalFlag ?? '';
+      // Import with current env
+      const { enqueueScan } = await import('../mods/virusScan/enqueue');
+      // [why awaited] Copilot round-1: the matcher was unawaited, so the test could
+      // restore the env flag and finish before enqueueScan/matcher settled — false
+      // pass or unhandled rejection.
+      await expect(enqueueScan({ attachmentId: 'test-id' })).resolves.toBeUndefined();
+      expect(published).toEqual([]);
+    } finally {
+      (env as { VIRUS_SCAN_ENABLED: boolean }).VIRUS_SCAN_ENABLED = realEnabled;
+      process.env['VIRUS_SCAN_ENABLED'] = originalFlag ?? '';
+    }
   });
 });
 
