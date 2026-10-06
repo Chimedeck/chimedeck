@@ -269,8 +269,11 @@ const fullSetReads: Array<Array<{ id: string }>> = [];
           preReadDone = true;
           return Promise.resolve([...attachRows]).then(onFulfilled, onRejected);
         }
-        // Transactional read: the concurrent upload has landed by now.
-        const fullSet: Row[] = [...attachRows, concurrentUpload];
+        // Transactional read: the concurrent upload has landed by now. Predicates
+        // accumulated on this builder MUST filter the result — otherwise a handler
+        // regression that re-scopes the lock to whereIn('id', order) would still
+        // receive the full set and this harness could not catch it (Copilot round 4).
+        const fullSet: Row[] = [...attachRows, concurrentUpload].filter(matches);
         fullSetReads.push(fullSet.map((r) => ({ ...r })) as Array<{ id: string }>);
         return Promise.resolve(fullSet).then(onFulfilled, onRejected);
       },
