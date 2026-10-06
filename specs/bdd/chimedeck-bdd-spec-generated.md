@@ -789,13 +789,21 @@ Each scenario below is mapped in `specs/bdd/bdd-playwright-map.json`.
 - Type: AUTO (Playwright)
 - Evidence: `tests/e2e/timeline-view.spec.ts:149`
 
-#### Scenario BDD-AUTO-0183 — Card missing start_date appears as unscheduled chip below its swimlane
+#### Scenario BDD-AUTO-0183 — Card missing start_date still renders as a scheduled bar
 - Type: AUTO (Playwright)
-- Evidence: `tests/e2e/timeline-view.spec.ts:171`
+- Evidence: `tests/e2e/timeline-view.spec.ts:183`
+- [2026-10-06 re-scope] Original scenario "appears as unscheduled chip below its swimlane" was
+  superseded by the delivered timeline: every card with a due date (today or future) renders as a
+  scheduled bar — a missing start_date defaults to today (`src/extensions/TimelineView/TimelineView.tsx`
+  lines 71–76). The unscheduled-chip path is dormant (`unscheduledCards: []`); flagged by Copilot
+  review on the promotion-fix PR and re-scoped to the shipped behaviour.
 
-#### Scenario BDD-AUTO-0184 — Card with no dates at all appears as unscheduled chip
+#### Scenario BDD-AUTO-0184 — Card with no dates is not rendered on the timeline
 - Type: AUTO (Playwright)
-- Evidence: `tests/e2e/timeline-view.spec.ts:191`
+- Evidence: `tests/e2e/timeline-view.spec.ts:200`
+- [2026-10-06 re-scope] Original scenario "appears as unscheduled chip" superseded: cards with no
+  due_date are intentionally not displayed on the timeline (`TimelineView.tsx` lines 63–76).
+  Flagged by Copilot review on the promotion-fix PR and re-scoped to the shipped behaviour.
 
 #### Scenario BDD-AUTO-0185 — Today button is clickable and does not throw
 - Type: AUTO (Playwright)
@@ -809,7 +817,7 @@ Each scenario below is mapped in `specs/bdd/bdd-playwright-map.json`.
 - Type: AUTO (Playwright)
 - Evidence: `tests/e2e/timeline-view.spec.ts:259`
 - [2026-10-06 rebind] Source scenario was originally titled "Clicking an unscheduled chip opens
-  the card detail modal" (timeline shipped unscheduled-card chips, tests/e2e/timeline-view.ts:248).
+  the card detail modal" (timeline shipped unscheduled-card chips, superseded in repo history; no current file reference).
   The delivered UI opens the detail modal from the scheduled bar; unscheduled-card presentation
   remains covered by BDD-AUTO-0183/0184 spec items (their mapped titles pending re-sync in the
   portback PR-H spec-regen lane). Scenario renamed and re-pointed; coverage intent (card detail
