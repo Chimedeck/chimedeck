@@ -133,6 +133,10 @@ export function AttachmentPanel({
 
   // Server-persisted attachments
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  // Mirror of `attachments` for callbacks that must read the latest order without
+  // re-subscribing on every render (drag-end reads it outside state updaters).
+  const attachmentsRef = useRef<Attachment[]>([]);
+  useEffect(() => { attachmentsRef.current = attachments; }, [attachments]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
@@ -177,12 +181,10 @@ export function AttachmentPanel({
             const newItem = sorted[newIdx];
             if (newItem) {
               sorted = [newItem, ...sorted.filter((_, i) => i !== newIdx)];
+              // Persist the new order — handled outside state updaters so React
+              // replaying the updater can't re-fire the network call.
+              void persistReorder(sorted.map((a) => a.id));
             }
-            // Persist the new order to the server (fire-and-forget)
-            void reorderAttachments({
-              cardId,
-              order: sorted.map((a) => a.id),
-            });
           }
         }
         setAttachments(sorted);
@@ -210,6 +212,41 @@ export function AttachmentPanel({
   useEffect(() => {
     onAttachmentsChange?.(attachments);
   }, [attachments, onAttachmentsChange]);
+
+  // [why] Serialize reorder mutations: rapid consecutive drags launch concurrent
+  // requests, and an older request finishing last would overwrite the user's newest
+  // order. Only the latest call is allowed to commit its result; earlier failures
+  // roll back + toast instead of leaving optimistic state unsynced.
+  const reorderInFlightRef = useRef<Promise<void> | null>(null);
+  const persistReorder = useCallback(
+    (order: string[]): Promise<void> => {
+      const run = async (): Promise<void> => {
+        // Wait for the previous reorder to finish before sending ours.
+        const prev = reorderInFlightRef.current;
+        if (prev) {
+          try {
+            await prev;
+          } catch {
+            // Previous call already rolled back its own order.
+          }
+        }
+        try {
+          await reorderAttachments({ cardId, order });
+        } catch {
+          // Roll back to the authoritative server order and surface the failure
+          // (same error UX as delete/rename rollback below).
+          pushErrorToast(translations['attachments.reorder.failed']);
+          void loadAttachments();
+        }
+      };
+      const task = run().finally(() => {
+        if (reorderInFlightRef.current === task) reorderInFlightRef.current = null;
+      });
+      reorderInFlightRef.current = task;
+      return task;
+    },
+    [cardId, loadAttachments, pushErrorToast]
+  );
 
   // Upload hook — refreshes the server list when a new upload completes
   const { uploads, upload, removeEntry } = useAttachmentUpload({
@@ -461,24 +498,19 @@ export function AttachmentPanel({
       const { active, over } = event;
       if (!over || active.id === over.id) return;
 
-      setAttachments((prev) => {
-        const oldIndex = prev.findIndex((a) => a.id === active.id);
-        const newIndex = prev.findIndex((a) => a.id === over.id);
-        if (oldIndex === -1 || newIndex === -1) return prev;
+      // [why] No network calls inside the functional updater: React may replay an
+      // updater (Strict Mode, interrupted renders), which would re-fire the request.
+      // Read current order, compute the move, update state, then persist outside.
+      const current = attachmentsRef.current;
+      const oldIndex = current.findIndex((a) => a.id === active.id);
+      const newIndex = current.findIndex((a) => a.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return;
 
-        const reordered = arrayMove(prev, oldIndex, newIndex);
-        // Persist the new order to the server (fire-and-forget)
-        void reorderAttachments({
-          cardId,
-          order: reordered.map((a) => a.id),
-        }).catch(() => {
-          // Roll back on failure
-          void loadAttachments();
-        });
-        return reordered;
-      });
+      const reordered = arrayMove(current, oldIndex, newIndex);
+      setAttachments(reordered);
+      void persistReorder(reordered.map((a) => a.id));
     },
-    [cardId, loadAttachments]
+    [persistReorder]
   );
 
   return (

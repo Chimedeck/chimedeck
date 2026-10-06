@@ -431,7 +431,7 @@ export function AttachmentItem({
         {dragHandleProps && (
           <button
             type="button"
-            className="flex-shrink-0 cursor-grab text-muted hover:text-subtle active:cursor-grabbing focus:outline-none"
+            className="flex-shrink-0 cursor-grab rounded text-muted hover:text-subtle active:cursor-grabbing focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             {...dragHandleProps}
             aria-label="Drag to reorder attachment"
           >

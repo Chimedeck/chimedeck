@@ -51,11 +51,18 @@ export function invalidateSpecsCachesForBoard({
   boardId,
   projectUrl,
   repoPath,
+  branch,
 }: {
   boardId: string;
   projectUrl: string;
   repoPath: string;
+  /** [why] Manifest cache keys are branch-scoped (`${boardId}:${projectUrl}:${branch ?? ''}`)
+   * since github_branch landed — invalidate every branch variant so a specs write or
+   * commit can't leave a stale branch-scoped manifest cached for up to TTL. */
+  branch?: string | null;
 }): void {
+  invalidateSpecsManifestCache(`${boardId}:${projectUrl}:${branch ?? ''}`);
+  // [why] Also clear the legacy un-scoped key so pre-branch entries can't survive.
   invalidateSpecsManifestCache(`${boardId}:${projectUrl}`);
   invalidateSpecsCachesForRepoPath(repoPath);
 }

@@ -166,6 +166,9 @@ export async function handlePutSpecsFile(req: Request, boardId: string): Promise
       boardId,
       projectUrl: board.github_project_url,
       repoPath,
+      // [why] Manifest cache keys are branch-scoped — pass the branch through so
+      // the branch-scoped entry dies with the file cache.
+      branch: githubBranch,
     });
 
     return Response.json(

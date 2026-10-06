@@ -14,6 +14,53 @@ import {
 } from '../../board/middlewares/requireBoardWritable';
 import { resolveCardId } from '../../../common/ids/resolveEntityId';
 import { generatePositions } from '../../list/mods/fractional';
+import { serializeAttachment, type ReferencedCard } from './serializeAttachment';
+
+export type ReorderValidation =
+  | { ok: true }
+  | { ok: false; name: string; message: string };
+
+// [why] Pure validation of the requested order against the card's attachment set —
+// kept free of db access so the duplicate/mismatch rules can be unit-tested directly.
+export function validateReorderOrder(
+  order: unknown,
+  attachments: Array<{ id: string }>
+): ReorderValidation {
+  if (!Array.isArray(order)) {
+    return { ok: false, name: 'bad-request', message: 'order must be an array of attachment IDs' };
+  }
+  if (order.length !== attachments.length) {
+    return {
+      ok: false,
+      name: 'reorder-count-mismatch',
+      message: `order has ${order.length} items but card has ${attachments.length} attachments`,
+    };
+  }
+  // [why] A duplicate like [a, a] passes count + membership checks yet updates `a`
+  // twice and leaves the omitted attachment with its old position.
+  const seen = new Set<string>();
+  for (const id of order) {
+    if (seen.has(id)) {
+      return {
+        ok: false,
+        name: 'reorder-duplicate-attachment',
+        message: `Attachment ${id} appears more than once in order`,
+      };
+    }
+    seen.add(id);
+  }
+  const attachmentIds = new Set(attachments.map((a) => a.id));
+  for (const id of order) {
+    if (!attachmentIds.has(id)) {
+      return {
+        ok: false,
+        name: 'attachment-card-mismatch',
+        message: `Attachment ${id} does not belong to this card`,
+      };
+    }
+  }
+  return { ok: true };
+}
 
 export async function handleReorderAttachments(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -60,63 +107,89 @@ export async function handleReorderAttachments(req: Request, cardId: string): Pr
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
+      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
       { status: 400 }
     );
   }
 
-  if (!Array.isArray(body.order)) {
-    return Response.json(
-      { error: { code: 'bad-request', message: 'order must be an array of attachment IDs' } },
-      { status: 400 }
-    );
-  }
-
-  // Fetch all attachments for this card
+  // Fetch all attachments for this card, then validate the requested order
+  // (count, duplicates, membership) via the shared pure helper.
   const attachments = await db('attachments').where({ card_id: resolvedCardId });
 
-  // Validate count matches
-  if (body.order.length !== attachments.length) {
+  const validation = validateReorderOrder(body.order, attachments as Array<{ id: string }>);
+  if (!validation.ok) {
     return Response.json(
-      {
-        name: 'reorder-count-mismatch',
-        data: {
-          message: `order has ${body.order.length} items but card has ${attachments.length} attachments`,
-        },
-      },
+      { name: validation.name, data: { message: validation.message } },
       { status: 400 }
     );
   }
 
-  // Validate all IDs belong to this card
-  const attachmentIds = new Set(attachments.map((a) => a.id as string));
-  for (const id of body.order) {
-    if (!attachmentIds.has(id)) {
-      return Response.json(
-        {
-          error: {
-            code: 'attachment-card-mismatch',
-            message: `Attachment ${id} does not belong to this card`,
-          },
-        },
-        { status: 400 }
-      );
-    }
-  }
-
-  // Assign fresh well-spaced positions
-  const positions = generatePositions(body.order.length);
+  // Assign fresh well-spaced positions. `body.order` is optional-typed at the JSON
+  // boundary; after validateReorderOrder succeeded it is a full permutation of the
+  // card's attachments, so bind it to a non-optional local.
+  const order: string[] = body.order as string[];
+  const positions = generatePositions(order.length);
 
   await db.transaction(async (trx) => {
-    for (let i = 0; i < body.order!.length; i++) {
-      await trx('attachments').where({ id: body.order![i] }).update({ position: positions[i] });
+    for (let i = 0; i < order.length; i++) {
+      await trx('attachments').where({ id: order[i] }).update({ position: positions[i] });
     }
   });
 
-  // Return updated attachments in the new order
+  // Return updated attachments in the new order — serialized through the same
+  // allowlisted shape as the list API (never raw DB rows, which would expose
+  // s3_key/s3_bucket/uploaded_by).
   const updatedAttachments = await db('attachments')
     .where({ card_id: resolvedCardId })
     .orderBy('position', 'asc');
 
-  return Response.json({ data: updatedAttachments });
+  // Resolve referenced card data for internal card-link attachments
+  // (same shape as the list API's refCardMap).
+  const referencedCardIds = updatedAttachments
+    .map((a) => a.referenced_card_id as string | null)
+    .filter((id): id is string => Boolean(id));
+
+  const refCardMap: Record<string, ReferencedCard> = {};
+
+  if (referencedCardIds.length > 0) {
+    const refCards = await db('cards').whereIn('id', referencedCardIds);
+    const refLists = await db('lists').whereIn(
+      'id',
+      refCards.map((c) => c.list_id)
+    );
+    const refBoards = await db('boards').whereIn(
+      'id',
+      refLists.map((l) => l.board_id)
+    );
+
+    const cardLabelRows = await db('card_labels')
+      .join('labels', 'card_labels.label_id', 'labels.id')
+      .whereIn('card_labels.card_id', referencedCardIds)
+      .select('card_labels.card_id', 'labels.id as label_id', 'labels.name', 'labels.color');
+
+    const listMap = Object.fromEntries(refLists.map((l) => [l.id, l]));
+    const boardMap = Object.fromEntries(refBoards.map((b) => [b.id, b]));
+
+    for (const rc of refCards) {
+      const refList = listMap[rc.list_id];
+      const refBoard = refList ? boardMap[refList.board_id] : null;
+      refCardMap[rc.id] = {
+        id: rc.id,
+        title: rc.title,
+        board_id: refBoard?.id ?? null,
+        board_name: refBoard?.title ?? null,
+        list_id: refList?.id ?? null,
+        list_name: refList?.title ?? null,
+        labels: cardLabelRows
+          .filter((cl) => cl.card_id === rc.id)
+          .map((cl) => ({
+            id: cl.label_id as string,
+            name: cl.name as string,
+            color: cl.color as string,
+          })),
+      };
+    }
+  }
+
+  return Response.json({ data: updatedAttachments.map((a) => serializeAttachment(a, refCardMap)) });
 }

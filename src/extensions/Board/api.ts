@@ -237,6 +237,7 @@ export async function patchBoardVisibility({
 // Board integrations settings
 export interface BoardIntegrations {
   github_project_url?: string | null;
+  github_branch?: string | null;
 }
 
 // GET /api/v1/boards/:id/settings/integrations — retrieve board integrations settings.

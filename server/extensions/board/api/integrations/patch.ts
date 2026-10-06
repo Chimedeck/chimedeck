@@ -14,16 +14,28 @@ interface PatchBoardIntegrationsBody {
   github_branch?: unknown;
 }
 
-// [why] Git branch names follow specific rules. We reject obviously invalid
-// names to prevent checkout failures downstream.
-function isValidGitBranchName(value: string): boolean {
+// [why] Mirror `git check-ref-format --branch` so a persisted branch never fails at
+// checkout time. Rules implemented (git check-ref-format(1)):
+// - non-empty, ≤255 chars
+// - no space, no ASCII control chars, no ~ ^ : ? * [ \
+// - no '..' sequence, no '@{', not a single '@'
+// - no component starting with '.', no component ending with '.lock' (case-insensitive)
+// - no leading '-' or '/', no trailing '/', no '//' (empty component)
+export function isValidGitBranchName(value: string): boolean {
   if (value.length === 0 || value.length > 255) return false;
-  // Reject patterns that git itself rejects
-  if (/[\s~^:?*[\\]/.test(value)) return false;
-  if (/\.\.|@\{/.test(value)) return false;
+  if (/[\s~^:?*[\\\x00-\x1f\x7f]/.test(value)) return false;
+  if (value.includes('..')) return false;
+  if (value.includes('@{')) return false;
+  if (value === '@') return false;
   if (/\.lock$/i.test(value)) return false;
   if (/^[-/]/.test(value)) return false;
   if (/\.$/.test(value)) return false;
+  if (value.includes('//')) return false;
+  if (value.endsWith('/')) return false;  // empty final component (e.g. 'feature/')
+  if (/(^|\/)\./.test(value)) return false;
+  // Any path component ENDING in '.lock' is off-limits (case-insensitive), which is
+  // git's actual rule; a component merely CONTAINING 'LOCK' ('feature/LOCK/qux') is legal.
+  if (value.split('/').some((c) => /\.lock$/i.test(c))) return false;
   return true;
 }
 
@@ -222,11 +234,12 @@ export async function handlePatchBoardIntegrations(
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'An unexpected error occurred';
-    console.error('[500] PATCH /settings/integrations:', message);
-    if (error instanceof Error && error.stack) console.error(error.stack);
+    // [why] Never forward a raw exception message to the client — DB/driver
+    // failures would expose schema or internal diagnostics. Log details here,
+    // return a fixed public message.
+    console.error('[500] PATCH /settings/integrations:', error);
     return Response.json(
-      { name: 'internal-server-error', data: { message } },
+      { name: 'internal-server-error', data: { message: 'An unexpected error occurred' } },
       { status: 500 }
     );
   }

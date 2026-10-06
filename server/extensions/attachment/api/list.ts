@@ -9,6 +9,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { resolveCardId } from '../../../common/ids/resolveEntityId';
+import { serializeAttachment } from './serializeAttachment';
 
 export async function handleListAttachments(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -46,7 +47,9 @@ export async function handleListAttachments(req: Request, cardId: string): Promi
   const attachments = await db('attachments')
     .where({ card_id: resolvedCardId })
     .orderBy('position', 'asc')
-    .orderBy('created_at', 'asc');
+    // [why] DESC fallback: unmigrated/new rows with equal or null position keep the
+    // pre-migration newest-first order (migration 0130 preserves it — see brief).
+    .orderBy('created_at', 'desc');
 
   // Resolve referenced card data for internal card-link attachments.
   const referencedCardIds = attachments
@@ -106,40 +109,7 @@ export async function handleListAttachments(req: Request, cardId: string): Promi
     }
   }
 
-  const data = attachments.map((attachment) => {
-    // URL-type attachments expose their external URL directly (user-supplied, not S3).
-    // FILE-type attachments use the authenticated proxy paths; never raw presigned URLs.
-    const view_url =
-      attachment.type === 'URL'
-        ? (attachment.url ?? attachment.external_url ?? null)
-        : `/api/v1/attachments/${attachment.id}/view`;
-
-    const thumbnail_url = attachment.thumbnail_key
-      ? `/api/v1/attachments/${attachment.id}/thumbnail`
-      : null;
-
-    return {
-      id: attachment.id,
-      card_id: attachment.card_id,
-      name: attachment.name,
-      alias: attachment.alias ?? null,
-      type: attachment.type,
-      content_type: attachment.mime_type ?? null,
-      size_bytes: attachment.size_bytes ?? null,
-      status: attachment.status,
-      view_url,
-      thumbnail_url,
-      external_url: attachment.external_url ?? null,
-      width: attachment.width ?? null,
-      height: attachment.height ?? null,
-      created_at: attachment.created_at,
-      updated_at: attachment.updated_at,
-      referenced_card_id: attachment.referenced_card_id ?? null,
-      referenced_card: attachment.referenced_card_id
-        ? (refCardMap[attachment.referenced_card_id as string] ?? null)
-        : null,
-    };
-  });
-
-  return Response.json({ data });
+  // Serialize through the shared allowlisted shape (same as reorder) so list
+  // responses include `position` and never leak raw DB columns.
+  return Response.json({ data: attachments.map((a) => serializeAttachment(a, refCardMap)) });
 }

@@ -317,6 +317,16 @@ export async function handleCommitDocumentProposals(
     pushToken,
   });
 
+  // [why] Invalidate cached manifests after a chat-assist commit lands, or the
+  // manifest API serves the pre-commit file list for up to TTL. Branch-scoped
+  // because manifest cache keys include the branch (specs/load.ts).
+  commitDocumentProposalsDeps.invalidateSpecsCachesForBoard({
+    boardId: board.id,
+    projectUrl: board.github_project_url,
+    repoPath: repo.repoPath,
+    branch: githubBranch,
+  });
+
   const { committed } = finalizeCommit(
     proposals,
     changedFiles,
