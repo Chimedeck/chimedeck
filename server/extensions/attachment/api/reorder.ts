@@ -136,11 +136,46 @@ export async function handleReorderAttachments(req: Request, cardId: string): Pr
   const order: string[] = body.order as string[];
   const positions = generatePositions(order.length);
 
-  await db.transaction(async (trx) => {
-    for (let i = 0; i < order.length; i++) {
-      await trx('attachments').where({ id: order[i] }).update({ position: positions[i] });
+  // [why lock + re-validate inside] The pre-transaction read validated a snapshot.
+  // An upload/delete committed between validation and the updates would let a
+  // partial permutation through (the old updates were scoped by attachment id
+  // alone), and two concurrent reorders could lock rows in different
+  // client-supplied orders and deadlock. Inside the transaction: re-read the
+  // card's attachment rows FOR UPDATE, re-validate the permutation against that
+  // locked snapshot, and update in DETERMINISTIC id order (never the
+  // client-supplied order) with card_id in every update predicate — concurrent
+  // reorders of the same card serialize instead of deadlocking, and an
+  // attachment that disappeared re-validated to a count mismatch (400).
+  // db.transaction resolves with the callback's return value, so an in-transaction
+  // validation failure surfaces as a non-null rejection payload.
+  const txFailure = await db.transaction(
+    async (trx): Promise<{ name: string; message: string } | null> => {
+      const locked = (await trx('attachments')
+        .where({ card_id: resolvedCardId })
+        .whereIn('id', order)
+        .forUpdate()
+        .orderBy('id', 'asc')) as Array<{ id: string }>;
+
+      const validationInside = validateReorderOrder(order, locked);
+      if (!validationInside.ok) {
+        return { name: validationInside.name, message: validationInside.message };
+      }
+
+      const positionById = new Map(order.map((id, idx) => [id, positions[idx] as string]));
+      for (const id of [...order].sort()) {
+        await trx('attachments')
+          .where({ id, card_id: resolvedCardId })
+          .update({ position: positionById.get(id) as string });
+      }
+      return null;
     }
-  });
+  );
+  if (txFailure) {
+    return Response.json(
+      { name: txFailure.name, data: { message: txFailure.message } },
+      { status: 400 }
+    );
+  }
 
   // Return updated attachments in the new order — serialized through the same
   // allowlisted shape as the list API (never raw DB rows, which would expose

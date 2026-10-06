@@ -1,6 +1,6 @@
 // Render smoke tests for HealthCheckRow.
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, mock } from 'bun:test';
+import { describe, it, expect, vi } from 'vitest';
 import { HealthCheckRow } from '../HealthCheckRow';
 import type { HealthCheck } from '../../api';
 
@@ -19,13 +19,13 @@ const baseEntry: HealthCheck = {
 
 describe('HealthCheckRow', () => {
   it('renders service name and URL', () => {
-    render(<HealthCheckRow entry={baseEntry} isProbing={false} onRemove={mock()} />);
+    render(<HealthCheckRow entry={baseEntry} isProbing={false} onRemove={vi.fn()} />);
     expect(screen.getByText('Stripe API')).toBeTruthy();
     expect(screen.getByText('https://api.stripe.com/')).toBeTruthy();
   });
 
   it('shows spinner when probing', () => {
-    render(<HealthCheckRow entry={baseEntry} isProbing={true} onRemove={mock()} />);
+    render(<HealthCheckRow entry={baseEntry} isProbing={true} onRemove={vi.fn()} />);
     expect(screen.getByRole('status')).toBeTruthy();
   });
 
@@ -40,7 +40,7 @@ describe('HealthCheckRow', () => {
         checkedAt: new Date().toISOString(),
       },
     };
-    render(<HealthCheckRow entry={entry} isProbing={false} onRemove={mock()} />);
+    render(<HealthCheckRow entry={entry} isProbing={false} onRemove={vi.fn()} />);
     expect(screen.getByText('120 ms')).toBeTruthy();
   });
 
@@ -55,7 +55,7 @@ describe('HealthCheckRow', () => {
         checkedAt: new Date().toISOString(),
       },
     };
-    render(<HealthCheckRow entry={entry} isProbing={false} onRemove={mock()} />);
+    render(<HealthCheckRow entry={entry} isProbing={false} onRemove={vi.fn()} />);
     expect(screen.getByText('Timeout')).toBeTruthy();
   });
 });

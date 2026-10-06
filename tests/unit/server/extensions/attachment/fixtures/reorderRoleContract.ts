@@ -46,17 +46,32 @@ function makeFakeDb(): unknown {
 
   function builder(name: string): Record<string, unknown> {
     const rows = tables[name] ?? [];
+    const preds: Array<(row: Row) => boolean> = [];
+    const matches = (row: Row) => preds.every((p) => p(row));
     const api: Record<string, unknown> = {
-      where(_col: unknown, _val?: unknown) {
+      where(col: unknown, _val?: unknown) {
+        if (col && typeof col === 'object') {
+          for (const [k, v] of Object.entries(col as Row)) {
+            preds.push((row) => row[k] === v);
+          }
+        }
         return api;
       },
-      whereIn(_col: unknown, _values?: unknown[]) {
+      whereIn(col: unknown, values?: unknown[]) {
+        if (typeof col === 'string' && Array.isArray(values)) {
+          preds.push((row) => (values as unknown[]).includes(row[col]));
+        }
         return api;
       },
       orWhere(_col: unknown, _val?: unknown) {
         return api;
       },
       join(_t: string, _on: string) {
+        return api;
+      },
+      forUpdate() {
+        // Locks are a no-op on the in-memory table; presence of the call is what
+        // the handler contract needs (same builder, same chain-shape as knex).
         return api;
       },
       select(..._cols: unknown[]) {
@@ -66,13 +81,20 @@ function makeFakeDb(): unknown {
         return api;
       },
       then(onFulfilled?: (rows: Row[]) => unknown, onRejected?: (err: unknown) => unknown) {
-        return Promise.resolve([...rows]).then(onFulfilled, onRejected);
+        return Promise.resolve(rows.filter(matches)).then(onFulfilled, onRejected);
       },
       first() {
-        return Promise.resolve(rows[0]);
+        return Promise.resolve(rows.find(matches));
       },
-      update(_values: Row) {
-        return Promise.resolve(1);
+      update(values: Row) {
+        let n = 0;
+        for (const row of rows) {
+          if (matches(row)) {
+            Object.assign(row, values);
+            n++;
+          }
+        }
+        return Promise.resolve(n);
       },
     };
     return api;
