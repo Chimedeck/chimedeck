@@ -8,8 +8,12 @@
 import { strict as assert } from 'node:assert';
 import { mock } from 'bun:test';
 
-// Simulate the disabled flag before any import reads it.
-process.env['VIRUS_SCAN_ENABLED'] = 'false';
+// Simulate the disabled flag through the centralized config module: mock
+// server/config/env BEFORE the enqueue import reads it, so no process-global
+// env mutation is needed and the disabled-path premise is explicit.
+await mock.module('../../../../config/env', () => ({
+  env: { VIRUS_SCAN_ENABLED: false },
+}));
 
 const published: Array<{ channel: string; message: string }> = [];
 const dbTouches: Array<{ table: string; values: Record<string, unknown> }> = [];

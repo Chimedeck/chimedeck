@@ -6,7 +6,7 @@ import { RedisPubSubAdapter } from './redis';
 // the adapter only touches Redis lazily (clients use lazyConnect) and this suite
 // replaces the internal sub client — a dummy URL is enough to exercise the real
 // in-process handler-map logic on every run.
-const REDIS_URL = Bun.env['REDIS_URL'] ?? 'redis://127.0.0.1:6379/15';
+const REDIS_URL = 'redis://127.0.0.1:6379/15';
 
 describe('RedisPubSubAdapter', () => {
   it('implements PubSubProvider interface', () => {
@@ -36,10 +36,14 @@ describe('RedisPubSubAdapter', () => {
     // ioredis keeps it alive) — it does not throw. The #347 delta had removed the
     // await AND asserted a rejection that can never happen; awaiting it exposed
     // the false premise. This pins the real in-place-update contract: no throw,
-    // no second Redis SUBSCRIBE issued, handlers map keeps one entry.
+    // no second Redis SUBSCRIBE issued, the map keeps one entry, and the stored
+    // handler IS the replacement (an implementation leaving `first` installed
+    // would fail this assertion).
     await expect(adapter.subscribe('test:dup-guard', second)).resolves.toBeUndefined();
     expect(subCalls).toEqual(['test:dup-guard']);
-    expect(((adapter as unknown as { handlers: Map<string, unknown> }).handlers).size).toBe(1);
+    const handlers = (adapter as unknown as { handlers: Map<string, (msg: string) => void> }).handlers;
+    expect(handlers.size).toBe(1);
+    expect(handlers.get('test:dup-guard')).toBe(second);
     await adapter.unsubscribe('test:dup-guard');
   });
 });

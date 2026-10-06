@@ -589,9 +589,14 @@ Each scenario below is mapped in `specs/bdd/bdd-playwright-map.json`.
 - Type: AUTO (Playwright)
 - Evidence: `tests/e2e/list-management.spec.ts:149`
 
-#### Scenario BDD-AUTO-0128 — Test 7 — UI: Double-clicking list header allows renaming
+#### Scenario BDD-AUTO-0128 — Test 7 — UI: Renaming a list via its header updates the name
 - Type: AUTO (Playwright)
-- Evidence: `tests/e2e/list-management.spec.ts:194`
+- Evidence: `tests/e2e/list-management.spec.ts:200`
+- [2026-10-06 re-scope] Original scenario "Double-clicking list header allows renaming" was
+  superseded by the delivered UI: list rename is a header button ("Rename list <name>")
+  that opens an inline edit input — single click, not a double-click. Re-scoped to the
+  delivered behaviour; flagged by Copilot review on PR #348. The double-click interaction
+  is intentionally not kept (no deliverable path).
 
 #### Scenario BDD-AUTO-0129 — Test 8 — UI: Dragging a list changes its position
 - Type: AUTO (Playwright)
@@ -705,9 +710,15 @@ Each scenario below is mapped in `specs/bdd/bdd-playwright-map.json`.
 - Type: AUTO (Playwright)
 - Evidence: `tests/e2e/search-filters.spec.ts:104`
 
-#### Scenario BDD-AUTO-0165 — Test 5 — UI search box filters visible cards by keyword
+#### Scenario BDD-AUTO-0165 — Test 5 — UI search palette finds a card by keyword
 - Type: AUTO (Playwright)
 - Evidence: `tests/e2e/search-filters.spec.ts:117`
+- [2026-10-06 re-scope] Original scenario "UI search box filters visible cards by keyword"
+  described an inline search box on the board; the delivered UI has no inline search input —
+  search is a modal palette opened from the header Search button (or Cmd/Ctrl+K). The palette
+  filters its offered results by keyword, which is the same user capability re-scoped to the
+  delivered surface; flagged by Copilot review on PR #348. Inline board-level filtering is
+  intentionally superseded (no deliverable path).
 
 #### Scenario BDD-AUTO-0166 — Test 6 — UI type filter toggle shows only matching result type
 - Type: AUTO (Playwright)
