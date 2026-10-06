@@ -14,9 +14,16 @@ import { dispatchNotificationEmail } from './emailDispatch';
 import { env } from '../../../config/env';
 import { getActiveWebhooksForEvent } from '../../webhooks/mods/registry';
 import { dispatchWebhook } from '../../webhooks/mods/dispatch';
+import { randomUUID } from 'node:crypto';
 import type { Knex } from 'knex';
 
 // [why] extracted to keep createNotificationsForMentions within the cognitive complexity limit.
+// eventId: one fresh randomUUID per logical mention emission (one call to
+// createNotificationsForMentions), never per recipient and deliberately not
+// sourceId — card-description mentions are 1:N across edits (mentions sync
+// re-derives from the same source_id), so sourceId would false-collapse
+// legitimate repeat mentions at the receiver's semantic dedupe
+// (chimedeck-whatsapp-dedupe-contract ADR; specs/changelog/20260908_175632.md).
 async function fireMentionWebhooks({
   boardId,
   cardId,
@@ -24,6 +31,7 @@ async function fireMentionWebhooks({
   sourceId,
   actorId,
   recipients,
+  eventId,
 }: {
   boardId: string;
   cardId: string | null;
@@ -31,6 +39,7 @@ async function fireMentionWebhooks({
   sourceId: string;
   actorId: string;
   recipients: string[];
+  eventId: string;
 }): Promise<void> {
   const webhooks = await getActiveWebhooksForEvent({ knex: db, eventType: 'mention' });
   for (const wh of webhooks) {
@@ -38,7 +47,15 @@ async function fireMentionWebhooks({
       endpoint: wh.endpoint_url,
       signingSecret: wh.signing_secret,
       eventType: 'mention',
-      payload: { boardId, cardId, sourceType, sourceId, actorId, mentionedUserIds: recipients },
+      payload: {
+        boardId,
+        cardId,
+        sourceType,
+        sourceId,
+        actorId,
+        mentionedUserIds: recipients,
+        eventId,
+      },
       webhookId: wh.id,
       knex: db,
     });
@@ -197,6 +214,12 @@ export async function createNotificationsForMentions({
 
   const now = new Date().toISOString();
 
+  // One durable eventId per logical mention emission (per the
+  // chimedeck-whatsapp-dedupe-contract ADR): distinct emissions mint distinct
+  // ids; retries of the same emission reuse it. Not sourceId (1:N across edits),
+  // not per-recipient (one emission = one logical event, N notified users).
+  const mentionEventId = randomUUID();
+
   for (const userId of recipients) {
     await notifyMentionedUser({
       trx,
@@ -217,10 +240,16 @@ export async function createNotificationsForMentions({
   // Fire-and-forget mention webhook — dispatched once per mention event (not per recipient).
   // [why] webhook subscribers receive the full mention context rather than a per-user notification.
   if (env.WEBHOOKS_ENABLED) {
-    fireMentionWebhooks({ boardId, cardId, sourceType, sourceId, actorId, recipients }).catch(
-      () => {
-        // Webhook errors must never propagate to the caller.
-      }
-    );
+    fireMentionWebhooks({
+      boardId,
+      cardId,
+      sourceType,
+      sourceId,
+      actorId,
+      recipients,
+      eventId: mentionEventId,
+    }).catch(() => {
+      // Webhook errors must never propagate to the caller.
+    });
   }
 }
