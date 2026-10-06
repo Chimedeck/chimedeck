@@ -6,4 +6,3 @@
 // to `tsc --noEmit` and every toHaveAttribute call in vitest-collected test files
 // errored TS2339. Importing the augmentation here makes those types program-global.
 import '@testing-library/jest-dom/vitest';
-
