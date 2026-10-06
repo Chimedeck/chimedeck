@@ -24,7 +24,13 @@ const usersTable: Row[] = [];
 const membershipsTable: Row[] = [
   { user_id: USER_ID, workspace_id: BOARD.workspace_id, role: 'GUEST' },
 ];
-const boardGuestAccessTable: Row[] = [];
+// Board-guest sub-type row the helper's board_guest_access lookup reads — the
+// production authorization path for guests (req.guestType is never populated in
+// the attachment router). Seeded for the guest-MEMBER case; cleared before the
+// plain-guest case so the lookup drives the 403.
+const boardGuestAccessTable: Row[] = [
+  { user_id: USER_ID, board_id: BOARD.id, guest_type: 'MEMBER' },
+];
 const attachmentsTable: Row[] = [ATTACHMENT_A, ATTACHMENT_B];
 
 function makeFakeDb(): unknown {
@@ -124,15 +130,19 @@ function makeRequest(order: string[]): Request {
 
 // Case 1 — board guest with MEMBER sub-type: the handler must NOT reject on role
 // grounds, and the shared helper (real implementation) must accept the same
-// scoped request. Before the fix the handler used requireRole('MEMBER') → 403.
-const guestMemberReq = Object.assign(makeRequest([ATTACHMENT_A.id, ATTACHMENT_B.id]), {
-  guestType: 'MEMBER',
-});
+// scoped request. guestType is deliberately NOT injected onto the request: real
+// attachment requests reach this handler with req.guestType unset (no middleware
+// in the attachment router populates it), so the helper's decision must come from
+// its board_guest_access DB lookup — the branch the production path actually
+// exercises — not from the request-context shortcut. Before the fix the handler
+// used requireRole('MEMBER') → 403.
+const guestMemberReq = makeRequest([ATTACHMENT_A.id, ATTACHMENT_B.id]);
 const res1 = await handleReorderAttachments(guestMemberReq as unknown as Request, CARD.id);
 assert.notEqual(res1.status, 403);
 const scoped = capturedScopedReqs.at(-1);
 assert.ok(scoped, 'workspace-scoped request captured');
 assert.equal(scoped.callerRole, 'GUEST');
+assert.equal(scoped.guestType, undefined, 'production path leaves guestType unset');
 const helperVerdict = await requireMemberOrBoardGuestMember(
   scoped as never,
   BOARD.id
@@ -140,10 +150,11 @@ const helperVerdict = await requireMemberOrBoardGuestMember(
 assert.equal(helperVerdict, null);
 
 // Case 2 — plain guest (no MEMBER sub-type, none in board_guest_access): 403 on
-// role grounds alone, with the shared insufficient-role error code.
-const plainGuestReq = Object.assign(makeRequest([ATTACHMENT_A.id, ATTACHMENT_B.id]), {
-  guestType: 'VIEWER',
-});
+// role grounds alone, with the shared insufficient-role error code. The seeded
+// board_guest_access row is removed for this case so the helper's DB lookup
+// (not a leftover row) drives the verdict.
+boardGuestAccessTable.length = 0;
+const plainGuestReq = makeRequest([ATTACHMENT_A.id, ATTACHMENT_B.id]);
 const res2 = await handleReorderAttachments(plainGuestReq as unknown as Request, CARD.id);
 assert.equal(res2.status, 403);
 const body = (await res2.json()) as { error?: { code?: string } };
