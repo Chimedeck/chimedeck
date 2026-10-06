@@ -818,14 +818,14 @@
       "id": "BDD-AUTO-0122",
       "type": "playwright",
       "file": "tests/e2e/list-management.spec.ts",
-      "title": "Test 1 \u2014 Create list returns 201 with id and name",
+      "title": "Test 1 \u2014 Create list returns 201 with id and title",
       "daily": true
     },
     {
       "id": "BDD-AUTO-0123",
       "type": "playwright",
       "file": "tests/e2e/list-management.spec.ts",
-      "title": "Test 2 \u2014 Rename list returns 200 with updated name",
+      "title": "Test 2 \u2014 Rename list returns 200 with updated title",
       "daily": true
     },
     {
@@ -860,7 +860,7 @@
       "id": "BDD-AUTO-0128",
       "type": "playwright",
       "file": "tests/e2e/list-management.spec.ts",
-      "title": "Test 7 \u2014 UI: Double-clicking list header allows renaming",
+      "title": "Test 7 \u2014 UI: Renaming a list via its header updates the name",
       "daily": true
     },
     {
@@ -930,14 +930,14 @@
       "id": "BDD-AUTO-0138",
       "type": "playwright",
       "file": "tests/e2e/otel-metrics.spec.ts",
-      "title": "returns 400 when delayMs is missing",
+      "title": "returns 400 when delayMs is missing (OTEL enabled)",
       "daily": false
     },
     {
       "id": "BDD-AUTO-0139",
       "type": "playwright",
       "file": "tests/e2e/otel-metrics.spec.ts",
-      "title": "returns 400 when delayMs is negative",
+      "title": "returns 400 when delayMs is negative (OTEL enabled)",
       "daily": false
     },
     {
@@ -1070,14 +1070,14 @@
       "id": "BDD-AUTO-0158",
       "type": "playwright",
       "file": "tests/e2e/presence-board.spec.ts",
-      "title": "Test 4 \u2014 Second user joining the board is reflected in the presence list",
+      "title": "Test 2 \u2014 Second user joining the board is reflected in the presence list",
       "daily": false
     },
     {
       "id": "BDD-AUTO-0159",
       "type": "playwright",
       "file": "tests/e2e/presence-board.spec.ts",
-      "title": "Test 5 \u2014 Unauthenticated presence request returns 401",
+      "title": "Test 4 \u2014 Unauthenticated presence request returns 401",
       "daily": false
     },
     {
@@ -1119,14 +1119,14 @@
       "id": "BDD-AUTO-0165",
       "type": "playwright",
       "file": "tests/e2e/search-filters.spec.ts",
-      "title": "Test 5 \u2014 UI search box filters visible cards by keyword",
+      "title": "Test 5 \u2014 UI search palette finds a card by keyword",
       "daily": false
     },
     {
       "id": "BDD-AUTO-0166",
       "type": "playwright",
       "file": "tests/e2e/search-filters.spec.ts",
-      "title": "Test 6 \u2014 UI type filter toggle shows only matching result type",
+      "title": "Test 6 \u2014 UI type filter narrows results to cards",
       "daily": false
     },
     {
@@ -1273,7 +1273,7 @@
       "id": "BDD-AUTO-0187",
       "type": "playwright",
       "file": "tests/e2e/timeline-view.spec.ts",
-      "title": "Clicking an unscheduled chip opens the card detail modal",
+      "title": "Clicking a scheduled bar opens the card detail modal",
       "daily": false
     }
   ]
