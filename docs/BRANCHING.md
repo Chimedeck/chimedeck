@@ -1,4 +1,4 @@
-# Branch policy: main is always the PR target
+# Branch policy: main is the default PR target
 
 ## Rule
 Feature, fix, chore, and Dependabot PRs target `main`. Never open one against `stable`.
