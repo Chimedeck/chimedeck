@@ -74,8 +74,15 @@ function describeAction(
   const linkUrl = textValue(payload.linkUrl);
   const linkTarget = referencedCardTitle || name || linkUrl || 'a link';
   const { dueDate, dueTime } = formatDueDateParts(payload.dueDate);
-  const next = textValue(payload.next);
+  let next = textValue(payload.next);
   const previous = textValue(payload.previous);
+  // [why] Clearing the GitHub branch override persists `next: null` (PATCH
+  // /settings/integrations) — textValue(null) is '' which rendered
+  // "changed the GitHub branch scope to " with an empty label. Surface an
+  // explicit default-branch label for this valid reset case instead.
+  if (action === 'board_github_branch_updated' && payload.next == null) {
+    next = translations['activity.action.board_github_branch_updated.defaultNext'];
+  }
 
   const key = `activity.action.${action}` as keyof typeof translations;
   const template = translations[key] ?? translations['activity.action.unknown'];

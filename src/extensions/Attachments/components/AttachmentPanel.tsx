@@ -26,13 +26,13 @@ import Button from '../../../common/components/Button';
 import ToastRegion from '../../../common/components/ToastRegion';
 import type { ToastItem } from '../../../common/components/ToastRegion';
 import { useAttachmentUpload } from '../hooks/useAttachmentUpload';
+import { useReorderPersistence } from '../hooks/useReorderPersistence';
 import {
   listAttachments,
   deleteAttachment,
   createUrlAttachment,
   patchAttachment,
   fetchCardPreview,
-  reorderAttachments,
 } from '../api';
 import { AttachmentDropZone } from './AttachmentDropZone';
 import { AttachmentItem } from './AttachmentItem';
@@ -137,6 +137,13 @@ export function AttachmentPanel({
   // re-subscribing on every render (drag-end reads it outside state updaters).
   const attachmentsRef = useRef<Attachment[]>([]);
   useEffect(() => { attachmentsRef.current = attachments; }, [attachments]);
+  // [why] Monotonic generation counter for reorder mutations, bumped synchronously
+  // at persistReorder call time. loadAttachments snapshots it when its fetch starts
+  // and refuses to apply the snapshot if a reorder was issued meanwhile — otherwise
+  // a failed reorder's unawaited rollback reload can land AFTER a newer queued
+  // reorder succeeded and overwrite the latest order with a pre-reorder server
+  // snapshot (UI stale even though the server saved the newest order).
+  const reorderEpochRef = useRef(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
@@ -169,8 +176,24 @@ export function AttachmentPanel({
   // Load attachments from the server
   const loadAttachments = useCallback(
     async (newAttachmentId?: string) => {
+      // [why] Snapshot the reorder generation when the fetch STARTS. If any
+      // persistReorder is issued while this request is in flight, our response is a
+      // pre-reorder snapshot for the list's ORDER — applying it would clobber the
+      // newer committed order (a failed reorder's rollback reload landing after a
+      // newer reorder succeeded left the UI stale even though the server saved the
+      // newest order). A reorder cannot change membership or counts, only order, so
+      // dropping the whole snapshot is safe; the newer reorder's own path owns the list.
+      const reorderEpochAtStart = reorderEpochRef.current;
       try {
         const res = await listAttachments({ cardId });
+        if (reorderEpochRef.current !== reorderEpochAtStart) {
+          // A reorder raced this fetch — discard the pre-reorder snapshot. For an
+          // add-triggered load, re-fetch so the new attachment still appears: the
+          // fresh GET snapshots the current epoch and applies unless ANOTHER reorder
+          // races it again (terminates: each retry requires a new real epoch bump).
+          if (newAttachmentId) void loadAttachments(newAttachmentId);
+          return;
+        }
         // [why] Server returns attachments ordered by position ASC — no client-side
         // sort needed. When a new attachment is added, we reorder it to the top.
         let sorted = res.data;
@@ -213,40 +236,19 @@ export function AttachmentPanel({
     onAttachmentsChange?.(attachments);
   }, [attachments, onAttachmentsChange]);
 
-  // [why] Serialize reorder mutations: rapid consecutive drags launch concurrent
-  // requests, and an older request finishing last would overwrite the user's newest
-  // order. Only the latest call is allowed to commit its result; earlier failures
-  // roll back + toast instead of leaving optimistic state unsynced.
-  const reorderInFlightRef = useRef<Promise<void> | null>(null);
-  const persistReorder = useCallback(
-    (order: string[]): Promise<void> => {
-      const run = async (): Promise<void> => {
-        // Wait for the previous reorder to finish before sending ours.
-        const prev = reorderInFlightRef.current;
-        if (prev) {
-          try {
-            await prev;
-          } catch {
-            // Previous call already rolled back its own order.
-          }
-        }
-        try {
-          await reorderAttachments({ cardId, order });
-        } catch {
-          // Roll back to the authoritative server order and surface the failure
-          // (same error UX as delete/rename rollback below).
-          pushErrorToast(translations['attachments.reorder.failed']);
-          void loadAttachments();
-        }
-      };
-      const task = run().finally(() => {
-        if (reorderInFlightRef.current === task) reorderInFlightRef.current = null;
-      });
-      reorderInFlightRef.current = task;
-      return task;
-    },
-    [cardId, loadAttachments, pushErrorToast]
-  );
+  // [why] Serialize reorder mutations + latest-wins failure handling live in
+  // useReorderPersistence (unit-tested in useReorderPersistence.test.ts): calls
+  // are serialized, only the latest failed reorder toasts + reloads, every call
+  // bumps reorderEpochRef so in-flight list fetches discard pre-reorder snapshots,
+  // and success reconciles state from the endpoint's returned list.
+  const persistReorder = useReorderPersistence({
+    cardId,
+    attachmentsRef: attachmentsRef as React.MutableRefObject<Attachment[]>,
+    setAttachments,
+    pushErrorToast,
+    loadAttachments,
+    reorderEpochRef: reorderEpochRef as React.MutableRefObject<number>,
+  });
 
   // Upload hook — refreshes the server list when a new upload completes
   const { uploads, upload, removeEntry } = useAttachmentUpload({
