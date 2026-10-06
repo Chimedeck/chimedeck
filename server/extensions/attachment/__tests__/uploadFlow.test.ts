@@ -4,7 +4,9 @@
 // mock.module on the shared db and pubsub modules; it lives in
 // ./fixtures/uploadFlowVirusScan.ts (spawned as a subprocess) so the mocks cannot
 // leak into — or be replaced by — adjacent suites that mock the same modules
-// differently. This file keeps only import-free assertions.
+// differently. Only that contract runs inside the fixture subprocess; this file
+// itself holds plain tests (SSRF validator, delete wiring) with ordinary static
+// and dynamic imports and no module mocking.
 import { describe, expect, test } from 'bun:test';
 
 // We test SSRF validator inline since it has no external dependencies
