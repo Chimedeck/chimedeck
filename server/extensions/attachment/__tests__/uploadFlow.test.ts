@@ -1,61 +1,31 @@
 // Integration tests for the full upload flow, external URL creation, and delete.
 // These tests mock S3 and DB to verify the API handler logic end-to-end.
-import { describe, expect, test, mock } from 'bun:test';
+// [why subprocess fixture] The virus-scan-disabled contract needs process-global
+// mock.module on the shared db and pubsub modules; it lives in
+// ./fixtures/uploadFlowVirusScan.ts (spawned as a subprocess) so the mocks cannot
+// leak into — or be replaced by — adjacent suites that mock the same modules
+// differently. This file keeps only import-free assertions.
+import { describe, expect, test } from 'bun:test';
 
 // We test SSRF validator inline since it has no external dependencies
 import { isForbiddenUrl } from '../api/addUrl';
 
 describe('upload flow (unit/logic)', () => {
-  // [why fakes] With VIRUS_SCAN_ENABLED=false the real enqueueScan writes the READY
-  // promotion through the real db client — the fakes keep this test fully offline
-  // and make the no-op contract (resolves undefined, one READY update, no publish)
-  // actually assertable, per the copilot round-1 thread on the unawaited matcher.
-  mock.module('../../../common/db', () => {
-    const touch: { table: string; values?: Record<string, unknown> }[] = [];
-    const dbFn = ((table: string) => ({
-      where() {
-        return {
-          update(values: Record<string, unknown>) {
-            touch.push({ table, values });
-            return Promise.resolve(1);
-          },
-        };
-      },
-    })) as unknown as typeof import('../../../common/db').db;
-    (dbFn as unknown as { __touch: typeof touch }).__touch = touch;
-    return { db: dbFn };
-  });
-  const published: Array<{ channel: string; message: string }> = [];
-  mock.module('../../../mods/pubsub/index', () => ({
-    publisher: {
-      publish: (channel: string, message: string) => {
-        published.push({ channel, message });
-        return Promise.resolve();
-      },
-    },
-  }));
-
-  test('VIRUS_SCAN_ENABLED=false: enqueueScan is a no-op (READY promotion, no queue publish)', async () => {
-    // Temporarily set env flag to false
-    const originalFlag = process.env['VIRUS_SCAN_ENABLED'];
-    process.env['VIRUS_SCAN_ENABLED'] = 'false';
-
-    const { env } = await import('../../../config/env');
-    const realEnabled = env.VIRUS_SCAN_ENABLED;
-    try {
-      (env as { VIRUS_SCAN_ENABLED: boolean }).VIRUS_SCAN_ENABLED = false;
-
-      // Import with current env
-      const { enqueueScan } = await import('../mods/virusScan/enqueue');
-      // [why awaited] Copilot round-1: the matcher was unawaited, so the test could
-      // restore the env flag and finish before enqueueScan/matcher settled — false
-      // pass or unhandled rejection.
-      await expect(enqueueScan({ attachmentId: 'test-id' })).resolves.toBeUndefined();
-      expect(published).toEqual([]);
-    } finally {
-      (env as { VIRUS_SCAN_ENABLED: boolean }).VIRUS_SCAN_ENABLED = realEnabled;
-      process.env['VIRUS_SCAN_ENABLED'] = originalFlag ?? '';
-    }
+  test('VIRUS_SCAN_ENABLED=false: enqueueScan is a no-op (subprocess fixture)', async () => {
+    const child = Bun.spawn(
+      [process.execPath, new URL('./fixtures/uploadFlowVirusScan.ts', import.meta.url).pathname],
+      { stdout: 'pipe', stderr: 'pipe' },
+    );
+    const [stdout, stderr, exitCode] = await Promise.all([
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+      child.exited,
+    ]);
+    expect(stderr).toBe('');
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain(
+      'enqueueScan no-op verified: resolves undefined, promotes attachment READY via db, never publishes to the scan queue'
+    );
   });
 });
 

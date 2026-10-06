@@ -3,8 +3,9 @@
 ## Rule
 Feature, fix, chore, and Dependabot PRs target `main`. Never open one against `stable`.
 
-**Sole exception:** promotion PRs — `main` → `stable` (head ref must be `main`, per the
-stable-source-guard). Promotion is the shipping step (flow §5) and is human-gated.
+**Sole PR-path exception:** promotion PRs (the shipping step, flow §5), which must pass the
+stable-source-guard — their head ref must be `main` or a `release/*` branch cut from `main`
+(see `.github/workflows/stable-source-guard.yml`).
 `stable` is the ship branch. It moves only by **promotion**: after a human inspects the merged
 change on `main`, a promotion carries it to `stable`. `main` merges deploy nowhere; the promotion
 to `stable` is what ships.
