@@ -13,6 +13,35 @@ import { publisher } from '../../../mods/pubsub/publisher';
 import { dispatchEvent } from '../../../mods/events/dispatch';
 import { writeActivity } from '../../activity/mods/write';
 import { resolveCardId } from '../../../common/ids/resolveEntityId';
+import { hasUploadedS3Key } from './uploadConfirmation';
+
+interface ConfirmUploadBody {
+  attachmentId?: string;
+}
+
+interface CardRow {
+  id: string;
+  list_id: string;
+  title: string | null;
+}
+
+interface ListRow {
+  id: string;
+  board_id: string;
+}
+
+interface BoardRow {
+  id: string;
+  workspace_id: string;
+}
+
+interface FileAttachmentRow {
+  id: string;
+  card_id: string;
+  type: 'FILE';
+  s3_key: string | null;
+  name: string;
+}
 
 export async function handleConfirmUpload(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -26,7 +55,7 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
     );
   }
 
-  const card = await db('cards').where({ id: resolvedCardId }).first();
+  const card = await db<CardRow>('cards').where({ id: resolvedCardId }).first();
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
@@ -34,8 +63,8 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
     );
   }
 
-  const list = await db('lists').where({ id: card.list_id }).first();
-  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
+  const list = await db<ListRow>('lists').where({ id: card.list_id }).first();
+  const board = list ? await db<BoardRow>('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
@@ -49,9 +78,9 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
   const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
-  let body: { attachmentId?: string };
+  let body: ConfirmUploadBody;
   try {
-    body = (await req.json()) as typeof body;
+    body = (await req.json()) as ConfirmUploadBody;
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
@@ -66,7 +95,7 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
     );
   }
 
-  const attachment = await db('attachments')
+  const attachment = await db<FileAttachmentRow>('attachments')
     .where({ id: body.attachmentId, card_id: resolvedCardId, type: 'FILE' })
     .first();
 
@@ -78,7 +107,7 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
   }
 
   // Verify the client actually PUT the file to S3
-  if (!attachment.s3_key) {
+  if (!hasUploadedS3Key(attachment.s3_key)) {
     return Response.json(
       { error: { code: 'upload-url-expired', message: 'Upload was not completed' } },
       { status: 400 }
@@ -98,7 +127,12 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
     );
   }
 
-  const actorId = (req as AuthenticatedRequest).currentUser!.id;
+  const actor = (req as AuthenticatedRequest).currentUser;
+  if (!actor) {
+    return Response.json({ error: { code: 'unauthorized', message: 'Authentication required' } }, { status: 401 });
+  }
+
+  const actorId = actor.id;
 
   // Enqueue virus scan (no-op when VIRUS_SCAN_ENABLED=false)
   await enqueueScan({ attachmentId: attachment.id });
@@ -136,6 +170,6 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
     )
     .catch(() => {});
 
-  const updated = await db('attachments').where({ id: attachment.id }).first();
+  const updated = await db<FileAttachmentRow>('attachments').where({ id: attachment.id }).first();
   return Response.json({ data: updated }, { status: 200 });
 }

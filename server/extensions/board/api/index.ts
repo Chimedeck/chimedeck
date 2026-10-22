@@ -3,7 +3,6 @@ import { applyBoardVisibility } from '../../../middlewares/boardVisibility';
 import { handleCreateBoard } from './create';
 import { handleListBoards } from './list';
 import { handleGetBoard } from './get';
-import { handleUpdateBoard } from './update';
 import { handlePatchBoard } from './patch';
 import { handleArchiveBoard } from './archive';
 import { handleDeleteBoard } from './delete';

@@ -17,8 +17,8 @@ const RunCountChip: FC<Props> = ({ count }) => {
   return (
     <span
       className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium tabular-nums ${colourClass}`}
-      aria-label={`${count} run${count !== 1 ? 's' : ''}`}
-      title={`${count} run${count !== 1 ? 's' : ''}`}
+      aria-label={`${String(count)} run${count !== 1 ? 's' : ''}`}
+      title={`${String(count)} run${count !== 1 ? 's' : ''}`}
     >
       {label}
     </span>

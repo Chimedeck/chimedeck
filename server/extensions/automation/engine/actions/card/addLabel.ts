@@ -1,6 +1,16 @@
 import { z } from 'zod';
 import type { ActionHandler, ActionContext } from '../../../common/types';
 
+// Existence-query columns from 0006_card and 0007_card_extended.
+interface EntityIdRow {
+  id: string;
+}
+
+interface CardLabelRow {
+  card_id: string;
+  label_id: string;
+}
+
 const configSchema = z.object({
   labelId: z.string().min(1),
 });
@@ -15,14 +25,14 @@ export const cardAddLabelAction: ActionHandler = {
     const cardId = evalContext.cardId;
     if (!cardId) throw new Error('card-id-missing');
 
-    const card = await trx('cards').where({ id: cardId }).first();
+    const card = await trx<EntityIdRow>('cards').where({ id: cardId }).first();
     if (!card) throw new Error('card-not-found');
 
-    const label = await trx('labels').where({ id: config.labelId }).first();
+    const label = await trx<EntityIdRow>('labels').where({ id: config.labelId }).first();
     if (!label) throw new Error('label-not-found');
 
     // Idempotent: skip if already attached
-    const existing = await trx('card_labels')
+    const existing = await trx<CardLabelRow>('card_labels')
       .where({ card_id: cardId, label_id: config.labelId })
       .first();
     if (!existing) {

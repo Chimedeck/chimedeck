@@ -1,0 +1,83 @@
+name: Copilot review gate
+
+# Enforces that GitHub Copilot reviews PRs before merge.
+# Uses pull_request_target, so the gate runs the trusted base-branch workflow on
+# lifecycle events, not a PR-edited copy. Never add a checkout or run PR code here.
+#
+# Design notes:
+# - No pull_request_review triggers: runs triggered by bot actors are held in
+#   action_required by GitHub and never report a status, which would deadlock the gate.
+#   The gate waits for the review itself by polling after lifecycle events.
+# - Retry levers: on a failed gate run, re-request the Copilot review (review_requested
+#   re-runs the gate) or manually re-run the failed run once the review has landed.
+# - The gate never auto-loops review requests.
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+      - synchronize
+      - review_requested
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: copilot-review-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: copilot-review-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event.pull_request.draft == false
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      COPILOT_LOGIN: copilot-pull-request-reviewer[bot]
+      POLL_INTERVAL: 20
+      POLL_BUDGET: 540
+    steps:
+      - name: Request Copilot review
+        # On lifecycle actions only — never on review_requested (the requester already
+        # triggered a run explicitly). A failed request must not stop gate evaluation.
+        if: >-
+          github.event.action != 'review_requested' &&
+          contains(fromJSON('["opened","reopened","ready_for_review","synchronize"]'), github.event.action)
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          gh pr edit "$PR_NUMBER" --repo "$REPO" --add-reviewer "@copilot"
+
+      - name: Require Copilot review on current head
+        run: |
+          set -euo pipefail
+
+          deadline=$(( $(date +%s) + POLL_BUDGET ))
+          while :; do
+            # Active reviews by the official Copilot bot on the current head SHA.
+            # --paginate covers PRs with more than 100 reviews. Dismissed and pending
+            # reviews do not count.
+            review_count=$(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/reviews?per_page=100" \
+              --jq '.[] | select(.user.login == env.COPILOT_LOGIN and .user.type == "Bot" and .commit_id == env.HEAD_SHA and .state != "DISMISSED" and .state != "PENDING") | .id' \
+              | wc -l | tr -d ' ')
+
+            echo "$(date -u +%H:%M:%S) active Copilot reviews on current head ($HEAD_SHA): $review_count"
+
+            if [ "$review_count" -ge 1 ]; then
+              exit 0
+            fi
+
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::error::Copilot has not reviewed the current PR head within ${POLL_BUDGET}s. Once the review lands, re-request the Copilot review or re-run this workflow."
+              exit 1
+            fi
+
+            sleep "$POLL_INTERVAL"
+          done

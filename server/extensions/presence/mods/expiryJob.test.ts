@@ -4,7 +4,7 @@ import { runExpiryCheck, setActiveBoardIds } from './expiryJob';
 
 // Mock the cache module
 const cacheKeys: Record<string, string[]> = {};
-mock.module('../../../mods/cache/index', () => ({
+await mock.module('../../../mods/cache/index', () => ({
   cache: {
     keys: async (pattern: string) => {
       // Pattern is "presence:<boardId>:*" — return stored keys
@@ -20,14 +20,14 @@ mock.module('../../../mods/cache/index', () => ({
 
 // Mock broadcastPresenceUpdate
 const broadcasts: Array<{ boardId: string; action: string; userId: string }> = [];
-mock.module('../api/presenceUpdate', () => ({
+await mock.module('../api/presenceUpdate', () => ({
   broadcastPresenceUpdate: async (args: { boardId: string; action: string; userId: string }) => {
     broadcasts.push(args);
   },
 }));
 
 // Mock db (not used by expiryJob directly — broadcastPresenceUpdate is mocked)
-mock.module('../../../common/db', () => ({ db: () => {} }));
+await mock.module('../../../common/db', () => ({ db: () => {} }));
 
 describe('runExpiryCheck', () => {
   beforeEach(() => {

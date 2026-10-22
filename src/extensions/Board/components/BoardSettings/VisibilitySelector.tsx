@@ -47,7 +47,7 @@ const VisibilitySelector = ({ value, onChange, disabled = false }: Props) => {
             name="board-visibility"
             value={opt.value}
             checked={value === opt.value}
-            onChange={() => !disabled && onChange(opt.value)}
+            onChange={() => { if (!disabled) onChange(opt.value); }}
             disabled={disabled}
             className="mt-0.5 accent-blue-500"
           />

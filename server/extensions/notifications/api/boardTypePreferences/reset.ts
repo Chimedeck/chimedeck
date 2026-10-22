@@ -8,15 +8,21 @@ import {
   type BoardVisibilityScopedRequest,
 } from '../../../../middlewares/boardVisibility';
 
+type ResolvedBoardPreferenceRequest = BoardVisibilityScopedRequest & {
+  board: { id: string };
+  currentUser: NonNullable<AuthenticatedRequest['currentUser']>;
+};
+
 export async function handleResetBoardTypePreferences(
   req: Request,
   boardId: string
 ): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
   if (visibilityError) return visibilityError;
-  const resolvedBoardId = (req as BoardVisibilityScopedRequest).board!.id;
+  const resolvedReq = req as ResolvedBoardPreferenceRequest;
+  const resolvedBoardId = resolvedReq.board.id;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const userId = resolvedReq.currentUser.id;
 
   await db('board_notification_type_preferences')
     .where({ user_id: userId, board_id: resolvedBoardId })

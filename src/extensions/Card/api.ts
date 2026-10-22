@@ -21,6 +21,7 @@ export interface Card {
   cover_aspect_ratio?: '16:9' | '1:1' | null;
   /** True when the cover attachment is a GIF (served via /view to preserve animation). */
   cover_is_gif?: boolean;
+  is_template?: boolean;
   created_at: string;
   updated_at: string;
   labels: Array<{ id: string; name: string; color: string }>;

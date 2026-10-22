@@ -32,7 +32,7 @@ export function UploadProgressBar({
       ) : (
         <div
           className="h-full bg-blue-500 rounded transition-all duration-200"
-          style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+          style={{ width: `${String(Math.min(100, Math.max(0, progress)))}%` }}
         />
       )}
     </div>

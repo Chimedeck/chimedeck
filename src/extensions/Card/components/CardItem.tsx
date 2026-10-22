@@ -5,6 +5,7 @@ import {
   BellAlertIcon,
   CalendarIcon,
   ChatBubbleLeftIcon,
+  DocumentTextIcon,
   PaperClipIcon,
   QueueListIcon,
   RectangleStackIcon,
@@ -298,6 +299,14 @@ const CardItemContent = memo(
             )}
           </div>
         )}
+        {card.is_template && (
+          <div className="mt-1.5">
+            <span className="inline-flex items-center gap-0.5 rounded bg-blue-50 border border-blue-200 px-1.5 py-0.5 text-xs text-blue-700 dark:bg-blue-900/20 dark:border-blue-700/40 dark:text-blue-400">
+              <DocumentTextIcon className="h-3 w-3 shrink-0" />
+              This card is a template.
+            </span>
+          </div>
+        )}
         {members.length > 0 && (
           <div className="mt-1.5">
             <CardMemberAvatars
@@ -415,7 +424,8 @@ const CardItemContent = memo(
       prevCard.linked_card_count === nextCard.linked_card_count &&
       prevCard.comment_count === nextCard.comment_count &&
       prevCard.labels === nextCard.labels &&
-      prevCard.members === nextCard.members
+      prevCard.members === nextCard.members &&
+      prevCard.is_template === nextCard.is_template
     );
   }
 );
@@ -540,7 +550,8 @@ function areCardItemPropsEqual(prev: CardItemProps, next: CardItemProps): boolea
     prevCard.linked_card_count === nextCard.linked_card_count &&
     prevCard.comment_count === nextCard.comment_count &&
     prevCard.labels === nextCard.labels &&
-    prevCard.members === nextCard.members
+    prevCard.members === nextCard.members &&
+    prevCard.is_template === nextCard.is_template
   );
 }
 

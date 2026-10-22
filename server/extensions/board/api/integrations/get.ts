@@ -24,6 +24,8 @@ export async function handleGetBoardIntegrations(req: Request, boardId: string):
     data: {
       github_project_url:
         (boardReq.board as { github_project_url?: string | null }).github_project_url ?? null,
+      github_branch:
+        (boardReq.board as { github_branch?: string | null }).github_branch ?? null,
     },
   });
 }

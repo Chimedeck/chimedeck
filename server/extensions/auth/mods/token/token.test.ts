@@ -58,8 +58,9 @@ describe('token issue and verify', () => {
 
     const decoded = await verifyAccessToken({ token });
     expect(decoded).not.toBeNull();
-    expect(decoded!.sub).toBe('user-123');
-    expect(decoded!.email).toBe('test@example.com');
+    if (!decoded) throw new Error('decoded token unexpectedly null');
+    expect(decoded.sub).toBe('user-123');
+    expect(decoded.email).toBe('test@example.com');
   });
 
   test('returns null for an invalid token', async () => {
@@ -73,7 +74,7 @@ describe('token issue and verify', () => {
 
     const token = await issueAccessToken({ sub: 'user-123', email: 'test@example.com' });
     const [header, payload] = token.split('.');
-    const tampered = `${header}.${payload}.invalidsignature`;
+    const tampered = `${header ?? ''}.${payload ?? ''}.invalidsignature`;
 
     const result = await verifyAccessToken({ token: tampered });
     expect(result).toBeNull();

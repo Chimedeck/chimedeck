@@ -38,11 +38,13 @@ export const specsReadDeps = {
 async function getOrBuildManifestForRead({
   boardId,
   projectUrl,
+  branch,
 }: {
   boardId: string;
   projectUrl: string;
+  branch?: string | null;
 }): Promise<{ manifest: SpecsManifest; repoPath: string }> {
-  const cacheKey = `${boardId}:${projectUrl}`;
+  const cacheKey = `${boardId}:${projectUrl}:${branch ?? ''}`;
 
   const cached = specsManifestCache.get(cacheKey);
   if (cached) {
@@ -60,6 +62,7 @@ async function getOrBuildManifestForRead({
     const { repoPath, ref, fetchedAt } = await specsReadDeps.downloadRepositoryFromProjectUrl({
       projectUrl,
       boardId,
+      branch,
     });
 
     const manifest = await specsReadDeps.buildSpecsManifest({ repoPath, ref, fetchedAt });
@@ -98,7 +101,11 @@ export async function handleReadSpecsFile(req: Request, boardId: string): Promis
   const roleError = specsReadDeps.requireRole(workspaceReq, 'MEMBER');
   if (roleError) return roleError;
 
-  const board = boardReq.board as { github_project_url?: string | null };
+  const board = boardReq.board as {
+    github_project_url?: string | null;
+    github_branch?: string | null;
+  };
+  const githubBranch = board.github_branch ?? null;
   if (!board.github_project_url) {
     return Response.json(
       {
@@ -125,6 +132,7 @@ export async function handleReadSpecsFile(req: Request, boardId: string): Promis
     const loaded = await getOrBuildManifestForRead({
       boardId,
       projectUrl: board.github_project_url,
+      branch: githubBranch,
     });
     repoPath = loaded.repoPath;
     manifest = loaded.manifest;

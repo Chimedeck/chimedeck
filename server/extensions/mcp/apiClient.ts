@@ -37,7 +37,7 @@ export async function apiCall<T>({
     const errPayload = payload as { name?: string; data?: unknown } | null;
     return {
       error: {
-        name: errPayload?.name ?? `http-${res.status}`,
+        name: errPayload?.name ?? `http-${String(res.status)}`,
         data: errPayload?.data ?? payload,
       },
     };

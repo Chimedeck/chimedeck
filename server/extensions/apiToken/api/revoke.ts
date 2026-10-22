@@ -7,7 +7,13 @@ export async function handleRevokeToken(req: Request, tokenId: string): Promise<
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const userId = (req as AuthenticatedRequest).currentUser?.id;
+  if (!userId) {
+    return Response.json(
+      { error: { code: 'unauthorized', message: 'Unauthorized' } },
+      { status: 401 },
+    );
+  }
 
   const token = await db('api_tokens').where({ id: tokenId }).first();
 

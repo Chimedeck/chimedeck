@@ -26,7 +26,7 @@ export async function cleanupOrphanAttachments(): Promise<void> {
       }
     }
     await db('attachments').where({ id: attachment.id }).delete();
-    console.info(`[orphan-cleanup] deleted attachment ${attachment.id}`);
+    console.info(`[orphan-cleanup] deleted attachment ${String(attachment.id)}`);
   }
 }
 
@@ -34,5 +34,5 @@ export async function cleanupOrphanAttachments(): Promise<void> {
 export let orphanCleanupInterval: ReturnType<typeof setInterval> | null = null;
 
 export function startOrphanCleanupWorker(): void {
-  orphanCleanupInterval = setInterval(cleanupOrphanAttachments, CLEANUP_INTERVAL_MS);
+  orphanCleanupInterval = setInterval(() => { void cleanupOrphanAttachments(); }, CLEANUP_INTERVAL_MS);
 }

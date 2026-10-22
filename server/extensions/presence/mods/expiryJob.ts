@@ -5,7 +5,6 @@
 // WHY: the TTL-based expiry in Redis/node-cache removes the key silently;
 // this job detects the expiry and broadcasts a leave event to all board subscribers.
 import { cache } from '../../../mods/cache/index';
-import { db } from '../../../common/db';
 import { broadcastPresenceUpdate } from '../api/presenceUpdate';
 
 // Board IDs that currently have at least one subscribed WS client.

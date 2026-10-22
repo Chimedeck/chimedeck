@@ -14,6 +14,7 @@ import {
   specsManifestCache,
   specsManifestInflight,
   MANIFEST_CACHE_TTL_MS,
+  invalidateSpecsCachesForRepoPath,
 } from '../../mods/specs/cache';
 import type { SpecsManifest } from '../../types';
 
@@ -31,12 +32,14 @@ async function getOrBuildManifest({
   boardId,
   projectUrl,
   refresh,
+  branch,
 }: {
   boardId: string;
   projectUrl: string;
   refresh: boolean;
+  branch?: string | null;
 }): Promise<{ manifest: SpecsManifest; repoPath: string }> {
-  const cacheKey = `${boardId}:${projectUrl}`;
+  const cacheKey = `${boardId}:${projectUrl}:${branch ?? ''}`;
 
   if (!refresh) {
     const cached = specsManifestCache.get(cacheKey);
@@ -47,17 +50,33 @@ async function getOrBuildManifest({
       }
       specsManifestCache.delete(cacheKey);
     }
-  }
 
-  const inflight = specsManifestInflight.get(cacheKey);
-  if (inflight) return inflight;
+    // [why] When refresh=false, skip inflight requests so a fresh fetch is triggered.
+    // Without this, concurrent refresh requests would return stale in-flight promises
+    // instead of fetching new commits from GitHub.
+    const inflight = specsManifestInflight.get(cacheKey);
+    if (inflight) return inflight;
+  } else {
+    // [why] When refresh=true, clear any cached data and in-flight requests
+    // so we force a fresh fetch from GitHub.
+    specsManifestCache.delete(cacheKey);
+    specsManifestInflight.delete(cacheKey);
+  }
 
   const task = (async () => {
     const { repoPath, ref, fetchedAt } = await specsLoadDeps.downloadRepositoryFromProjectUrl({
       projectUrl,
       boardId,
       refresh,
+      branch,
     });
+
+    // [why] When the user explicitly refreshes, new commits may have been pulled.
+    // Invalidate the file cache so subsequent file reads pick up updated content
+    // instead of serving stale cached versions.
+    if (refresh) {
+      invalidateSpecsCachesForRepoPath(repoPath);
+    }
 
     const manifest = await specsLoadDeps.buildSpecsManifest({ repoPath, ref, fetchedAt });
 
@@ -109,6 +128,7 @@ export async function handleLoadSpecsManifest(req: Request, boardId: string): Pr
   if (roleError) return roleError;
 
   const githubProjectUrl = board.github_project_url;
+  const githubBranch = (board as { github_branch?: string | null }).github_branch ?? null;
   if (!githubProjectUrl) {
     return Response.json(
       {
@@ -128,6 +148,7 @@ export async function handleLoadSpecsManifest(req: Request, boardId: string): Pr
       boardId,
       projectUrl: githubProjectUrl,
       refresh,
+      branch: githubBranch,
     });
   } catch (error) {
     if (error instanceof Error && error.message) {

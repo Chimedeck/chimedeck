@@ -45,7 +45,7 @@ const ToggleSwitch = ({
         aria-checked={enabled}
         aria-label={ariaLabel}
         disabled={disabled}
-        onClick={() => !disabled && onChange(!enabled)}
+        onClick={() => { if (!disabled) { onChange(!enabled); } }}
         className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900 ${track}`}
       >
         <span
@@ -126,14 +126,14 @@ const NotificationPreferencesPanel = () => {
                   <td className="py-3 text-center">
                     <ToggleSwitch
                       enabled={inAppChecked}
-                      onChange={(next) => handleToggle(type, 'in_app_enabled', next)}
+                      onChange={(next) => void handleToggle(type, 'in_app_enabled', next)}
                       ariaLabel={`${NOTIFICATION_TYPE_LABELS[type]} — ${translations['NotificationPreferences.columnInApp']}`}
                     />
                   </td>
                   <td className="py-3 text-center">
                     <ToggleSwitch
                       enabled={emailChecked && emailEnabled}
-                      onChange={(next) => handleToggle(type, 'email_enabled', next)}
+                      onChange={(next) => void handleToggle(type, 'email_enabled', next)}
                       disabled={!emailEnabled}
                       ariaLabel={`${NOTIFICATION_TYPE_LABELS[type]} — ${translations['NotificationPreferences.columnEmail']}`}
                       disabledTooltip={translations['NotificationPreferences.emailDisabledTooltip']}

@@ -11,6 +11,11 @@ import { env } from '../../../config/env';
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_SECONDS = 3600; // 1 hour
 
+type UserRow = {
+  id: string;
+  email: string;
+};
+
 export async function handleForgotPassword(req: Request): Promise<Response> {
   // Rate limit by IP: 5 requests per hour
   const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? 'unknown';
@@ -41,7 +46,7 @@ export async function handleForgotPassword(req: Request): Promise<Response> {
   const email = body.email.toLowerCase().trim();
 
   // Always return success — look up user silently
-  const user = await db('users').where({ email }).first();
+  const user = await db<UserRow>('users').where({ email }).first();
   if (user) {
     const token = randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour

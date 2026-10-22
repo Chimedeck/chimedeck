@@ -9,6 +9,7 @@ import {
   BoltIcon,
   ChevronUpIcon,
   DocumentDuplicateIcon,
+  DocumentTextIcon,
   LinkIcon,
   PrinterIcon,
   PuzzlePieceIcon,
@@ -40,6 +41,8 @@ interface Props {
   onMoveCard: () => void;
   onPrint: () => void;
   onAIAssist?: () => void;
+  isTemplate?: boolean;
+  onMakeTemplate?: () => void;
 }
 
 // ------------------------------------------------------------------
@@ -95,6 +98,8 @@ const CardModalBottomBar = ({
   onMoveCard,
   onPrint,
   onAIAssist,
+  isTemplate,
+  onMakeTemplate,
 }: Props) => {
   const powerUps = usePopover();
   const automations = usePopover();
@@ -198,6 +203,22 @@ const CardModalBottomBar = ({
                   >
                     <SparklesIcon className="w-4 h-4 shrink-0 text-blue-500" />
                     AI Assist
+                  </button>
+                  <div className="border-t border-border my-1" />
+                </>
+              )}
+              {onMakeTemplate && (
+                <>
+                  <button
+                    type="button"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-base hover:bg-bg-overlay rounded-lg transition-colors"
+                    onClick={() => {
+                      actions.setOpen(false);
+                      onMakeTemplate();
+                    }}
+                  >
+                    <DocumentTextIcon className="w-4 h-4 shrink-0" />
+                    {isTemplate ? 'Remove template' : 'Make template'}
                   </button>
                   <div className="border-t border-border my-1" />
                 </>

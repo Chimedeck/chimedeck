@@ -68,6 +68,7 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
       'c.cover_size',
       'c.created_at',
       'c.updated_at',
+      'c.is_template',
       db.raw(`
         COALESCE(
           json_agg(DISTINCT jsonb_build_object('id', l.id, 'name', l.name, 'color', l.color))

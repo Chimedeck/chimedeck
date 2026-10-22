@@ -8,6 +8,7 @@ This project is developed primarily through an **AI agent loop** — a phased, m
 
 - [Prerequisites](#prerequisites)
 - [Project Context Files](#project-context-files)
+- [Branch Model](#branch-model)
 - [The Agent Loop](#the-agent-loop)
   - [Running the Loop](#running-the-loop)
   - [Bootstrap Phase (new projects)](#bootstrap-phase-new-projects)
@@ -59,6 +60,30 @@ The agent reads these files on **every** iteration. Keep them up to date — the
 | `specs/sprints/sprint-N.md` | Detailed scope, acceptance criteria, and file list for each sprint. |
 | `.github/copilot-instructions.md` | The workflow + coding conventions the agent follows. **Read this before contributing anything.** |
 | `sample-project/` | Read-only reference repo. Never modify or run anything inside it. |
+
+---
+
+## Branch Model
+
+Two long-lived branches:
+
+- `main` — integration and the **default base**. All work branches off `main` and targets `main`.
+- `stable` — the **deploy** branch. Only `stable` deploys to production.
+
+The flow is one-way: `main` → `stable`.
+
+1. Branch your feature/fix off `main`; open the PR with `main` as the base.
+2. After it merges to `main`, promote it with a **forward PR** from `main` to `stable`.
+3. Never branch off `stable`, and never open a feature PR with `stable` as the base. PRs into
+   `stable` must come only from `main` (or a `release/*` branch cut from `main`).
+
+**Why this matters:** in September 2026 two feature PRs were merged straight into `stable`, so
+`main` fell 35 commits behind production and new work started from a stale tree. Keeping the flow
+one-way is what prevents that divergence.
+
+If `main` and `stable` ever diverge again, reconcile with a back-merge PR (`stable` → `main`).
+Because promotion keeps `main` an ancestor of `stable`, that reconciliation is normally a clean
+fast-forward.
 
 ---
 

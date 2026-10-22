@@ -10,11 +10,15 @@ import {
 import { guestGuard } from '../../../middlewares/guestGuard';
 import { duplicateBoard } from '../mods/duplicate/index';
 
+type BoardDuplicateSource = { workspace_id: string; title: string };
+
 export async function handleDuplicateBoard(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const board = await db('boards').where({ id: boardId }).first();
+  const board = (await db('boards')
+    .where({ id: boardId })
+    .first()) as BoardDuplicateSource | undefined;
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },

@@ -2,13 +2,20 @@
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 
+type AuthenticatedUserRequest = AuthenticatedRequest & {
+  currentUser: NonNullable<AuthenticatedRequest['currentUser']>;
+};
+type NotificationOwnerRow = { user_id: string };
+
 export async function handleMarkUnread(req: Request, notificationId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const userId = (req as AuthenticatedUserRequest).currentUser.id;
 
-  const notification = await db('notifications').where({ id: notificationId }).first();
+  const notification = (await db('notifications')
+    .where({ id: notificationId })
+    .first()) as NotificationOwnerRow | undefined;
   if (!notification) {
     return Response.json(
       { error: { code: 'notification-not-found', message: 'Notification not found' } },

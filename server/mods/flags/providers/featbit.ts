@@ -23,13 +23,13 @@ export class FeatBitProvider implements FlagProvider {
     }
   }
 
-  async isEnabled(flagKey: string, _context?: FlagContext): Promise<boolean> {
+  async isEnabled(_flagKey: string, _context?: FlagContext): Promise<boolean> {
     if (!this.initialized) return false;
     // TODO: return this.client.boolVariation(flagKey, context?.userId ?? 'anon', false)
     return false;
   }
 
-  async getValue<T>(flagKey: string, defaultValue: T, _context?: FlagContext): Promise<T> {
+  async getValue<T>(_flagKey: string, defaultValue: T, _context?: FlagContext): Promise<T> {
     if (!this.initialized) return defaultValue;
     // TODO: return this.client.jsonVariation(flagKey, context?.userId ?? 'anon', defaultValue)
     return defaultValue;

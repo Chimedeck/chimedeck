@@ -113,6 +113,7 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
         'c.cover_size',
         'c.created_at',
         'c.updated_at',
+        'c.is_template',
         db.raw(
           `COALESCE(json_agg(DISTINCT jsonb_build_object('id', l.id, 'name', l.name, 'color', l.color)) FILTER (WHERE l.id IS NOT NULL), '[]'::json) as labels`
         ),

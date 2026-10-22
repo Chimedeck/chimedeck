@@ -108,20 +108,32 @@ async function notifyMentionedUser({
   }
   if (!inAppEnabled) return;
 
-  const [inserted] = await trx('notifications').insert(
-    {
-      user_id: userId,
-      type: 'mention',
-      source_type: sourceType,
-      source_id: sourceId,
-      card_id: cardId,
-      board_id: boardId,
-      actor_id: actorId,
-      read: false,
-      created_at: now,
-    },
-    ['*']
-  );
+  // [why] 20260616_notifications_unique_constraint guards (user_id, type, source_type,
+  // source_id). Duplicates can arrive via concurrent same-source edits (two saves of the
+  // same description touching the same mention). In PostgreSQL, catching a 23505 in JS
+  // would NOT save the caller's transaction — the error aborts the PG transaction itself.
+  // ON CONFLICT DO NOTHING avoids raising the error at all: a losing concurrent insert
+  // simply returns no rows, and we treat that as already-notified (no publish, no email).
+  const insertedRows = await trx('notifications')
+    .insert(
+      {
+        user_id: userId,
+        type: 'mention',
+        source_type: sourceType,
+        source_id: sourceId,
+        card_id: cardId,
+        board_id: boardId,
+        actor_id: actorId,
+        read: false,
+        created_at: now,
+      },
+      ['*']
+    )
+    .onConflict(['user_id', 'type', 'source_type', 'source_id'])
+    .ignore();
+
+  const [inserted] = insertedRows;
+  if (!inserted) return;
 
   await publishToUser(userId, {
     type: 'notification_created',

@@ -4,12 +4,22 @@ import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 
+type UserRow = {
+  id: string;
+  email: string;
+  name: string | null;
+  avatar_url: string | null;
+  created_at: string;
+};
+
 export async function handleGetMe(req: Request): Promise<Response> {
-  const authError = await authenticate(req as AuthenticatedRequest);
+  const authenticatedReq = req as AuthenticatedRequest;
+  const authError = await authenticate(authenticatedReq);
   if (authError) return authError;
 
-  const { currentUser } = req as AuthenticatedRequest;
-  const user = await db('users').where({ id: currentUser!.id }).first();
+  const { currentUser } = authenticatedReq;
+  if (!currentUser) return Response.json({ error: { code: 'unauthorized', message: 'Missing authenticated user' } }, { status: 401 });
+  const user = (await db('users').where({ id: currentUser.id }).first()) as UserRow | undefined;
 
   if (!user) {
     return Response.json(
@@ -32,10 +42,12 @@ export async function handleGetMe(req: Request): Promise<Response> {
 }
 
 export async function handlePatchMe(req: Request): Promise<Response> {
-  const authError = await authenticate(req as AuthenticatedRequest);
+  const authenticatedReq = req as AuthenticatedRequest;
+  const authError = await authenticate(authenticatedReq);
   if (authError) return authError;
 
-  const { currentUser } = req as AuthenticatedRequest;
+  const { currentUser } = authenticatedReq;
+  if (!currentUser) return Response.json({ error: { code: 'unauthorized', message: 'Missing authenticated user' } }, { status: 401 });
 
   let body: { name?: string; avatar_url?: string };
   try {
@@ -58,7 +70,11 @@ export async function handlePatchMe(req: Request): Promise<Response> {
     );
   }
 
-  const [user] = await db('users').where({ id: currentUser!.id }).update(updates).returning('*');
+  const users = (await db('users')
+    .where({ id: currentUser.id })
+    .update(updates)
+    .returning('*')) as UserRow[];
+  const [user] = users;
 
   if (!user) {
     return Response.json(

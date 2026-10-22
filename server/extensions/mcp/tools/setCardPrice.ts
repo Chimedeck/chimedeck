@@ -3,15 +3,17 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { apiCall } from '../apiClient';
 
 export function registerSetCardPrice(server: McpServer, token: string): void {
-  server.tool(
+  server.registerTool(
     'set_card_price',
-    'Set or clear the price on a card. Pass amount=null to remove the price.',
     {
+      description: 'Set or clear the price on a card. Pass amount=null to remove the price.',
+      inputSchema: {
       cardId: z.string().describe('ID of the card to update'),
       // nullable() allows amount: null to explicitly clear the price
       amount: z.number().nullable().describe('Price amount (pass null to clear the price)'),
       currency: z.string().optional().describe('ISO 4217 currency code, e.g. "USD"'),
       label: z.string().optional().describe('Optional display label for the price'),
+      },
     },
     async ({ cardId, amount, currency, label }) => {
       const result = await apiCall<{ data: unknown }>({

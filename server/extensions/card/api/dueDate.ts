@@ -4,15 +4,18 @@ import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
-  requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
+
+interface WorkspaceRow {
+  id: string;
+}
 
 export async function handleListDueCards(req: Request, workspaceId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const workspace = await db('workspaces').where({ id: workspaceId }).first();
+  const workspace = await db<WorkspaceRow>('workspaces').where({ id: workspaceId }).first();
   if (!workspace) {
     return Response.json(
       { error: { code: 'workspace-not-found', message: 'Workspace not found' } },
@@ -42,7 +45,7 @@ export async function handleListDueCards(req: Request, workspaceId: string): Pro
     );
   }
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const userId = (req as AuthenticatedRequest & { currentUser: { id: string } }).currentUser.id;
 
   // Cards assigned to caller where due_date < before, within the workspace
   const cards = await db('cards')

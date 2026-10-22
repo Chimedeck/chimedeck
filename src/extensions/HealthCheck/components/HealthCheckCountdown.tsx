@@ -12,10 +12,10 @@ interface Props {
 /** Formats raw seconds into a human-readable string: "45s" or "1m 05s". */
 function formatCountdown(seconds: number): string {
   if (seconds <= 0) return 'Refreshing…';
-  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 60) return `${String(seconds)}s`;
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  return `${m}m ${String(s).padStart(2, '0')}s`;
+  return `${String(m)}m ${String(s).padStart(2, '0')}s`;
 }
 
 /** Presentational countdown component for the auto-refresh timer. */
@@ -27,7 +27,7 @@ export function HealthCheckCountdown({
   const display = paused ? 'Paused' : formatCountdown(secondsRemaining);
   const progress = totalSeconds > 0 ? Math.max(0, secondsRemaining / totalSeconds) : 0;
   // Width of the progress bar as a percentage
-  const widthPct = `${Math.round(progress * 100)}%`;
+  const widthPct = `${String(Math.round(progress * 100))}%`;
 
   return (
     <span

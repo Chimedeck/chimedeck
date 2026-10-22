@@ -1,6 +1,7 @@
 import { describe, expect, test, mock, beforeEach } from 'bun:test';
+import type { WriteActivityInput } from '../write';
 
-const writeActivityMock = mock(async (input: any) => ({
+const writeActivityMock = mock(async (input: WriteActivityInput) => ({
   id: 'activity-1',
   action: input.action,
   actor_id: input.actorId,
@@ -13,31 +14,31 @@ const mapActivityToNotificationMock = mock(() => Promise.resolve());
 const getActiveWebhooksForEventMock = mock(async () => []);
 const dispatchWebhookMock = mock(() => Promise.resolve());
 
-mock.module('../write', () => ({
+await mock.module('../write', () => ({
   writeActivity: writeActivityMock,
 }));
 
-mock.module('../../events/publishCardActivityEvent', () => ({
+await mock.module('../../events/publishCardActivityEvent', () => ({
   publishCardActivityEvent: publishCardActivityEventMock,
 }));
 
-mock.module('../mapActivityToNotification', () => ({
+await mock.module('../mapActivityToNotification', () => ({
   mapActivityToNotification: mapActivityToNotificationMock,
 }));
 
-mock.module('../../../common/db', () => ({
+await mock.module('../../../common/db', () => ({
   db: mock(() => ({})),
 }));
 
-mock.module('../../../config/env', () => ({
+await mock.module('../../../config/env', () => ({
   env: { WEBHOOKS_ENABLED: false },
 }));
 
-mock.module('../../webhooks/mods/registry', () => ({
+await mock.module('../../webhooks/mods/registry', () => ({
   getActiveWebhooksForEvent: getActiveWebhooksForEventMock,
 }));
 
-mock.module('../../webhooks/mods/dispatch', () => ({
+await mock.module('../../webhooks/mods/dispatch', () => ({
   dispatchWebhook: dispatchWebhookMock,
 }));
 

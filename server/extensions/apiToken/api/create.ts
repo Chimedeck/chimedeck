@@ -9,7 +9,14 @@ export async function handleCreateToken(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const currentUser = (req as AuthenticatedRequest).currentUser;
+  if (!currentUser) {
+    return Response.json(
+      { name: 'unauthorized', data: { message: 'Not authenticated' } },
+      { status: 401 },
+    );
+  }
+  const userId = currentUser.id;
 
   let body: { name?: string; expiresAt?: string | null };
   try {

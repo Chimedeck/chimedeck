@@ -7,6 +7,15 @@ import { applyBoardVisibility } from '../../../middlewares/boardVisibility';
 import { probe } from '../mods/probe';
 import { checkRateLimit, retryAfterMs } from '../mods/rateLimiter';
 
+// Read/filter columns from migrations 0095 and 0097.
+interface ProbeHealthCheckRow {
+  id: string;
+  board_id: string;
+  is_active: boolean;
+  url: string;
+  expected_status: number | null;
+}
+
 export async function handleProbeHealthCheck(
   req: Request,
   boardId: string,
@@ -19,7 +28,7 @@ export async function handleProbeHealthCheck(
   if (visibilityError) return visibilityError;
 
   // Look up the health check and verify it belongs to this board.
-  const check = await db('board_health_checks')
+  const check = await db<ProbeHealthCheckRow>('board_health_checks')
     .where({ id: healthCheckId, board_id: boardId, is_active: true })
     .first();
 

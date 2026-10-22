@@ -24,7 +24,6 @@ const MentionInput = ({
   onChange,
   placeholder,
   className,
-  rows = 3,
   disabled = false,
   'aria-label': ariaLabel,
   onKeyDown: externalKeyDown,
@@ -41,14 +40,14 @@ const MentionInput = ({
     dismissSuggestions,
   } = useMentionInput({ boardId, value, onChange });
 
-  const [localHighlight, setLocalHighlight] = useState(0);
+  const [, setLocalHighlight] = useState(0);
 
   // Auto-resize: expand the textarea to show all content without internal scrolling
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight}px`;
+    el.style.height = `${String(el.scrollHeight)}px`;
   }, [value]);
 
   return (
@@ -69,7 +68,6 @@ const MentionInput = ({
         aria-autocomplete="list"
         aria-expanded={showSuggestions}
         style={{ overflow: 'hidden' }}
-        // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus={autoFocus}
       />
       {showSuggestions && (

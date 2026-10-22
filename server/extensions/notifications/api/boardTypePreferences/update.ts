@@ -16,6 +16,11 @@ interface PatchBody {
   in_app_enabled?: unknown;
   email_enabled?: unknown;
 }
+type ResolvedBoardPreferenceRequest = BoardVisibilityScopedRequest & {
+  board: { id: string };
+  currentUser: NonNullable<AuthenticatedRequest['currentUser']>;
+};
+type BoardTypePreferenceRow = { id: string };
 
 export async function handleUpdateBoardTypePreference(
   req: Request,
@@ -23,13 +28,14 @@ export async function handleUpdateBoardTypePreference(
 ): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
   if (visibilityError) return visibilityError;
-  const resolvedBoardId = (req as BoardVisibilityScopedRequest).board!.id;
+  const resolvedReq = req as ResolvedBoardPreferenceRequest;
+  const resolvedBoardId = resolvedReq.board.id;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const userId = resolvedReq.currentUser.id;
 
   let body: PatchBody;
   try {
-    body = await req.json();
+    body = await req.json() as PatchBody;
   } catch {
     return Response.json(
       { error: { name: 'invalid-request-body', data: { message: 'Invalid JSON body' } } },
@@ -88,9 +94,9 @@ export async function handleUpdateBoardTypePreference(
   }
 
   const now = new Date().toISOString();
-  const existing = await db('board_notification_type_preferences')
+  const existing = (await db('board_notification_type_preferences')
     .where({ user_id: userId, board_id: resolvedBoardId, type })
-    .first();
+    .first()) as BoardTypePreferenceRow | undefined;
 
   if (existing) {
     const updates: Record<string, unknown> = { updated_at: now };

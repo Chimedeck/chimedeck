@@ -79,8 +79,9 @@ describe('requireRole', () => {
     const req = makeReq('VIEWER');
     const result = requireRole(req, 'ADMIN');
     expect(result).not.toBeNull();
-    expect(result!.status).toBe(403);
-    const body = await result!.json();
+    if (!result) throw new Error('expected a 403 response');
+    expect(result.status).toBe(403);
+    const body = await result.json();
     expect(body.error?.code).toBe('insufficient-role');
   });
 
@@ -88,8 +89,9 @@ describe('requireRole', () => {
     const req = makeReq(undefined);
     const result = requireRole(req, 'VIEWER');
     expect(result).not.toBeNull();
-    expect(result!.status).toBe(403);
-    const body = await result!.json();
+    if (!result) throw new Error('expected a 403 response');
+    expect(result.status).toBe(403);
+    const body = await result.json();
     expect(body.error?.code).toBe('insufficient-role');
   });
 
@@ -102,6 +104,7 @@ describe('requireRole', () => {
     const req = makeReq('MEMBER');
     const result = requireRole(req, 'ADMIN');
     expect(result).not.toBeNull();
-    expect(result!.status).toBe(403);
+    if (!result) throw new Error('expected a 403 response');
+    expect(result.status).toBe(403);
   });
 });

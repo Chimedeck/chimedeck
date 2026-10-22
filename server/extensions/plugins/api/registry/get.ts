@@ -17,7 +17,13 @@ export async function handleGetPlugin(req: Request, pluginId: string): Promise<R
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const currentUser = (req as AuthenticatedRequest).currentUser!;
+  const currentUser = (req as AuthenticatedRequest).currentUser;
+  if (!currentUser) {
+    return Response.json(
+      { error: { code: 'unauthorized', message: 'Unauthorized' } },
+      { status: 401 },
+    );
+  }
   const admin = await isRegistryAdmin(currentUser.id);
 
   const plugin = await db('plugins')

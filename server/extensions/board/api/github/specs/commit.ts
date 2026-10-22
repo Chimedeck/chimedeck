@@ -101,7 +101,11 @@ export async function handleCommitSpecs(req: Request, boardId: string): Promise<
   const writeAccessError = requireSpecsWriteAccess(workspaceReq);
   if (writeAccessError) return writeAccessError;
 
-  const board = boardReq.board as { github_project_url?: string | null };
+  const board = boardReq.board as {
+    github_project_url?: string | null;
+    github_branch?: string | null;
+  };
+  const githubBranch = board.github_branch ?? null;
   if (!board.github_project_url) {
     return Response.json(
       {
@@ -144,6 +148,7 @@ export async function handleCommitSpecs(req: Request, boardId: string): Promise<
     repo = await specsCommitDeps.downloadRepositoryFromProjectUrl({
       projectUrl: board.github_project_url,
       boardId,
+      branch: githubBranch,
     });
   } catch (err) {
     return Response.json(

@@ -1,7 +1,10 @@
 // list.archive_all_cards — archives every non-archived card in a list atomically.
 
 import { z } from 'zod';
-import type { ActionHandler, ActionContext } from '../../../../common/types';
+import type { ActionHandler, ActionContext } from '../../../common/types';
+
+// Read projection from db/migrations/0005_list.ts (primary key).
+type ListRow = { id: string };
 
 const configSchema = z.object({
   listId: z.string().min(1),
@@ -15,7 +18,7 @@ export const listArchiveAllCardsAction: ActionHandler = {
   async execute({ action, trx }: ActionContext): Promise<void> {
     const config = configSchema.parse(action.config);
 
-    const list = await trx('lists').where({ id: config.listId }).first();
+    const list = await trx<ListRow>('lists').where({ id: config.listId }).first();
     if (!list) throw new Error('list-not-found');
 
     await trx('cards')

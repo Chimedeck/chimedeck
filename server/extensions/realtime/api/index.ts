@@ -3,7 +3,7 @@
 import type { ServerWebSocket } from 'bun';
 import type { Server } from 'bun';
 import { verifyWsToken } from '../mods/auth';
-import { rooms, type WsData } from '../mods/rooms/index';
+import { type WsData } from '../mods/rooms/index';
 import { subscribeToBoard } from '../mods/rooms/subscribe';
 import { unsubscribeFromBoard } from '../mods/rooms/unsubscribe';
 import { recordPong, initHeartbeat, startHeartbeatLoop } from '../mods/heartbeat';

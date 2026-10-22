@@ -75,3 +75,7 @@ playwright-report/
 .playwright-mcp/
 
 /specs/tests/TEST_CREDENTIALS.md
+.obsidian/
+.task.resume
+.agent-loop-current-log
+console-errors.txt

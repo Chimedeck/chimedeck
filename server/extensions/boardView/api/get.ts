@@ -10,7 +10,14 @@ export async function handleGetViewPreference(req: Request, boardId: string): Pr
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const currentUser = (req as AuthenticatedRequest).currentUser;
+  if (!currentUser) {
+    return Response.json(
+      { error: { code: 'unauthorized', message: 'Unauthorized' } },
+      { status: 401 },
+    );
+  }
+  const userId = currentUser.id;
 
   const resolvedBoardId = await resolveBoardId(boardId);
   const board = resolvedBoardId ? await db('boards').where({ id: resolvedBoardId }).first() : null;

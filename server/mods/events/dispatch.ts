@@ -112,6 +112,10 @@ export async function dispatchEvent(input: WriteEventInput): Promise<WrittenEven
                 boardId: event.board_id,
                 entityId: event.entity_id,
                 actorId: event.actor_id,
+                // Durable producer identity (ADR chimedeck-whatsapp-dedupe-contract):
+                // receiver keys semantic dedupe on this, so re-signed retries of
+                // the same logical event collapse into one delivery set.
+                eventId: event.id,
               },
               webhookId: webhook.id,
               knex: db,

@@ -14,7 +14,7 @@ export const cardAddCommentAction: ActionHandler = {
   label: 'Add comment to card',
   category: 'card',
   configSchema,
-  async execute({ action, automation, event, evalContext, trx }: ActionContext): Promise<void> {
+  async execute({ action, automation, evalContext, trx }: ActionContext): Promise<void> {
     const config = configSchema.parse(action.config);
     const cardId = evalContext.cardId;
     if (!cardId) throw new Error('card-id-missing');

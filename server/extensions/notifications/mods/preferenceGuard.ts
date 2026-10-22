@@ -24,6 +24,12 @@ export interface NotificationPreference {
   email_enabled: boolean;
 }
 
+// Migration 0037: non-null user/type keys and non-null channel booleans.
+interface PreferenceRow extends NotificationPreference {
+  user_id: string;
+  type: string;
+}
+
 // When NOTIFICATION_PREFERENCES_ENABLED flag is off callers should skip the guard entirely
 // and treat all channels as enabled. This helper is used when the flag is on.
 export async function preferenceGuard({
@@ -33,7 +39,7 @@ export async function preferenceGuard({
   userId: string;
   type: NotificationType;
 }): Promise<NotificationPreference> {
-  const row = await db('notification_preferences')
+  const row = await db<PreferenceRow>('notification_preferences')
     .where({ user_id: userId, type })
     .select('in_app_enabled', 'email_enabled')
     .first();

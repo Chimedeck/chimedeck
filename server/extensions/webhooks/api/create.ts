@@ -28,7 +28,14 @@ export async function handleCreateWebhook(req: Request): Promise<Response> {
 
   const { label, endpointUrl, eventTypes } = body;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const currentUser = (req as AuthenticatedRequest).currentUser;
+  if (!currentUser) {
+    return Response.json(
+      { name: 'unauthorized', data: { message: 'Not authenticated' } },
+      { status: 401 },
+    );
+  }
+  const userId = currentUser.id;
 
   if (!label || typeof label !== 'string' || label.trim() === '') {
     return Response.json(

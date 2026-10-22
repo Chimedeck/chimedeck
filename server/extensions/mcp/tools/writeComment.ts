@@ -3,13 +3,15 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { apiCall } from '../apiClient';
 
 export function registerWriteComment(server: McpServer, token: string): void {
-  server.tool(
+  server.registerTool(
     'write_comment',
-    'Post a comment on a card.',
     {
+      description: 'Post a comment on a card.',
+      inputSchema: {
       cardId: z.string().describe('ID of the card to comment on'),
       content: z.string().optional().describe('Comment body text'),
       text: z.string().optional().describe('Deprecated alias for comment body text'),
+      },
     },
     async ({ cardId, content, text }) => {
       const commentContent = content ?? text;

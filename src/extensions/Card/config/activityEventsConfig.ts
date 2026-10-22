@@ -30,6 +30,12 @@ export const VISIBLE_ACTIVITY_EVENT_TYPES: string[] = [
   'checklist_item_assigned',
   'checklist_item_unassigned',
   'checklist_item_due_date_updated',
+  // Sprint 87 — board github integration events (server visibleEventTypes.ts parity)
+  'board_github_project_url_updated',
+  // Port-back bundle C — github branch scope + card templates
+  'board_github_branch_updated',
+  'card.template.enabled',
+  'card.template.disabled',
   // Sprint 176 — sprint generation lifecycle events
   'sprint_generation_started',
   'sprint_generation_artifact_created',

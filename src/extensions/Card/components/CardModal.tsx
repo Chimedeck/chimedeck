@@ -3,7 +3,7 @@
 // Two-column layout: left = content, right = ActivityFeed (ResizablePanels).
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { PhotoIcon, XMarkIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import type { Card, Label, CardMember, Checklist } from '../api';
 import type { Attachment } from '../../Attachments/types';
 import CardTitle from './CardTitle';
@@ -120,6 +120,9 @@ interface Props {
   onRerun?: (runId: string) => void | Promise<void>;
   /** Callback for edit action on AI edit runs. */
   onEdit?: (runId: string) => void | Promise<void>;
+  isTemplate?: boolean;
+  onMakeTemplate?: () => void;
+  onCreateFromTemplate?: () => void;
 }
 
 const COVER_COLORS = [
@@ -206,6 +209,9 @@ const CardModal = ({
   onApprove,
   onRerun,
   onEdit,
+  isTemplate = false,
+  onMakeTemplate,
+  onCreateFromTemplate,
 }: Props) => {
   const isReadOnly = card.archived;
   const canEditCover = !isReadOnly && !isViewerGuest;
@@ -538,6 +544,22 @@ const CardModal = ({
               </div>
             )}
 
+            {isTemplate && (
+              <div className="mx-5 mb-2 rounded-lg bg-blue-50 border border-blue-300 px-3 py-2 text-sm text-blue-800 dark:bg-blue-900/30 dark:border-blue-700/50 dark:text-blue-400 flex items-center justify-between">
+                <span>This is a template card.</span>
+                {onCreateFromTemplate && (
+                  <button
+                    type="button"
+                    className="ml-3 inline-flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
+                    onClick={onCreateFromTemplate}
+                  >
+                    <DocumentTextIcon className="w-3.5 h-3.5" />
+                    Create card from Template
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Body: ResizablePanels when activity visible, single column otherwise */}
             {activityVisible ? (
               <ResizablePanels
@@ -579,7 +601,9 @@ const CardModal = ({
                       cardId={card.id}
                       canWrite={!isViewerGuest}
                       insertMarkdownRef={insertMarkdownRef}
-                      onCountChange={onAttachmentCountChange}
+                      {...(onAttachmentCountChange
+                        ? { onCountChange: onAttachmentCountChange }
+                        : {})}
                       onAttachmentsChange={syncCardAttachmentState}
                       refreshSignal={attachmentRefreshSignal}
                     />
@@ -665,7 +689,9 @@ const CardModal = ({
                     cardId={card.id}
                     canWrite={!isViewerGuest}
                     insertMarkdownRef={insertMarkdownRef}
-                    onCountChange={onAttachmentCountChange}
+                    {...(onAttachmentCountChange
+                      ? { onCountChange: onAttachmentCountChange }
+                      : {})}
                     onAttachmentsChange={syncCardAttachmentState}
                     refreshSignal={attachmentRefreshSignal}
                   />
@@ -709,6 +735,8 @@ const CardModal = ({
               onMoveCard={onMoveCard}
               onPrint={onPrint}
               onAIAssist={onChatStart}
+              isTemplate={isTemplate}
+              onMakeTemplate={onMakeTemplate}
             />
           </div>
 

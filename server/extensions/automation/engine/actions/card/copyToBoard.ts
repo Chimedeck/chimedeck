@@ -22,6 +22,18 @@ const configSchema = z.object({
   position: z.enum(['top', 'bottom']).optional(),
 });
 
+type CardRow = {
+  list_id: string;
+  title: string;
+  description: string | null;
+  due_date: string | null;
+};
+type BoardRow = { workspace_id: string };
+type MembershipRow = { role: string };
+type ListRow = { id: string };
+type PositionRow = { position: string };
+type SourceBoardRow = { board_id: string };
+
 export const cardCopyToBoardAction: ActionHandler = {
   type: 'card.copy_to_board',
   label: 'Copy card to another board',
@@ -35,33 +47,33 @@ export const cardCopyToBoardAction: ActionHandler = {
     const actorId = evalContext.actorId;
 
     // Load the source card.
-    const card = await trx('cards').where({ id: cardId }).first();
+    const card = (await trx('cards').where({ id: cardId }).first()) as CardRow | undefined;
     if (!card) throw new Error('card-not-found');
 
     // Load the target board and verify it exists.
-    const targetBoard = await trx('boards').where({ id: config.targetBoardId }).first();
+    const targetBoard = (await trx('boards').where({ id: config.targetBoardId }).first()) as BoardRow | undefined;
     if (!targetBoard) throw new Error('target-board-not-found');
 
     // Enforce actor access: the triggering user must be a MEMBER+ of the target board's workspace.
     // This keeps automations user-specific — the same rule only works if the actor can actually
     // write to the target board. GUESTs (rank 0) are read-only and cannot trigger copy actions.
-    const actorMembership = await trx('memberships')
+    const actorMembership = (await trx('memberships')
       .where({ user_id: actorId, workspace_id: targetBoard.workspace_id })
-      .first();
+      .first()) as MembershipRow | undefined;
     if (!actorMembership || !['OWNER', 'ADMIN', 'MEMBER'].includes(actorMembership.role)) {
       throw new Error('actor-lacks-target-board-access');
     }
 
     // Verify the target list belongs to the target board.
-    const targetList = await trx('lists')
+    const targetList = (await trx('lists')
       .where({ id: config.targetListId, board_id: config.targetBoardId })
-      .first();
+      .first()) as ListRow | undefined;
     if (!targetList) throw new Error('target-list-not-found');
 
     // Compute position in the target list.
-    const targetCards = await trx('cards')
+    const targetCards = (await trx('cards')
       .where({ list_id: config.targetListId, archived: false })
-      .orderBy('position', 'asc');
+      .orderBy('position', 'asc')) as PositionRow[];
 
     let position: string;
     if (config.position === 'top') {
@@ -88,14 +100,14 @@ export const cardCopyToBoardAction: ActionHandler = {
       updated_at: new Date().toISOString(),
     });
 
-    const newCard = await trx('cards').where({ id: newCardId }).first();
+    const newCard = (await trx('cards').where({ id: newCardId }).first()) as unknown;
 
     // Attach a link to the original card on the copied card so it is traceable.
-    const sourceBoard = await trx('boards')
+    const sourceBoard = (await trx('boards')
       .join('lists', 'lists.board_id', 'boards.id')
       .where('lists.id', card.list_id)
       .select('boards.id as board_id')
-      .first();
+      .first()) as SourceBoardRow | undefined;
     if (sourceBoard) {
       const sourceCardUrl = `${env.APP_BASE_URL}/boards/${sourceBoard.board_id}/cards/${cardId}`;
       const attachmentShortId = await generateUniqueShortId('attachments');
@@ -103,7 +115,7 @@ export const cardCopyToBoardAction: ActionHandler = {
         id: randomUUID(),
         short_id: attachmentShortId,
         card_id: newCardId,
-        uploaded_by: actorId ?? null,
+        uploaded_by: actorId,
         name: card.title,
         type: 'URL',
         url: sourceCardUrl,
@@ -117,7 +129,7 @@ export const cardCopyToBoardAction: ActionHandler = {
     // websocket clients on the target board are notified. The actorId is used as-is
     // so activity logs show it was this specific user who created the card.
     postCommit(() => {
-      dispatchEvent({
+      void dispatchEvent({
         type: 'card.created',
         boardId: config.targetBoardId,
         entityId: newCardId,

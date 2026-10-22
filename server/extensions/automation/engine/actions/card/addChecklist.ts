@@ -3,6 +3,16 @@ import { z } from 'zod';
 import { between, HIGH_SENTINEL } from '../../../../list/mods/fractional';
 import type { ActionHandler, ActionContext } from '../../../common/types';
 
+// Read projections from migrations 0006_card and 0007_card_extended.
+interface CardLookupRow {
+  id: string;
+}
+
+interface ChecklistItemPositionRow {
+  card_id: string;
+  position: string;
+}
+
 const configSchema = z.object({
   name: z.string().min(1).max(255),
   items: z.array(z.string().min(1).max(512)).optional(),
@@ -22,12 +32,12 @@ export const cardAddChecklistAction: ActionHandler = {
     const cardId = evalContext.cardId;
     if (!cardId) throw new Error('card-id-missing');
 
-    const card = await trx('cards').where({ id: cardId }).first();
+    const card = await trx<CardLookupRow>('cards').where({ id: cardId }).first();
     if (!card) throw new Error('card-not-found');
 
     const titles = config.items && config.items.length > 0 ? config.items : [config.name];
 
-    const lastItem = await trx('checklist_items')
+    const lastItem = await trx<ChecklistItemPositionRow>('checklist_items')
       .where({ card_id: cardId })
       .orderBy('position', 'desc')
       .first();

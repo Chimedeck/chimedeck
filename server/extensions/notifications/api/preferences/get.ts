@@ -5,15 +5,25 @@ import { db } from '../../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
 import { NOTIFICATION_TYPES } from '../../mods/preferenceGuard';
 
+type AuthenticatedUserRequest = AuthenticatedRequest & {
+  currentUser: NonNullable<AuthenticatedRequest['currentUser']>;
+};
+type NotificationPreferenceRow = {
+  type: string;
+  in_app_enabled: boolean;
+  email_enabled: boolean;
+  updated_at: string | null;
+};
+
 export async function handleGetPreferences(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const userId = (req as AuthenticatedUserRequest).currentUser.id;
 
-  const rows = await db('notification_preferences')
+  const rows = (await db('notification_preferences')
     .where({ user_id: userId })
-    .select('type', 'in_app_enabled', 'email_enabled', 'updated_at');
+    .select('type', 'in_app_enabled', 'email_enabled', 'updated_at')) as NotificationPreferenceRow[];
 
   const rowByType = new Map(rows.map((r) => [r.type, r]));
 

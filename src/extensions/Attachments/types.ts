@@ -43,6 +43,8 @@ export interface Attachment {
   referenced_card_id: string | null;
   /** Resolved card preview — populated by the list API when referenced_card_id is set. */
   referenced_card: CardPreview | null;
+  /** Fractional position for drag-and-drop reorder within the card. */
+  position: string | null;
   created_at: string;
   updated_at: string;
 }

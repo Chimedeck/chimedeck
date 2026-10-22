@@ -104,7 +104,11 @@ export async function handlePutSpecsFile(req: Request, boardId: string): Promise
   const writeAccessError = requireSpecsWriteAccess(workspaceReq);
   if (writeAccessError) return writeAccessError;
 
-  const board = boardReq.board as { github_project_url?: string | null };
+  const board = boardReq.board as {
+    github_project_url?: string | null;
+    github_branch?: string | null;
+  };
+  const githubBranch = board.github_branch ?? null;
   if (!board.github_project_url) {
     return Response.json(
       {
@@ -137,6 +141,7 @@ export async function handlePutSpecsFile(req: Request, boardId: string): Promise
     const result = await specsFileWriteDeps.downloadRepositoryFromProjectUrl({
       projectUrl: board.github_project_url,
       boardId,
+      branch: githubBranch,
     });
     repoPath = result.repoPath;
   } catch (err) {
@@ -161,6 +166,9 @@ export async function handlePutSpecsFile(req: Request, boardId: string): Promise
       boardId,
       projectUrl: board.github_project_url,
       repoPath,
+      // [why] Manifest cache keys are branch-scoped — pass the branch through so
+      // the branch-scoped entry dies with the file cache.
+      branch: githubBranch,
     });
 
     return Response.json(

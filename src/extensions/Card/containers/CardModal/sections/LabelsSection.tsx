@@ -25,7 +25,11 @@ export const LabelsSection = ({
         <LabelChip
           key={label.id}
           label={label}
-          {...(!disabled && { onRemove: () => onDetach(label.id) })}
+          {...(!disabled && {
+            onRemove: () => {
+              void onDetach(label.id);
+            },
+          })}
         />
       ))}
       {!disabled && (
