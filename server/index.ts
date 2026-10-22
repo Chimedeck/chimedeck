@@ -31,6 +31,7 @@ import { attachmentRouter } from './extensions/attachment/api/index';
 import { searchRouter } from './extensions/search/api/index';
 import { presenceRouter } from './extensions/presence/api/index';
 import { notificationsRouter } from './extensions/notifications/api/index';
+import { startPushDelivery } from './extensions/notifications/push/queue';
 import { startExpiryJob } from './extensions/presence/mods/expiryJob';
 import { rooms } from './extensions/realtime/mods/rooms/index';
 // Start orphan cleanup scheduler on server boot
@@ -342,6 +343,8 @@ async function getCachedPluginOrigins(): Promise<PluginCspOrigins> {
   }
   return _pluginOriginCache;
 }
+
+startPushDelivery();
 
 Bun.serve({
   port: appConfig.port,

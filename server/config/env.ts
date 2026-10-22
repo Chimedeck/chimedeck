@@ -53,11 +53,11 @@ function resolveS3Env(): {
     // When unset, fall back to the global AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY.
     S3_AWS_ACCESS_KEY_ID: orUnset(
       Bun.env['S3_AWS_ACCESS_KEY_ID'],
-      useLocalStorage ? LOCALSTACK_ACCESS_KEY_ID : '',
+      useLocalStorage ? LOCALSTACK_ACCESS_KEY_ID : ''
     ),
     S3_AWS_SECRET_ACCESS_KEY: orUnset(
       Bun.env['S3_AWS_SECRET_ACCESS_KEY'],
-      useLocalStorage ? LOCALSTACK_SECRET_ACCESS_KEY : '',
+      useLocalStorage ? LOCALSTACK_SECRET_ACCESS_KEY : ''
     ),
     // Global AWS credentials — used by SES and as fallback for S3.
     AWS_ACCESS_KEY_ID: orUnset(Bun.env['AWS_ACCESS_KEY_ID'], ''),
@@ -66,6 +66,10 @@ function resolveS3Env(): {
 }
 
 export const env = {
+  MOBILE_PUSH_ENABLED: Bun.env['MOBILE_PUSH_ENABLED'] === 'true',
+  MOBILE_PUSH_DEVELOPMENT_CREDENTIALS_JSON:
+    Bun.env['MOBILE_PUSH_DEVELOPMENT_CREDENTIALS_JSON'] ?? '',
+  MOBILE_PUSH_PRODUCTION_CREDENTIALS_JSON: Bun.env['MOBILE_PUSH_PRODUCTION_CREDENTIALS_JSON'] ?? '',
   DATABASE_URL: Bun.env['DATABASE_URL'] ?? '',
   JWT_PRIVATE_KEY: decodeKey(Bun.env['JWT_PRIVATE_KEY'] ?? '', 'JWT_PRIVATE_KEY'),
   JWT_PUBLIC_KEY: decodeKey(Bun.env['JWT_PUBLIC_KEY'] ?? '', 'JWT_PUBLIC_KEY'),

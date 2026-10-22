@@ -1,0 +1,10 @@
+# Keep runtime mobile-push identities and local verification artefacts out of images.
+.git
+node_modules
+.secrets
+*firebase-adminsdk*.json
+*service-account*.json
+.env.json
+test-results
+playwright-report
+coverage

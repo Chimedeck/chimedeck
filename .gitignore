@@ -25,6 +25,10 @@ out/
 .env.test
 .env.production
 .env.agent
+.env.json
+.secrets/
+*firebase-adminsdk*.json
+*service-account*.json
 
 # Logs
 logs/

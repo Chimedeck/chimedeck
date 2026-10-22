@@ -1,0 +1,14 @@
+# Optional runtime-only credential mount. Combine with the appropriate base compose file.
+# Keep the referenced JSON outside the checkout and readable by the container's app user.
+services:
+  app:
+    environment:
+      MOBILE_PUSH_ENABLED: 'true'
+      MOBILE_PUSH_DEVELOPMENT_CREDENTIALS_JSON: application-default
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase_mobile_development
+    secrets:
+      - firebase_mobile_development
+
+secrets:
+  firebase_mobile_development:
+    file: '${MOBILE_PUSH_DEVELOPMENT_CREDENTIALS_FILE:?Set the external credential file path}'

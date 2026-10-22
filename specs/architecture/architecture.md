@@ -323,6 +323,8 @@ Board event persisted (events/dispatch.ts)
 
 ### Preference model
 
+Mobile Android/iOS push is an opt-in device projection of the in-app channel, not a third independent per-type preference. The additive design, authorization boundaries, queue semantics, and rollout criteria are specified in [Mobile push delivery](./mobile-push.md). Existing inbox/email preferences remain authoritative.
+
 Stored in `notification_preferences` table (`user_id`, `type`, `in_app_enabled`, `email_enabled`).
 Missing rows are treated as both channels enabled (opt-out model).
 When `NOTIFICATION_PREFERENCES_ENABLED=false`, the guard always returns all-enabled.

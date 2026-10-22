@@ -93,6 +93,7 @@
     "axios": "^1",
     "class-variance-authority": "^0.7",
     "clsx": "^2",
+    "firebase-admin": "^14.5.0",
     "handlebars": "^4.7.9",
     "idb": "^8.0.3",
     "ioredis": "^5.10.0",

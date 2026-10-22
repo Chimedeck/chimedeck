@@ -923,6 +923,122 @@ paths:
               schema:
                 $ref: '#/components/schemas/GenericDataResponse'
 
+  /api/v1/notifications/unread-count:
+    get:
+      tags: [Notifications]
+      summary: Count the caller's unread notifications
+      description: Excludes hidden card_updated records. No other user's total is returned.
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Exact unread total
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [count]
+                    properties:
+                      count: { type: integer, minimum: 0 }
+        '401': { description: Authentication required }
+
+  /api/v1/notifications/push-capabilities:
+    get:
+      tags: [Notifications]
+      summary: Inspect configured mobile push environments
+      description: Reports enable flag and credential configuration presence, not a live Firebase credential check. Never returns credential material.
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Available environment configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      development: { type: boolean }
+                      production: { type: boolean }
+        '401': { description: Authentication required }
+
+  /api/v1/notifications/devices:
+    put:
+      tags: [Notifications]
+      summary: Register or rotate this installation's push token
+      description: The recipient comes from Bearer authentication. Reusing an installation requires its secret proof. Development and production tokens are separate. The server stores only a hash of the proof.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, secret, token, platform, environment]
+              properties:
+                id:
+                  type: string
+                  pattern: '^[a-zA-Z0-9-]{16,64}$'
+                secret:
+                  type: string
+                  minLength: 32
+                  maxLength: 256
+                  writeOnly: true
+                token:
+                  type: string
+                  minLength: 20
+                  maxLength: 4096
+                  writeOnly: true
+                platform: { type: string, enum: [android, ios] }
+                environment: { type: string, enum: [development, production] }
+      responses:
+        '200':
+          description: Registration persisted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      registered: { type: boolean, enum: [true] }
+        '400': { description: Invalid JSON or device fields; structured name/data error }
+        '401': { description: Authentication required }
+        '409': { description: Installation proof could not be verified }
+        '503': { description: Push is not configured for the requested environment }
+
+  /api/v1/notifications/devices/{installationId}/revoke:
+    post:
+      tags: [Notifications]
+      summary: Revoke an installation after logout or session expiry
+      description: Authorizes with a secret installation proof and expected recipient user ID, including after Bearer expiry. Unknown installations, incorrect proofs, and former-account requests all return 204 without revealing or modifying a different mapping.
+      security: []
+      parameters:
+        - in: path
+          name: installationId
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-zA-Z0-9-]{16,64}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [secret, user_id]
+              properties:
+                secret: { type: string, minLength: 32, maxLength: 256, writeOnly: true }
+                user_id: { type: string }
+      responses:
+        '204': { description: Proof processed; no mapping or token is returned }
+        '400': { description: Invalid JSON object; structured name/data error }
+
   /api/v1/boards/{boardId}/presence:
     get:
       tags: [Presence]

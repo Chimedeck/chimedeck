@@ -9,6 +9,7 @@
 import type { WsData } from './mods/rooms/index';
 import type { ServerWebSocket } from 'bun';
 import { pubsub } from '../../mods/pubsub/index';
+import { queueNotificationPush } from '../notifications/push/queue';
 
 // Map from userId → Set of connected sockets (a user may have multiple tabs)
 export const userSockets = new Map<string, Set<ServerWebSocket<WsData>>>();
@@ -81,5 +82,11 @@ export async function unsubscribeUserChannel(userId: string): Promise<void> {
 
 /** Route a JSON message to all open sockets belonging to a user via pubsub. */
 export async function publishToUser(userId: string, message: object): Promise<void> {
+  try {
+    await queueNotificationPush({ userId, message });
+  } catch {
+    // Never fail the originating comment/card operation because push is down.
+    console.warn('Mobile notification could not be queued.');
+  }
   await pubsub.publish(`user:${userId}`, JSON.stringify(message));
 }

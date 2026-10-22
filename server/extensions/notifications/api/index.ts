@@ -1,5 +1,6 @@
 // Notification API router.
 import { handleListNotifications } from './list';
+import { pushRouter } from '../push/api';
 import { handleMarkRead } from './markRead';
 import { handleMarkUnread } from './markUnread';
 import { handleMarkAllRead } from './markAllRead';
@@ -31,6 +32,8 @@ export async function notificationsRouter(
   req: Request,
   pathname: string
 ): Promise<Response | null> {
+  const pushResponse = await pushRouter({ req, pathname });
+  if (pushResponse !== null) return pushResponse;
   const preferencesResponse = await resolvePreferenceRouters(req, pathname);
   if (preferencesResponse !== null) return preferencesResponse;
 
